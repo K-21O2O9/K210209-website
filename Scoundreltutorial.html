@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoundrel — Codex of the Damned</title>
+    <style>
+        :root {
+            --void: #050308;
+            --abyss: #0b060c;
+            --parchment-dark: #110a0f;
+            --blood: #8b1a1a;
+            --blood-bright: #b91c1c;
+            --blood-glow: #dc2626;
+            --crimson-pale: #d4a0a0;
+            --crimson-muted: #9a7070;
+            --gold-dim: #b8963c;
+            --gold-pale: #d4b860;
+            --bone: #c4b5a5;
+            --ash: #6b5b5b;
+            --ember: #4a3030;
+            --border-gothic: #3d1a1a;
+            --glow-blood: rgba(180, 20, 20, 0.35);
+            --glow-strong: rgba(200, 25, 25, 0.55);
+            --parchment: #1a0f14;
+            --parchment-light: #1f1218;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @font-face {
+            font-family: 'Diablo';
+            src: local('Georgia'), local('Times New Roman'), local('serif');
+        }
+
+        body {
+            background: var(--void);
+            background-image:
+                radial-gradient(ellipse at 50% 0%, rgba(120, 15, 15, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(80, 10, 10, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 60%, rgba(100, 8, 8, 0.06) 0%, transparent 50%),
+                url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='60' height='60' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            color: var(--bone);
+            font-family: 'Diablo', 'Georgia', 'Times New Roman', serif;
+            display: flex;
+            justify-content: center;
+            padding: 2.5rem 1rem;
+            line-height: 1.7;
+            min-height: 100vh;
+            letter-spacing: 0.02em;
+        }
+
+        .codex-container {
+            max-width: 700px;
+            width: 100%;
+            background: var(--abyss);
+            border: 3px solid var(--border-gothic);
+            border-radius: 8px;
+            padding: 2.5rem 2rem;
+            box-shadow:
+                0 0 80px var(--glow-blood),
+                0 0 20px rgba(0, 0, 0, 0.6),
+                inset 0 0 80px rgba(0, 0, 0, 0.4);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 2.2rem;
+        }
+
+        /* Gothic corner ornaments */
+        .codex-container::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            border: 1px solid rgba(160, 40, 40, 0.15);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        .codex-container::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            border: 1px solid rgba(140, 30, 30, 0.08);
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        /* Title area */
+        .title-section {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-ornament {
+            font-size: 2.5rem;
+            color: var(--blood-bright);
+            letter-spacing: 6px;
+            text-shadow: 0 0 30px var(--glow-strong);
+            margin-bottom: 0.2rem;
+            font-weight: 400;
+        }
+
+        .title-main {
+            font-size: 2.6rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            color: #d4a0a0;
+            text-shadow:
+                0 0 40px rgba(200, 30, 30, 0.6),
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            text-transform: uppercase;
+        }
+
+        .title-sub {
+            font-size: 1rem;
+            letter-spacing: 4px;
+            color: var(--crimson-muted);
+            margin-top: 0.3rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .title-divider {
+            width: 60%;
+            height: 1px;
+            margin: 0.6rem auto 0;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(180, 40, 40, 0.5) 20%,
+                    rgba(200, 50, 50, 0.8) 50%,
+                    rgba(180, 40, 40, 0.5) 80%,
+                    transparent);
+        }
+
+        /* Section styling */
+        .section {
+            background: var(--parchment);
+            border: 1px solid rgba(140, 35, 35, 0.2);
+            border-radius: 6px;
+            padding: 1.5rem 1.6rem;
+            position: relative;
+            z-index: 1;
+            transition: border-color 0.35s, box-shadow 0.35s;
+        }
+
+        .section:hover {
+            border-color: rgba(200, 45, 45, 0.45);
+            box-shadow: 0 0 30px rgba(170, 20, 20, 0.12), inset 0 0 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(120, 30, 30, 0.3);
+            padding-bottom: 0.7rem;
+        }
+
+        .section-icon {
+            font-size: 1.5rem;
+            color: var(--blood-glow);
+            text-shadow: 0 0 15px var(--glow-strong);
+            flex-shrink: 0;
+            width: 28px;
+            text-align: center;
+        }
+
+        .section h2 {
+            font-size: 1.25rem;
+            color: #d4a0a0;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 800;
+            text-shadow: 0 0 15px rgba(180, 30, 30, 0.3);
+        }
+
+        .section p {
+            color: var(--bone);
+            font-size: 0.95rem;
+            margin-bottom: 0.7rem;
+        }
+
+        .section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .section ul li {
+            margin-bottom: 0.55rem;
+            padding-left: 1.6rem;
+            position: relative;
+            font-size: 0.95rem;
+            color: #c4b5a5;
+        }
+
+        .section ul li::before {
+            content: '';
+            position: absolute;
+            left: 0.1rem;
+            top: 0.55rem;
+            width: 7px;
+            height: 7px;
+            background: var(--blood-bright);
+            border-radius: 1px;
+            transform: rotate(45deg);
+            box-shadow: 0 0 8px var(--glow-strong);
+        }
+
+        /* Highlight colours */
+        .hl-red {
+            color: #ef4444;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+        }
+        .hl-gold {
+            color: #d4b860;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(212, 184, 96, 0.25);
+        }
+        .hl-blue {
+            color: #60a5fa;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(96, 165, 250, 0.2);
+        }
+        .hl-green {
+            color: #4ade80;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(74, 222, 128, 0.2);
+        }
+        .hl-pale {
+            color: #e8c8c8;
+            font-weight: 700;
+        }
+
+        /* Mini cards */
+        .mini-cards-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 1rem 0 0.5rem;
+        }
+
+        .mini-card {
+            width: 66px;
+            height: 90px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.1rem;
+            border: 2px solid;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            background: #1a0f14;
+        }
+        .mini-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            border-radius: 6px 6px 0 0;
+        }
+        .mini-card.monster {
+            border-color: rgba(244, 63, 94, 0.5);
+        }
+        .mini-card.monster::before {
+            background: #f43f5e;
+        }
+        .mini-card.weapon {
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+        .mini-card.weapon::before {
+            background: #3b82f6;
+        }
+        .mini-card.potion {
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+        .mini-card.potion::before {
+            background: #10b981;
+        }
+        .mini-suit {
+            font-size: 1.7rem;
+            line-height: 1;
+        }
+        .mini-label {
+            font-size: 0.5rem;
+            color: #999;
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+
+        /* Formula box */
+        .formula-box {
+            background: rgba(140, 20, 20, 0.06);
+            border: 1px solid rgba(160, 40, 40, 0.25);
+            border-left: 3px solid var(--blood-bright);
+            padding: 0.9rem 1.2rem;
+            border-radius: 0 6px 6px 0;
+            margin: 0.9rem 0;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #e0c0c0;
+            letter-spacing: 0.03em;
+            text-shadow: 0 0 10px rgba(180, 30, 30, 0.2);
+        }
+
+        .formula-box span {
+            color: var(--blood-glow);
+        }
+
+        /* Strategy inset */
+        .strategy-inset {
+            background: rgba(160, 25, 25, 0.06);
+            border: 1px solid rgba(170, 40, 40, 0.2);
+            padding: 1rem 1.2rem;
+            border-radius: 6px;
+            margin: 0.8rem 0 0;
+            font-size: 0.9rem;
+            color: #c4a0a0;
+            position: relative;
+        }
+        .strategy-inset::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--blood-bright);
+            border-radius: 3px 0 0 3px;
+            box-shadow: 0 0 12px var(--glow-strong);
+        }
+
+        /* Footer */
+        .footer-section {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            padding-top: 0.5rem;
+        }
+
+        .footer-divider {
+            width: 40%;
+            height: 1px;
+            margin: 0 auto 1.2rem;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(160, 35, 35, 0.5) 30%,
+                    rgba(200, 50, 50, 0.7) 50%,
+                    rgba(160, 35, 35, 0.5) 70%,
+                    transparent);
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: #805050;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .footer-text strong {
+            color: #b06060;
+            letter-spacing: 2px;
+        }
+
+        .footer-symbol {
+            font-size: 1.4rem;
+            color: var(--blood-bright);
+            letter-spacing: 8px;
+            text-shadow: 0 0 25px var(--glow-strong);
+            margin-bottom: 0.4rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--void);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-gothic);
+            border-radius: 3px;
+        }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 1rem 0.4rem;
+            }
+            .codex-container {
+                padding: 1.5rem 1rem;
+                gap: 1.5rem;
+            }
+            .title-main {
+                font-size: 1.8rem;
+                letter-spacing: 3px;
+            }
+            .section {
+                padding: 1.2rem 1rem;
+            }
+            .section h2 {
+                font-size: 1.05rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="codex-container">
+
+        <!-- ═══════════ TITLE ═══════════ -->
+        <div class="title-section">
+            <div class="title-ornament">~ * ~</div>
+            <div class="title-main">Scoundrel</div>
+            <div class="title-sub">Codex of the Damned</div>
+            <div class="title-divider"></div>
+        </div>
+
+        <!-- ═══════════ THE CARDS ═══════════ -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-icon">&#10017;</span>
+                <h2>The Cards of Fate</h2>
+            </div>
+            <p>The dungeon deck is forged from three <span class="hl-pale">suits</span>, each bearing a rank from <span class="hl-gold">2</span> through <span class="hl-gold">Ace</span> (Ace = 14). Every card is a choice — every choice, a scar.</p>
+            <div class="mini-cards-row">
+                <div class="mini-card monster">
+                    <span class="mini-suit" style="color:#f43f5e;">&#9824;</span>
+                    <span class="mini-label">Monster</span>
+                </div>
+                <div class="mini-card monster">
+                    <span class="mini-suit" style="color:#f43f5e;">&#9827;</span>
+                    <span class="mini-label">Monster</span>
+                </div>
+                <div class="mini-card weapon">
+                    <span class="mini-suit" style="color:#3b82f6;">&#9830;</span>
+                    <span class="mini-label">Weapon</span>
+                </div>
+                <div class="mini-card potion">
+                    <span class="mini-suit" style="color:#10b981;">&#9829;</span>
+                    <span class="mini-label">Potion</span>
+                </div>
+            </div>
+            <ul>
+                <li><span class="hl-red">&#9824; &#9827; Monsters</span> — Deal wounds equal to their rank. They must be slain or evaded.</li>
+                <li><span class="hl-blue">&#9830; Weapons</span> — Reduce incoming damage. Each strike leaves a scar on the blade — a durability limit.</li>
+                <li><span class="hl-green">&#9829; Potions</span> — Restore vitality by their rank. Only <span class="hl-gold">one draught per room</span> holds power; further swigs are worthless.</li>
+            </ul>
+        </div>
+
+        <!-- ═══════════ THE ROOM ═══════════ -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-icon">&#9864;</span>
+                <h2>The Chamber of Souls</h2>
+            </div>
+            <p>Each chamber reveals <span class="hl-gold">four face-down cards</span> on the cold stone. You must <span class="hl-pale">resolve exactly three</span> before the passage forward opens. The fourth is abandoned to the darkness — forever lost.</p>
+            <div class="strategy-inset">
+                <span class="hl-red">Whisper of caution:</span> Survey all four cards before acting. If a towering horror lurks among them, consider <span class="hl-gold">fleeing the entire chamber</span> — but know this: you may only flee <em>before</em> resolving a single card, and only once per room.
+            </div>
+        </div>
+
+        <!-- ═══════════ COMBAT ═══════════ -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-icon">&#9876;</span>
+                <h2>The Art of Slaughter</h2>
+            </div>
+            <p>When you <span class="hl-blue">grip a weapon</span>, its rank deflects the monster's fury. The calculus of blood is simple:</p>
+            <div class="formula-box">
+                Wounds Sustained = <span>Monster Rank</span> &minus; <span>Weapon Rank</span> &nbsp;(never below zero)
+            </div>
+            <p>After the kill, the weapon's <span class="hl-gold">durability</span> is branded with the monster's rank. Henceforth, the blade may only be wielded against foes whose rank is <span class="hl-pale">strictly lower</span> than that threshold.</p>
+            <ul>
+                <li><span class="hl-pale">Example:</span> You bear a <span class="hl-blue">7&#9830; blade</span>. A <span class="hl-red">10&#9824; horror</span> attacks — you suffer 3 wounds, and the blade's durability becomes 10. Now it serves only against monsters ranked <span class="hl-gold">9 or below</span>.</li>
+            </ul>
+            <p>Without a weapon — or when your blade has grown too dull — you must face the monster <span class="hl-red">barehanded</span>, enduring the <span class="hl-red">full brunt</span> of its rank in damage.</p>
+        </div>
+
+        <!-- ═══════════ POTIONS ═══════════ -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-icon">&#9764;</span>
+                <h2>Elixirs of the Flesh</h2>
+            </div>
+            <p><span class="hl-green">Potions</span> knit wounds by their rank, but the body grows tolerant. <span class="hl-gold">Only the first potion</span> in any chamber mends flesh; all others are bitter water. Your mortal shell caps at <span class="hl-gold">20 vitality</span> — do not squander healing.</p>
+        </div>
+
+        <!-- ═══════════ TIMER ═══════════ -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-icon">&#9202;</span>
+                <h2>The Doom Clock</h2>
+            </div>
+            <p>The dungeon grants <span class="hl-gold">sixty heartbeats</span> per <span class="hl-gold">seven-floor cycle</span>. When the last grain falls, your soul is forfeit — instant death. Survive seven chambers, and the sands turn anew. Speed is survival. Hesitation is the grave.</p>
+        </div>
+
+        <!-- ═══════════ SCORING ═══════════ -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-icon">&#9733;</span>
+                <h2>The Tally of Triumph</h2>
+            </div>
+            <p>Each floor cleared brands <span class="hl-gold">+1 mark</span> upon your legacy. The dungeon yields only when <span class="hl-pale">every last monster</span> in the entire deck lies dead at your feet. Your <span class="hl-gold">greatest score</span> is etched into the stone — can you surpass it?</p>
+        </div>
+
+        <!-- ═══════════ GAME OVER ═══════════ -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-icon">&#9760;</span>
+                <h2>The End of the Road</h2>
+            </div>
+            <p>The darkness claims you when:</p>
+            <ul>
+                <li>Your <span class="hl-red">vitality drains to zero</span></li>
+                <li>The <span class="hl-gold">Doom Clock expires</span></li>
+            </ul>
+            <p>Flee with wisdom. Once a chamber's first card is resolved, the door seals behind you — no escape until three are dealt with, or the room is cleared.</p>
+        </div>
+
+        <!-- ═══════════ FOOTER ═══════════ -->
+        <div class="footer-section">
+            <div class="footer-divider"></div>
+            <div class="footer-symbol">&#9760; ~ &#9876; ~ &#9760;</div>
+            <div class="footer-text">
+                Forged in darkness by <strong>K210209 Studios</strong>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
