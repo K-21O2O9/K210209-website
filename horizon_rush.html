@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Horizon Rush: Flow State</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+        
+        body, html {
+            margin: 0; padding: 0; width: 100vw; height: 100vh;
+            overflow: hidden; background-color: #000;
+            font-family: 'Montserrat', sans-serif;
+            touch-action: none; user-select: none; -webkit-user-select: none;
+        }
+        #gameCanvas {
+            display: block; width: 100%; height: 100%;
+        }
+        .overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none; display: flex; flex-direction: column;
+        }
+        .pointer-events-auto { pointer-events: auto; }
+        .glass-panel {
+            background: rgba(12, 12, 18, 0.88);
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .text-glow { text-shadow: 0 0 12px rgba(255, 255, 255, 0.8); }
+        .text-glow-orange { text-shadow: 0 0 20px rgba(245, 158, 11, 0.8); }
+        .text-glow-cyan { text-shadow: 0 0 20px rgba(34, 211, 238, 0.8); }
+        .text-glow-red { text-shadow: 0 0 30px rgba(239, 68, 68, 1); }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="hud" class="overlay justify-between" style="display: none;">
+        <div class="flex justify-between items-start p-5 md:p-8">
+            <div class="text-white">
+                <div class="text-xs uppercase tracking-widest opacity-70 font-bold drop-shadow-md">Distance</div>
+                <div id="distanceEl" class="text-2xl md:text-4xl font-black text-glow">0m</div>
+            </div>
+            
+            <div class="w-1/3 max-w-[220px] flex flex-col items-center">
+                <div class="text-xs font-black uppercase tracking-widest text-white mb-1 drop-shadow-md">Momentum</div>
+                <div class="w-full h-2.5 bg-gray-900/80 rounded-full overflow-hidden border border-gray-600 shadow-inner">
+                    <div id="flowBar" class="h-full bg-yellow-400 w-0 transition-all duration-200 ease-out shadow-[0_0_12px_#facc15]"></div>
+                </div>
+            </div>
+
+            <div class="text-white text-right">
+                <div class="text-xs uppercase tracking-widest opacity-70 font-bold drop-shadow-md">Score</div>
+                <div id="scoreEl" class="text-2xl md:text-4xl font-black text-glow">0</div>
+                <div id="comboEl" class="text-sm font-bold text-yellow-400 mt-0.5 opacity-0 transition-opacity">x1.0</div>
+            </div>
+        </div>
+        
+        <div id="comboText" class="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-4xl font-black italic text-cyan-400 text-glow-cyan opacity-0 transition-opacity duration-300 pointer-events-none text-center w-full z-10"></div>
+
+        <div id="swipeHint" class="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex flex-col items-center opacity-0 transition-opacity duration-500 pointer-events-none">
+            <div class="text-white/90 text-sm font-bold uppercase tracking-[0.2em] mb-2 text-center bg-black/60 p-5 rounded-xl backdrop-blur-md border border-white/10">
+                Swipe Up <span class="text-yellow-400">↑</span> Jump<br>
+                Swipe Down <span class="text-yellow-400">↓</span> Dive / Slide<br>
+                Swipe Right <span class="text-yellow-400">→</span> Dash
+            </div>
+        </div>
+    </div>
+
+    <div id="mainMenu" class="overlay glass-panel pointer-events-auto justify-center items-center z-40 overflow-y-auto">
+        <div class="text-center px-4 max-w-2xl py-10">
+            <h1 class="text-5xl md:text-7xl font-black text-white text-glow-orange mb-2 tracking-tight">HORIZON<br>RUSH</h1>
+            <p class="text-gray-300 text-xs md:text-sm mb-6 tracking-[0.2em] uppercase font-bold">Realistic Ninja Parkour</p>
+            
+            <div class="bg-gray-900/80 border border-gray-700 rounded-2xl p-4 mb-8 inline-block text-left shadow-2xl w-full">
+                <h3 class="text-yellow-400 font-bold text-sm uppercase tracking-wider mb-3 border-b border-gray-700 pb-2 text-center">10 New Ultimate Combos</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-white/90 text-[11px] font-bold tracking-wide">
+                    <div><span class="text-purple-400 text-glow">VOID CRASH:</span> ↑ &rarr; ↓ &rarr; ↑ &rarr; ↓</div>
+                    <div><span class="text-red-500 text-glow">HELLFIRE SPRINT:</span> ↓ (Gnd) &rarr; ↓ (Gnd) &rarr; →</div>
+                    <div><span class="text-cyan-400 text-glow">OMEGA BURST:</span> → &rarr; → &rarr; →</div>
+                    <div><span class="text-green-400 text-glow">PLASMA GLIDE:</span> ↑ &rarr; ↑ &rarr; ↓ &rarr; →</div>
+                    <div><span class="text-yellow-400 text-glow">THUNDERBOLT:</span> → &rarr; ↑ &rarr; ↓ &rarr; →</div>
+                    <div><span class="text-gray-400 text-glow">SHADOW STEP:</span> ↓ &rarr; → &rarr; ↓</div>
+                    <div><span class="text-orange-500 text-glow">TITAN KICK:</span> Wall Hit &rarr; ↑ &rarr; ↓</div>
+                    <div><span class="text-pink-400 text-glow">ASTRAL FLOAT:</span> → &rarr; ↑ &rarr; ↑</div>
+                    <div><span class="text-amber-500 text-glow">DRAGON ASCENT:</span> ↓ (Gnd) &rarr; → &rarr; ↑</div>
+                    <div><span class="text-white text-glow">SUPERNOVA:</span> ↓ &rarr; ↑ &rarr; → &rarr; ↑</div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-gray-700 text-center">
+                    <span class="text-red-400 font-bold text-xs">Warning:</span> Hitting obstacles or falling is fatal.
+                </div>
+            </div>
+            
+            <div class="flex flex-col gap-4 items-center">
+                <button id="btnStart" class="px-12 py-4 bg-white text-black font-black text-lg rounded-full hover:bg-gray-200 transition-transform active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.3)]">START RUN</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameOverModal" class="overlay glass-panel pointer-events-auto justify-center items-center z-50" style="display: none;">
+        <div class="text-center bg-black/95 p-10 rounded-3xl border border-red-900/50 max-w-md w-full shadow-2xl mx-4">
+            <h2 class="text-4xl font-black text-red-500 mb-1 text-glow-red">FATAL CRASH</h2>
+            <p class="text-gray-400 mb-8 text-sm">Your run has ended.</p>
+            <div class="grid grid-cols-2 gap-6 mb-8 text-left bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+                <div>
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Distance</div>
+                    <div id="goDistance" class="text-2xl font-black text-white">0m</div>
+                </div>
+                <div>
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Score</div>
+                    <div id="goScore" class="text-2xl font-black text-yellow-400">0</div>
+                </div>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button id="btnRestart" class="px-8 py-3.5 bg-white text-black font-black rounded-full hover:bg-gray-200 transition-transform active:scale-95 w-full shadow-lg">TRY AGAIN</button>
+                <button id="btnGoMenu" class="px-8 py-3.5 bg-transparent border border-white/40 text-white font-bold rounded-full hover:bg-white hover:text-black transition-colors w-full">MAIN MENU</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+/**
+ * HORIZON RUSH - LAG-FREE PROCEDURAL PHOTOREALISM ENGINE WITH 10 NEW UNIQUE COMBOS
+ */
+
+const AssetCache = {
+    sky: null, backCity: null, midCity: null, foreCity: null,
+    patterns: {},
+    
+    init(w, h) {
+        this.buildSky(w, h);
+        this.buildCityscapes(w, h);
+        this.buildTextures();
+    },
+
+    buildSky(w, h) {
+        let c = document.createElement('canvas'); c.width = w; c.height = h;
+        let ctx = c.getContext('2d');
+        
+        let grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#040714'); 
+        grad.addColorStop(0.3, '#120f26'); 
+        grad.addColorStop(0.6, '#3a1f3a'); 
+        grad.addColorStop(0.9, '#a23b38');
+        grad.addColorStop(1, '#d97736');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = '#ffffff';
+        for(let i=0; i<150; i++) {
+            let sx = Math.random() * w; let sy = Math.random() * (h*0.5);
+            ctx.globalAlpha = Math.random() * 0.8 + 0.2;
+            ctx.beginPath(); ctx.arc(sx, sy, Math.random()*1.2, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        let sunGrad = ctx.createRadialGradient(w*0.7, h-200, 0, w*0.7, h-200, 150);
+        sunGrad.addColorStop(0, 'rgba(255, 237, 160, 1)'); 
+        sunGrad.addColorStop(0.2, 'rgba(251, 146, 60, 0.8)');
+        sunGrad.addColorStop(1, 'rgba(251, 146, 60, 0)');
+        ctx.fillStyle = sunGrad; ctx.fillRect(w*0.7-150, h-350, 300, 300);
+        this.sky = c;
+    },
+
+    buildCityscapes(w, h) {
+        const buildLayer = (baseRGB, fogOverlay, heightMod, hasWindows, speedMod) => {
+            let c = document.createElement('canvas'); c.width = 2400; c.height = h;
+            let ctx = c.getContext('2d');
+            
+            for(let x=0; x<2400; x+= (80 + Math.random()*60)) {
+                let bw = 70 + Math.random()*120;
+                let bh = 150 + Math.random() * heightMod;
+                let by = h - bh;
+                
+                ctx.fillStyle = baseRGB;
+                ctx.fillRect(x, by, bw, bh);
+                
+                if(Math.random() > 0.5) ctx.fillRect(x + 10, by - 20, bw - 20, 20);
+                
+                if (hasWindows && bw > 80 && bh > 150) {
+                    ctx.fillStyle = 'rgba(253, 224, 71, 0.25)';
+                    let wSize = speedMod > 0.1 ? 6 : 3;
+                    for(let wx = x + 10; wx < x + bw - 15; wx += wSize*3) {
+                        for(let wy = by + 20; wy < h - 40; wy += wSize*4) {
+                            if(Math.random() > 0.7) ctx.fillRect(wx, wy, wSize, wSize*1.5);
+                        }
+                    }
+                    ctx.fillStyle = baseRGB;
+                }
+                
+                let fogGrad = ctx.createLinearGradient(0, by, 0, h);
+                fogGrad.addColorStop(0, 'rgba(0,0,0,0)');
+                fogGrad.addColorStop(1, fogOverlay);
+                ctx.fillStyle = fogGrad;
+                ctx.fillRect(x, by - 20, bw, bh + 20);
+            }
+            return c;
+        };
+        this.backCity = buildLayer('#1e1b4b', 'rgba(234, 88, 12, 0.9)', 500, false, 0.05);
+        this.midCity = buildLayer('#0f172a', 'rgba(159, 18, 57, 0.7)', 400, true, 0.15);
+        this.foreCity = buildLayer('#020617', 'rgba(2, 6, 23, 0.4)', 250, false, 0.3);
+    },
+
+    buildTextures() {
+        let tmpCanvas = document.createElement('canvas'); 
+        tmpCanvas.width = 256; tmpCanvas.height = 256;
+        let tCtx = tmpCanvas.getContext('2d');
+        
+        tCtx.fillStyle = '#4a4a50'; tCtx.fillRect(0,0,256,256);
+        let idata = tCtx.getImageData(0,0,256,256); let d = idata.data;
+        for(let i=0; i<d.length; i+=4) {
+            let noise = (Math.random()-0.5)*30;
+            d[i]+=noise; d[i+1]+=noise; d[i+2]+=noise;
+        }
+        tCtx.putImageData(idata,0,0);
+        
+        tCtx.fillStyle = 'rgba(0,0,0,0.05)';
+        for(let i=0; i<15; i++) {
+            tCtx.beginPath();
+            tCtx.arc(Math.random()*256, Math.random()*256, 10 + Math.random()*40, 0, Math.PI*2);
+            tCtx.fill();
+        }
+        tCtx.strokeStyle = 'rgba(0,0,0,0.3)'; tCtx.lineWidth = 2;
+        for(let i=0; i<256; i+=128) { tCtx.strokeRect(i,0,2,256); tCtx.strokeRect(0,i,256,2); }
+        this.patterns.concrete = tCtx.createPattern(tmpCanvas, 'repeat');
+
+        tCtx.clearRect(0,0,256,256);
+        tCtx.fillStyle = '#0f172a'; tCtx.fillRect(0,0,256,256);
+        tCtx.fillStyle = '#1e293b'; 
+        for(let x=0; x<256; x+=64) {
+            for(let y=0; y<256; y+=64) {
+                tCtx.fillRect(x+4, y+4, 56, 56);
+                if(Math.random()>0.75) {
+                    tCtx.fillStyle = Math.random()>0.4 ? 'rgba(254, 240, 138, 0.4)' : 'rgba(186, 230, 253, 0.3)';
+                    tCtx.fillRect(x+4, y+4, 56, 56); 
+                    tCtx.fillStyle = '#1e293b';
+                }
+            }
+        }
+        tCtx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+        tCtx.beginPath(); tCtx.moveTo(0, 0); tCtx.lineTo(150, 0); tCtx.lineTo(0, 150); tCtx.fill();
+        tCtx.beginPath(); tCtx.moveTo(100, 256); tCtx.lineTo(256, 256); tCtx.lineTo(256, 100); tCtx.fill();
+        this.patterns.glass = tCtx.createPattern(tmpCanvas, 'repeat');
+
+        tCtx.clearRect(0,0,256,256);
+        tCtx.fillStyle = '#94a3b8'; tCtx.fillRect(0,0,256,256);
+        for(let y=0; y<256; y+=16) {
+            let off = (y/16)%2===0 ? 0 : 16;
+            for(let x=-32; x<256; x+=32) {
+                let r = 120 + Math.random()*30, g = 30 + Math.random()*15, b = 20 + Math.random()*10;
+                tCtx.fillStyle = `rgb(${r},${g},${b})`;
+                tCtx.fillRect(x+off+1, y+1, 30, 14); 
+                tCtx.fillStyle = 'rgba(0,0,0,0.3)';
+                tCtx.fillRect(x+off+1, y+13, 30, 2);
+                tCtx.fillRect(x+off+29, y+1, 2, 14);
+            }
+        }
+        this.patterns.brick = tCtx.createPattern(tmpCanvas, 'repeat');
+
+        tCtx.clearRect(0,0,256,256);
+        let grad = tCtx.createLinearGradient(0,0,256,256);
+        grad.addColorStop(0, '#ec4899'); grad.addColorStop(1, '#3b82f6');
+        tCtx.fillStyle = grad; tCtx.fillRect(0,0,256,256);
+        tCtx.fillStyle = 'rgba(0,0,0,0.15)';
+        for(let y=0; y<256; y+=3) tCtx.fillRect(0, y, 256, 1);
+        this.patterns.led = tCtx.createPattern(tmpCanvas, 'repeat');
+    }
+};
+
+const AudioSys = {
+    ctx: null,
+    init() {
+        if (!this.ctx) {
+            try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    },
+    playTone(freq, type, duration, vol=0.1) {
+        if(!this.ctx) return;
+        try {
+            const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+            osc.start(); osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {}
+    },
+    playJump() { this.playTone(220, 'sine', 0.25, 0.15); },
+    playDoubleJump() { this.playTone(330, 'sine', 0.2, 0.15); setTimeout(()=>this.playTone(440, 'sine', 0.2, 0.15), 50); },
+    playTripleJump() { 
+        this.playTone(440, 'square', 0.1, 0.15); setTimeout(()=>this.playTone(550, 'square', 0.1, 0.15), 100);
+        setTimeout(()=>this.playTone(880, 'sine', 0.4, 0.2), 200);
+    },
+    playDash() { this.playTone(150, 'square', 0.25, 0.12); },
+    playDive() { this.playTone(100, 'sawtooth', 0.3, 0.15); },
+    playMeteor() { this.playTone(60, 'square', 0.6, 0.3); setTimeout(()=>this.playTone(120, 'sawtooth', 0.4, 0.2), 100); },
+    playExplosion() {
+        if(!this.ctx) return;
+        try {
+            let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            gain.gain.setValueAtTime(0.7, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
+            osc.start(); osc.stop(this.ctx.currentTime + 0.6);
+        } catch(e){}
+    },
+    playSlide() { this.playTone(120, 'triangle', 0.25, 0.15); },
+    playHit() { this.playTone(60, 'sawtooth', 0.35, 0.25); }
+};
+
+const CONFIG = {
+    gravity: 1600, diveGravity: 4500, meteorGravity: 7000,
+    jumpForce: -680, tripleJumpForce: -980,
+    runSpeed: 440, dashSpeed: 1300, wallSlideSpeed: 250,
+    platformTypes: { BUILDING: 0, WIRE: 1, WALL: 2, LOW_BARRIER: 3, BILLBOARD: 4 }
+};
+
+let GAME_STATE = 'MENU';
+
+const Input = {
+    jump: false, dash: false, slide: false, dive: false,
+    _jumpProcessed: false, _dashProcessed: false, _slideProcessed: false, _diveProcessed: false,
+    touchStartX: 0, touchStartY: 0, swipeThreshold: 40,
+
+    init() {
+        window.addEventListener('keydown', (e) => {
+            if (GAME_STATE !== 'PLAYING') return;
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') this.jump = true;
+            if (e.code === 'ShiftLeft' || e.code === 'KeyD' || e.code === 'ArrowRight') this.dash = true;
+            if (e.code === 'ArrowDown' || e.code === 'KeyS') { 
+                if(Game.player && !Game.player.grounded) this.dive = true; else this.slide = true; 
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { this.jump = false; this._jumpProcessed = false; }
+            if (e.code === 'ShiftLeft' || e.code === 'KeyD' || e.code === 'ArrowRight') { this.dash = false; this._dashProcessed = false; }
+            if (e.code === 'ArrowDown' || e.code === 'KeyS') { this.slide = false; this.dive = false; this._slideProcessed = false; this._diveProcessed = false; }
+        });
+
+        window.addEventListener('touchstart', e => {
+            this.touchStartX = e.changedTouches[0].screenX; 
+            this.touchStartY = e.changedTouches[0].screenY;
+            if (GAME_STATE === 'PLAYING') AudioSys.init();
+        }, {passive: false});
+
+        window.addEventListener('touchend', e => {
+            if (GAME_STATE !== 'PLAYING') return;
+            let dx = e.changedTouches[0].screenX - this.touchStartX;
+            let dy = e.changedTouches[0].screenY - this.touchStartY;
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (Math.abs(dx) > this.swipeThreshold) {
+                    this.dash = true; setTimeout(() => { this.dash = false; this._dashProcessed = false; }, 100);
+                }
+            } else {
+                if (Math.abs(dy) > this.swipeThreshold) {
+                    if (dy < 0) {
+                        this.jump = true; setTimeout(() => { this.jump = false; this._jumpProcessed = false; }, 100);
+                    } else {
+                        if(Game.player && !Game.player.grounded) {
+                            this.dive = true; setTimeout(() => { this.dive = false; this._diveProcessed = false; }, 100);
+                        } else {
+                            this.slide = true; setTimeout(() => { this.slide = false; this._slideProcessed = false; }, 400); 
+                        }
+                    }
+                } else {
+                    this.jump = true; setTimeout(() => { this.jump = false; this._jumpProcessed = false; }, 100);
+                }
+            }
+        }, {passive: false});
+    },
+    
+    consume(key) {
+        let pk = '_' + key + 'Processed';
+        if (this[key] && !this[pk]) { this[pk] = true; return true; }
+        return false;
+    }
+};
+
+class Particle {
+    constructor(x, y, vx, vy, life, color, size, type='circle') {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+        this.life = life; this.maxLife = life;
+        this.color = color; this.size = size; this.type = type; 
+        this.angle = Math.random() * Math.PI; this.rotSpeed = (Math.random() - 0.5) * 15;
+    }
+    update(dt) {
+        this.x += this.vx * dt; this.y += this.vy * dt;
+        if(this.type === 'square') { this.vy += 2200 * dt; this.angle += this.rotSpeed * dt; }
+        this.life -= dt;
+    }
+    draw(ctx, camX, camY) {
+        const alpha = Math.max(0, this.life / this.maxLife);
+        ctx.globalAlpha = alpha; ctx.fillStyle = this.color;
+        if(this.type === 'glow') { ctx.shadowBlur = 12; ctx.shadowColor = this.color; }
+        
+        ctx.beginPath();
+        if (this.type === 'square') {
+            ctx.save(); ctx.translate(this.x - camX, this.y - camY); ctx.rotate(this.angle);
+            ctx.fillStyle = '#64748b'; ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size); 
+            ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
+            ctx.restore();
+        } else {
+            ctx.arc(this.x - camX, this.y - camY, this.size, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    }
+}
+
+const Particles = {
+    arr: [],
+    add(x, y, vx, vy, life, color, size, type='circle') {
+        this.arr.push(new Particle(x, y, vx, vy, life, color, size, type));
+    },
+    burst(x, y, count, color, speed, type='circle') {
+        for(let i=0; i<count; i++) {
+            const angle = Math.random() * Math.PI * 2; const v = Math.random() * speed;
+            this.add(x, y, Math.cos(angle)*v, Math.sin(angle)*v, 0.25 + Math.random()*0.3, color, 1 + Math.random()*3, type);
+        }
+    },
+    dashTrail(x, y, w, h, color) {
+        this.add(x + Math.random()*w, y + Math.random()*h, -600, (Math.random()-0.5)*50, 0.4, color, 2.5 + Math.random()*2, 'glow');
+    },
+    slideSparks(x, y, w, h) {
+        this.add(x + w, y + h, (Math.random()-0.2)*150, -Math.random()*60, 0.25, '#facc15', 2.5, 'glow');
+    },
+    debris(x, y, count) {
+        for(let i=0; i<count; i++) {
+            this.add(x + (Math.random()-0.5)*60, y + (Math.random()-0.5)*20, (Math.random()-0.5)*1200, -Math.random()*1200 - 300, 1.2 + Math.random(), '#475569', 8 + Math.random()*16, 'square');
+        }
+    },
+    updateAndDraw(dt, ctx, camX, camY) {
+        for(let i=this.arr.length-1; i>=0; i--) {
+            let p = this.arr[i]; p.update(dt);
+            if (p.life <= 0) this.arr.splice(i, 1); else p.draw(ctx, camX, camY);
+        }
+    },
+    clear() { this.arr = []; }
+};
+
+class Player {
+    constructor() { this.reset(); }
+    
+    reset() {
+        this.w = 22; this.h = 56;
+        this.x = 120; this.y = 100;
+        this.vx = CONFIG.runSpeed; this.vy = 0;
+        this.state = 'FALLING'; this.stateTime = 0;
+        this.grounded = false; this.jumpCount = 0;
+        this.dashCooldown = 0; this.dashTimer = 0;
+        this.tripleJumpWindow = 0;
+        this.moveHistory = []; this.trail = [];
+    }
+
+    setState(newState) {
+        if (this.state === newState) return;
+        this.state = newState; this.stateTime = 0;
+    }
+
+    recordMove(move) {
+        this.moveHistory.push(move);
+        if(this.moveHistory.length > 8) this.moveHistory.shift(); // Increased to 8 to store longer combos
+    }
+
+    update(dt, world) {
+        this.stateTime += dt;
+        if (this.tripleJumpWindow > 0) this.tripleJumpWindow -= dt;
+
+        let currentSpeed = (CONFIG.runSpeed + (Game.flowMeter / 100) * 350);
+        
+        if (this.state === 'SLIDING') currentSpeed *= 1.3;
+        if (this.state === 'METEOR_DIVING' || this.state === 'VOID_CRASH') currentSpeed *= 0.5; 
+        if (this.state === 'TITAN') currentSpeed *= 2.0;
+        
+        if (['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
+            this.dashTimer -= dt; this.vy = 0; 
+            
+            // Render specific trail colors based on combo state
+            if (this.state === 'HELLFIRE') Particles.dashTrail(this.x, this.y, this.w, this.h, '#ef4444');
+            else if (this.state === 'OMEGA') Particles.dashTrail(this.x, this.y, this.w, this.h, '#06b6d4');
+            else if (this.state === 'PLASMA_GLIDE') Particles.dashTrail(this.x, this.y, this.w, this.h, '#22c55e');
+            else if (this.state === 'THUNDERBOLT') Particles.dashTrail(this.x, this.y, this.w, this.h, '#eab308');
+            else Particles.dashTrail(this.x, this.y, this.w, this.h, '#0ea5e9'); // Default DASHING
+
+            if (this.dashTimer <= 0) this.setState(this.grounded ? 'RUNNING' : 'FALLING');
+        } else {
+            this.vx = currentSpeed;
+        }
+
+        if (!['GRINDING', 'DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
+            let grav = CONFIG.gravity;
+            if (this.state === 'DIVING') grav = CONFIG.diveGravity;
+            if (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) grav = CONFIG.meteorGravity;
+            if (this.state === 'ASTRAL') grav = 200; // Low gravity float
+            
+            this.vy += grav * dt;
+            if (this.state === 'WALL_RUN' && this.vy > CONFIG.wallSlideSpeed) {
+                this.vy = CONFIG.wallSlideSpeed;
+            }
+        }
+
+        if (this.dashCooldown > 0) this.dashCooldown -= dt;
+        
+        // --- DASH INPUT & COMBOS ---
+        if (Input.consume('dash') && this.dashCooldown <= 0 && !['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
+            this.recordMove('DASH');
+            let hist = this.moveHistory.join(',');
+
+            if (hist.endsWith('SLIDE,SLIDE,DASH')) {
+                this.setState('HELLFIRE'); this.dashTimer = 0.5; this.vx = 2200; this.vy = 0;
+                Game.showComboText("HELLFIRE SPRINT!", "text-red-500 text-glow-red text-5xl");
+                AudioSys.playDash(); this.moveHistory = [];
+            } else if (hist.endsWith('DASH,DASH,DASH')) {
+                this.setState('OMEGA'); this.dashTimer = 0.4; this.vx = 2600; this.vy = 0;
+                Game.showComboText("OMEGA BURST!", "text-cyan-300 text-glow-cyan text-5xl");
+                AudioSys.playDash(); this.moveHistory = [];
+            } else if (hist.endsWith('JUMP,JUMP,DIVE,DASH')) {
+                this.setState('PLASMA_GLIDE'); this.dashTimer = 0.6; this.vx = 1900; this.vy = 0;
+                Game.showComboText("PLASMA GLIDE!", "text-green-400 text-glow text-5xl");
+                AudioSys.playDash(); this.moveHistory = [];
+            } else if (hist.endsWith('DASH,JUMP,DIVE,DASH')) {
+                this.setState('THUNDERBOLT'); this.dashTimer = 0.5; this.vx = 2000; this.vy = 0;
+                Game.showComboText("THUNDERBOLT!", "text-yellow-400 text-glow-orange text-5xl");
+                AudioSys.playDash(); this.moveHistory = [];
+            } else {
+                this.setState('DASHING'); this.vx = CONFIG.dashSpeed;
+                this.dashTimer = 0.28; this.dashCooldown = 0.8;
+                Particles.burst(this.x, this.y+this.h/2, 25, '#38bdf8', 400, 'glow');
+                AudioSys.playDash(); Game.addScore(80); Game.addFlow(12);
+            }
+        }
+
+        // --- DIVE / SLIDE INPUT & COMBOS ---
+        if (Input.consume('dive') && !this.grounded && !['DIVING', 'METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state) && !['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
+            this.recordMove('DIVE');
+            let hist = this.moveHistory.join(',');
+            
+            if (hist.endsWith('JUMP,DIVE,JUMP,DIVE')) {
+                this.setState('VOID_CRASH'); this.vy = Math.max(this.vy, 1200);
+                AudioSys.playMeteor(); Game.showComboText("VOID CRASH!", "text-purple-500 text-glow-cyan text-5xl");
+                this.moveHistory = [];
+            } else if (hist.endsWith('DIVE,DASH,DIVE')) {
+                this.setState('SHADOW_STEP'); 
+                Particles.burst(this.x, this.y, 30, '#1e293b', 400, 'glow');
+                this.x += 600; this.y -= 150; this.vy = -300; // Teleport & pop up to avoid wall clip
+                Particles.burst(this.x, this.y, 30, '#475569', 400, 'glow');
+                AudioSys.playDash(); Game.showComboText("SHADOW STEP!", "text-gray-400 text-glow text-5xl");
+                this.moveHistory = [];
+            } else if (hist.endsWith('WALL_RUN,JUMP,DIVE')) {
+                this.setState('TITAN'); this.vy = Math.max(this.vy, 1500);
+                AudioSys.playMeteor(); Game.showComboText("TITAN KICK!", "text-orange-500 text-glow-orange text-5xl");
+                this.moveHistory = [];
+            } else if (hist.endsWith('JUMP,DASH,JUMP,DIVE')) {
+                this.setState('METEOR_DIVING'); this.vy = Math.max(this.vy, 800);
+                AudioSys.playMeteor(); Game.showComboText("EARTHQUAKE PREP!", "text-orange-500 text-glow-red");
+            } else {
+                this.setState('DIVING'); this.vy = Math.max(this.vy, 400); AudioSys.playDive();
+            }
+            Particles.burst(this.x+this.w/2, this.y, 25, '#fff', 300);
+        }
+
+        if ((Input.slide || Input.consume('slide')) && this.grounded && !['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
+            if (Input.consume('slide')) this.recordMove('SLIDE');
+            if (this.state !== 'SLIDING') {
+                this.setState('SLIDING'); this.h = 26; this.y += 30; 
+                AudioSys.playSlide(); Game.addScore(40); Game.addFlow(8);
+            }
+        } else if (this.state === 'SLIDING' && !Input.slide) {
+            this.setState('RUNNING'); this.y -= 30; this.h = 56;
+        }
+
+        if (this.state === 'SLIDING') Particles.slideSparks(this.x, this.y, this.w, this.h);
+        
+        if (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
+            let pColor = this.state === 'VOID_CRASH' ? '#a855f7' : (this.state === 'TITAN' ? '#f97316' : '#ef4444');
+            Particles.add(this.x + this.w/2, this.y + this.h/2, (Math.random()-0.5)*100, -300, 0.4, pColor, 4, 'glow');
+        }
+
+        // --- JUMP INPUT & COMBOS ---
+        if (Input.consume('jump')) {
+            this.recordMove('JUMP');
+            let hist = this.moveHistory.join(',');
+
+            if (hist.endsWith('DASH,JUMP,JUMP')) {
+                this.setState('ASTRAL'); this.vy = -700; this.grounded = false; this.jumpCount = 2;
+                AudioSys.playTripleJump(); Game.showComboText("ASTRAL FLOAT!", "text-pink-400 text-glow text-5xl");
+                Particles.burst(this.x, this.y, 40, '#ec4899', 400, 'glow');
+                this.moveHistory = [];
+            } else if (hist.endsWith('SLIDE,DASH,JUMP')) {
+                this.setState('DRAGON_ASCENT'); this.vy = -1400; this.grounded = false; this.jumpCount = 2;
+                AudioSys.playTripleJump(); Game.showComboText("DRAGON ASCENT!", "text-amber-500 text-glow-orange text-5xl");
+                Particles.burst(this.x, this.y, 50, '#f59e0b', 500, 'glow');
+                this.moveHistory = [];
+            } else if (hist.endsWith('DIVE,JUMP,DASH,JUMP')) {
+                this.setState('SUPERNOVA'); this.vy = -1200; this.grounded = false; this.jumpCount = 2;
+                AudioSys.playTripleJump(); Game.showComboText("SUPERNOVA!", "text-white text-glow text-5xl");
+                Particles.burst(this.x, this.y, 60, '#ffffff', 600, 'glow');
+                this.moveHistory = [];
+            } else if (this.state === 'SLIDING' && this.tripleJumpWindow > 0) {
+                this.y -= 30; this.h = 56; this.vy = CONFIG.tripleJumpForce;
+                this.setState('TRIPLE_JUMPING');
+                this.grounded = false; this.jumpCount = 2; this.tripleJumpWindow = 0;
+                AudioSys.playTripleJump();
+                Particles.burst(this.x + this.w/2, this.y + this.h, 40, '#a855f7', 400, 'glow');
+                Game.showComboText("TRIPLE FLIP!", "text-purple-400 text-glow-cyan");
+                Game.addScore(600); Game.addFlow(40);
+            } else if (this.grounded || this.state === 'GRINDING') {
+                if (this.state === 'SLIDING') { this.h = 56; this.y -= 30; }
+                this.vy = CONFIG.jumpForce; this.setState('JUMPING');
+                this.grounded = false; this.jumpCount = 1;
+                AudioSys.playJump();
+                Particles.burst(this.x + this.w/2, this.y + this.h, 15, '#ffffff', 160);
+            } else if (this.state === 'WALL_RUN') {
+                this.vy = CONFIG.jumpForce; this.vx = currentSpeed;
+                this.setState('DOUBLE_JUMPING'); this.grounded = false;
+                AudioSys.playDoubleJump();
+                Particles.burst(this.x, this.y + this.h, 20, '#f59e0b', 200, 'glow');
+                Game.addScore(120); Game.addFlow(15);
+            } else if (this.jumpCount < 2 && !['DIVING', 'METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
+                this.vy = CONFIG.jumpForce * 1.1; 
+                this.setState('DOUBLE_JUMPING'); this.jumpCount = 2;
+                AudioSys.playDoubleJump();
+                Particles.burst(this.x + this.w/2, this.y + this.h, 25, '#22d3ee', 250, 'glow');
+                Game.showComboText("AIR FLIP!", "text-cyan-400 text-glow-cyan");
+                Game.addScore(150); Game.addFlow(10);
+            }
+        }
+
+        // Horizontal Collision
+        if (!['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
+            let nextX = this.x + this.vx * dt;
+            let colX = world.checkCollision(this, nextX, this.y);
+            
+            if (colX) {
+                if (colX.type === CONFIG.platformTypes.WALL || colX.type === CONFIG.platformTypes.BUILDING) {
+                    this.x = colX.x - this.w; this.vx = 0;
+                    
+                    if (this.state !== 'WALL_RUN') {
+                        this.setState('WALL_RUN');
+                        this.recordMove('WALL_RUN');
+                        this.vy = -350; // Pop up slightly upon hitting a wall
+                        Particles.burst(this.x + this.w, this.y, 12, '#f59e0b', 120);
+                    }
+                    
+                    if (this.y < colX.y + 15 && this.vy <= 0) {
+                        this.setState('JUMPING'); 
+                        this.vy = CONFIG.jumpForce * 0.7; this.vx = currentSpeed;
+                        this.x = colX.x + 5; this.y = colX.y - this.h - 5;
+                        Game.addScore(50);
+                    } else if (this.stateTime > 0.8 && this.vy > 0) {
+                        this.setState('FALLING'); this.x -= 8;
+                    }
+                } else if (!['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
+                    this.x = colX.x - this.w;
+                    AudioSys.playHit(); Game.gameOver(); return;
+                }
+            } else { this.x = nextX; }
+        } else {
+            this.x += this.vx * dt;
+        }
+
+        // Vertical Collision
+        let nextY = this.y + this.vy * dt;
+        let colY = world.checkCollision(this, this.x, nextY, true);
+        this.grounded = false;
+
+        if (colY) {
+            if (this.vy > 0) { 
+                this.y = colY.y - this.h;
+                this.vy = 0; this.grounded = true; this.jumpCount = 0;
+                this.moveHistory = []; 
+                
+                if (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
+                    Game.cameraShake = this.state === 'VOID_CRASH' ? 50 : 35; 
+                    AudioSys.playExplosion();
+                    
+                    let smashName = this.state === 'VOID_CRASH' ? "VOID SHATTER!" : (this.state === 'TITAN' ? "TITAN IMPACT!" : "EARTHQUAKE SIDESMASH!");
+                    let smashColor = this.state === 'VOID_CRASH' ? "text-purple-500 text-glow-cyan" : (this.state === 'TITAN' ? "text-orange-500 text-glow-orange" : "text-red-500 text-glow-red");
+                    Game.showComboText(smashName, smashColor + " text-5xl");
+                    
+                    world.shatterPlatform(colY, this.x + this.w/2);
+                    
+                    let pColor = this.state === 'VOID_CRASH' ? '#a855f7' : (this.state === 'TITAN' ? '#f97316' : '#ef4444');
+                    Particles.burst(this.x + this.w/2, this.y + this.h, 60, pColor, 800, 'glow');
+                    Game.addScore(this.state === 'VOID_CRASH' ? 2500 : 1500); Game.addFlow(100);
+                    
+                    this.setState('SLIDING'); this.h = 26; this.y += 30; 
+                    this.tripleJumpWindow = 0.5; 
+                } else if (this.state === 'DIVING') {
+                    this.setState('SLIDING'); this.h = 26; this.y += 30; 
+                    this.tripleJumpWindow = 0.45; AudioSys.playSlide();
+                    Particles.burst(this.x + this.w/2, this.y + this.h, 30, '#facc15', 300, 'glow');
+                    Game.addScore(100); Game.addFlow(20);
+                } else if (colY.type === CONFIG.platformTypes.WIRE) {
+                    this.setState('GRINDING'); Particles.burst(this.x + this.w/2, this.y + this.h, 6, '#22d3ee', 180);
+                } else {
+                    if (this.state !== 'SLIDING' && this.state !== 'RUNNING') {
+                        this.setState('RUNNING'); Particles.burst(this.x + this.w/2, this.y + this.h, 15, '#cbd5e1', 120);
+                    }
+                }
+            } else if (this.vy < 0 && colY.type !== CONFIG.platformTypes.WIRE) {
+                this.y = colY.y + colY.h; this.vy = 0;
+            }
+        } else {
+            this.y = nextY;
+            if (['RUNNING', 'GRINDING', 'SLIDING'].includes(this.state)) {
+                if(this.state === 'SLIDING' && !Input.slide) { this.y -= 30; this.h = 56; }
+                this.setState('FALLING');
+            }
+        }
+
+        if (this.y > 2000) { AudioSys.playHit(); Game.gameOver(); return; }
+        
+        if (['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT', 'METEOR_DIVING', 'VOID_CRASH', 'TITAN', 'ASTRAL', 'DRAGON_ASCENT', 'SUPERNOVA'].includes(this.state) || Game.flowMeter > 40) {
+            this.trail.push({x: this.x, y: this.y, state: this.state, stateTime: this.stateTime});
+            if (this.trail.length > (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state) ? 12 : 8)) this.trail.shift();
+        } else if(this.trail.length > 0) {
+            this.trail.shift();
+        }
+    }
+
+    draw(ctx, camX, camY) {
+        if (this.trail.length > 0) {
+            this.trail.forEach((t, i) => {
+                ctx.globalAlpha = (i / this.trail.length) * 0.4;
+                let color = '#94a3b8';
+                if (['METEOR_DIVING', 'HELLFIRE'].includes(t.state)) color = '#ef4444';
+                if (t.state === 'VOID_CRASH') color = '#a855f7';
+                if (t.state === 'TITAN' || t.state === 'DRAGON_ASCENT') color = '#f97316';
+                if (t.state === 'OMEGA') color = '#06b6d4';
+                if (t.state === 'PLASMA_GLIDE') color = '#22c55e';
+                if (t.state === 'THUNDERBOLT') color = '#eab308';
+                if (t.state === 'ASTRAL') color = '#ec4899';
+                if (t.state === 'SUPERNOVA') color = '#ffffff';
+                this.drawStickman(ctx, t.x, t.y, t.state, t.stateTime, color, camX, camY, true);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        let isCrash = ['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state);
+        
+        let sColor = '#38bdf8';
+        if (this.state === 'VOID_CRASH') sColor = '#a855f7';
+        else if (this.state === 'HELLFIRE' || this.state === 'METEOR_DIVING') sColor = '#ef4444';
+        else if (this.state === 'TITAN' || this.state === 'DRAGON_ASCENT') sColor = '#f97316';
+        else if (this.state === 'OMEGA') sColor = '#06b6d4';
+        else if (this.state === 'PLASMA_GLIDE') sColor = '#22c55e';
+        else if (this.state === 'THUNDERBOLT') sColor = '#eab308';
+        else if (this.state === 'ASTRAL') sColor = '#ec4899';
+        else if (this.state === 'SUPERNOVA') sColor = '#ffffff';
+        else if (Game.flowMeter >= 100) sColor = '#f59e0b';
+        
+        ctx.shadowBlur = isCrash ? 25 : (Game.flowMeter > 50 ? 15 : 0);
+        ctx.shadowColor = sColor;
+        this.drawStickman(ctx, this.x, this.y, this.state, this.stateTime, isCrash ? sColor : '#ffffff', camX, camY, false);
+        ctx.shadowBlur = 0;
+    }
+
+    drawStickman(ctx, x, y, state, stateTime, color, camX, camY, isTrail) {
+        let drawX = x - camX; let drawY = y - camY;
+        let cx = drawX + this.w/2; let cy = drawY + this.h/2;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+
+        // Flips & Rotations
+        if (['DOUBLE_JUMPING', 'SUPERNOVA'].includes(state)) {
+            ctx.rotate(Math.min(1, stateTime / 0.5) * Math.PI * 2);
+        } else if (['TRIPLE_JUMPING', 'ASTRAL'].includes(state)) {
+            ctx.rotate(-Math.min(1, stateTime / 0.6) * Math.PI * 4);
+        } else if (state === 'DIVING') {
+            ctx.rotate(Math.PI / 4);
+        } else if (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(state)) {
+            ctx.rotate(Math.PI / 2); ctx.scale(1.3, 0.7); 
+        } else if (['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(state)) {
+            ctx.rotate(Math.PI / 8); ctx.scale(1.4, 0.6);
+        } else if (state === 'DRAGON_ASCENT') {
+            ctx.rotate(-Math.PI / 4); ctx.scale(0.8, 1.2);
+        }
+        
+        ctx.strokeStyle = color; ctx.lineWidth = 4.5;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        let hw = this.w/2, hh = this.h/2;
+        let headY, hipY, shoulderY;
+        
+        ctx.beginPath();
+        let cycle = stateTime * 18; let stride = 22;
+
+        if (state === 'RUNNING' || state === 'GRINDING') {
+            let bounce = Math.abs(Math.sin(cycle)) * 4;
+            let lean = 12; 
+            
+            headY = -hh + 16 + bounce; let headX = lean;
+            hipY = headY + 18; let hipX = -lean;
+            shoulderY = headY + 6; let shoulderX = lean - 4;
+
+            ctx.moveTo(headX + 7, headY); ctx.arc(headX, headY, 7, 0, Math.PI*2);
+            ctx.moveTo(headX, headY + 7); ctx.lineTo(hipX, hipY);
+
+            let armBob = Math.sin(cycle) * 2;
+            ctx.moveTo(shoulderX, shoulderY); ctx.lineTo(shoulderX - 20, shoulderY - 4 + armBob);
+            ctx.moveTo(shoulderX, shoulderY); ctx.lineTo(shoulderX - 22, shoulderY - 8 - armBob);
+
+            let lThigh = Math.sin(cycle); let rThigh = Math.sin(cycle + Math.PI);
+            let lKnee = { x: hipX + lThigh * 14, y: hipY + 12 - Math.min(0, lThigh*8) };
+            let rKnee = { x: hipX + rThigh * 14, y: hipY + 12 - Math.min(0, rThigh*8) };
+            let lFoot = { x: hipX + lThigh * 18, y: hh - Math.max(0, Math.cos(cycle) * 12) };
+            let rFoot = { x: hipX + rThigh * 18, y: hh - Math.max(0, Math.cos(cycle + Math.PI) * 12) };
+
+            ctx.moveTo(hipX, hipY); ctx.lineTo(lKnee.x, lKnee.y); ctx.lineTo(lFoot.x, lFoot.y);
+            ctx.moveTo(hipX, hipY); ctx.lineTo(rKnee.x, rKnee.y); ctx.lineTo(rFoot.x, rFoot.y);
+
+        } else if (['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(state)) {
+            let dashLean = 18; headY = -hh + 24; let headX = dashLean; hipY = headY + 8; let hipX = -dashLean;
+
+            ctx.moveTo(headX + 7, headY); ctx.arc(headX, headY, 7, 0, Math.PI*2);
+            ctx.moveTo(headX, headY + 7); ctx.lineTo(hipX, hipY);
+
+            ctx.moveTo(headX - 2, headY + 5); ctx.lineTo(hipX - 15, headY - 2);
+            ctx.moveTo(headX - 2, headY + 5); ctx.lineTo(hipX - 12, headY + 2);
+
+            ctx.moveTo(hipX, hipY); ctx.lineTo(hipX - 20, hh - 10);
+            ctx.moveTo(hipX, hipY); ctx.lineTo(hipX - 16, hh - 4);
+            
+        } else if (state === 'SLIDING') {
+            hipY = hh - 6; headY = hh - 22; shoulderY = headY + 5; let hipX = -5;
+            ctx.moveTo(4, headY); ctx.arc(-2, headY, 7, 0, Math.PI*2);
+            ctx.moveTo(-2, headY + 6); ctx.lineTo(hipX, hipY);
+            ctx.moveTo(hipX, hipY); ctx.lineTo(10, hh - 2); ctx.lineTo(28, hh); 
+            ctx.moveTo(hipX, hipY); ctx.lineTo(-12, hh - 6); ctx.lineTo(-6, hh); 
+            ctx.moveTo(-4, shoulderY); ctx.lineTo(16, hh); 
+            ctx.moveTo(-6, shoulderY); ctx.lineTo(-18, shoulderY - 12); 
+            
+        } else {
+            headY = -hh + 10; hipY = headY + 26; shoulderY = headY + 8;
+            ctx.moveTo(7, headY); ctx.arc(0, headY, 7, 0, Math.PI*2);
+            ctx.moveTo(0, headY + 7); ctx.lineTo(0, hipY);
+
+            if (['JUMPING', 'FALLING', 'DIVING', 'METEOR_DIVING', 'VOID_CRASH', 'TITAN', 'DRAGON_ASCENT'].includes(state)) {
+                ctx.moveTo(0, hipY); ctx.lineTo(-12, hipY + 10); ctx.lineTo(-16, hh - 6);
+                ctx.moveTo(0, hipY); ctx.lineTo(12, hipY + 8); ctx.lineTo(8, hh - 12);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(24, shoulderY + 2); 
+                ctx.moveTo(0, shoulderY); ctx.lineTo(-18, shoulderY - 4); 
+            } else if (['DOUBLE_JUMPING', 'TRIPLE_JUMPING', 'ASTRAL', 'SUPERNOVA'].includes(state)) {
+                ctx.moveTo(0, hipY); ctx.lineTo(-10, hh - 10); ctx.lineTo(2, hh - 6);
+                ctx.moveTo(0, hipY); ctx.lineTo(6, hh - 12); ctx.lineTo(12, hh - 2);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(-10, shoulderY + 10);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(10, shoulderY + 10);
+            } else if (state === 'WALL_RUN') {
+                ctx.moveTo(0, hipY); ctx.lineTo(6, hh - 10 + Math.sin(cycle)*10);
+                ctx.moveTo(0, hipY); ctx.lineTo(12, hh - 10 - Math.sin(cycle)*10);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(-12, shoulderY + 6);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(8, shoulderY - 4);
+            }
+        }
+        ctx.stroke();
+
+        if (!isTrail && (Game.flowMeter >= 100 || ['METEOR_DIVING', 'VOID_CRASH', 'TITAN', 'HELLFIRE', 'OMEGA'].includes(this.state))) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            let coreY = ['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT', 'RUNNING'].includes(state) ? hipY - 6 : hipY - 10;
+            ctx.arc(0, coreY, 4.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
+class World {
+    constructor() {
+        this.platforms = [];
+        this.lastX = -200; this.baseY = 460;
+        this.addPlatform(-300, 460, 2400, 900, CONFIG.platformTypes.BUILDING);
+        this.lastX = 2100;
+    }
+
+    addPlatform(x, y, w, h, type) {
+        this.platforms.push({x, y, w, h, type});
+    }
+
+    shatterPlatform(targetPlatform, impactX) {
+        if (targetPlatform.type !== CONFIG.platformTypes.BUILDING) return;
+        
+        Particles.debris(impactX, targetPlatform.y, 45);
+
+        let craterW = 160;
+        let leftEdge = impactX - craterW/2;
+        
+        if (leftEdge > targetPlatform.x + 40 && leftEdge + craterW < targetPlatform.x + targetPlatform.w - 40) {
+            let origW = targetPlatform.w;
+            let origX = targetPlatform.x;
+            
+            targetPlatform.w = leftEdge - targetPlatform.x;
+            this.addPlatform(
+                leftEdge + craterW, 
+                targetPlatform.y, 
+                (origX + origW) - (leftEdge + craterW), 
+                targetPlatform.h, 
+                targetPlatform.type
+            );
+        }
+    }
+
+    generateAhead(camX) {
+        while (this.lastX < camX + 3600) {
+            let gap = Math.random() * 180 + 110;
+            let width = Math.random() * 520 + 400;
+            
+            this.baseY += (Math.random() - 0.5) * 220;
+            if (this.baseY > 620) this.baseY = 620;
+            if (this.baseY < 180) this.baseY = 180;
+
+            let startX = this.lastX + gap;
+
+            this.addPlatform(startX, this.baseY, width, 900, CONFIG.platformTypes.BUILDING);
+            
+            let roll = Math.random();
+            if (roll > 0.3) {
+                let obsX = startX + width * 0.45;
+                if (roll > 0.75) {
+                    this.addPlatform(obsX, this.baseY - 170, 100, 130, CONFIG.platformTypes.BILLBOARD);
+                } else if (roll > 0.5) {
+                    this.addPlatform(obsX, this.baseY - 42, 110, 42, CONFIG.platformTypes.LOW_BARRIER);
+                } else {
+                    this.addPlatform(obsX, this.baseY - 240, 42, 240, CONFIG.platformTypes.WALL);
+                }
+            }
+
+            if (Math.random() > 0.5) {
+                this.addPlatform(startX + 100, this.baseY - 145 - Math.random()*80, 260, 10, CONFIG.platformTypes.WIRE);
+            }
+            this.lastX = startX + width;
+        }
+        this.platforms = this.platforms.filter(p => p.x + p.w > camX - 1200);
+    }
+
+    checkCollision(player, nextX, nextY, checkYOnly = false) {
+        for (let p of this.platforms) {
+            if (nextX < p.x + p.w && nextX + player.w > p.x && nextY < p.y + p.h && nextY + player.h > p.y) {
+                if (checkYOnly) {
+                    if (p.type === CONFIG.platformTypes.WIRE && player.vy < 0) continue;
+                    if (p.type === CONFIG.platformTypes.WIRE && player.y > p.y) continue;
+                }
+                return p;
+            }
+        }
+        return null;
+    }
+
+    draw(ctx, camX, camY) {
+        for (let p of this.platforms) {
+            let drawX = p.x - camX; let drawY = p.y - camY;
+            if (drawX > window.innerWidth + 300 || drawX + p.w < -300) continue;
+
+            if (p.type === CONFIG.platformTypes.BUILDING) {
+                ctx.save();
+                ctx.fillStyle = AssetCache.patterns.concrete;
+                ctx.translate(drawX - p.x, 0); 
+                ctx.fillRect(p.x, drawY, p.w, p.h);
+                ctx.restore();
+                
+                if (p.w > 180) {
+                    ctx.save();
+                    ctx.fillStyle = AssetCache.patterns.glass;
+                    ctx.translate(drawX - p.x + 20, 0);
+                    ctx.fillRect(p.x, drawY + 30, p.w - 40, p.h - 30);
+                    ctx.restore();
+                }
+
+                ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(drawX, drawY, p.w, 4);
+                ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(drawX + p.w - 8, drawY, 8, p.h);
+                
+            } else if (p.type === CONFIG.platformTypes.WALL) {
+                ctx.save();
+                ctx.fillStyle = AssetCache.patterns.brick; 
+                ctx.translate(drawX - p.x, 0); 
+                ctx.fillRect(p.x, drawY, p.w, p.h);
+                ctx.restore();
+                
+                let grad = ctx.createLinearGradient(0, drawY + p.h - 50, 0, drawY + p.h);
+                grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,0.8)');
+                ctx.fillStyle = grad; ctx.fillRect(drawX, drawY, p.w, p.h);
+                
+            } else if (p.type === CONFIG.platformTypes.LOW_BARRIER) {
+                ctx.fillStyle = AssetCache.patterns.concrete;
+                ctx.beginPath();
+                ctx.moveTo(drawX + 10, drawY); ctx.lineTo(drawX + p.w - 10, drawY);
+                ctx.lineTo(drawX + p.w, drawY + p.h); ctx.lineTo(drawX, drawY + p.h);
+                ctx.fill();
+                
+                ctx.save();
+                ctx.fillStyle = AssetCache.patterns.hazard;
+                ctx.translate(drawX - p.x + 5, 0);
+                ctx.fillRect(p.x, drawY + 15, p.w - 10, 10);
+                ctx.restore();
+                
+            } else if (p.type === CONFIG.platformTypes.WIRE) {
+                let grad = ctx.createLinearGradient(drawX, drawY, drawX, drawY + p.h);
+                grad.addColorStop(0, '#1e293b'); grad.addColorStop(0.5, '#94a3b8'); grad.addColorStop(1, '#0f172a');
+                ctx.fillStyle = grad; 
+                ctx.fillRect(drawX, drawY, p.w, p.h);
+                
+            } else if (p.type === CONFIG.platformTypes.BILLBOARD) {
+                ctx.save();
+                ctx.fillStyle = AssetCache.patterns.scaffold;
+                ctx.translate(drawX - p.x, 0);
+                ctx.fillRect(p.x + 15, drawY + p.h, 20, 150); 
+                ctx.fillRect(p.x + p.w - 35, drawY + p.h, 20, 150);
+                ctx.restore();
+                
+                ctx.fillStyle = '#0f172a'; ctx.fillRect(drawX-5, drawY-5, p.w+10, p.h+10);
+                
+                ctx.save();
+                ctx.fillStyle = AssetCache.patterns.led;
+                ctx.translate(drawX - p.x, 0);
+                ctx.fillRect(p.x, drawY, p.w, p.h);
+                ctx.restore();
+                
+                ctx.fillStyle = '#fff'; ctx.font = '900 24px Montserrat'; ctx.textAlign = 'center';
+                ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
+                ctx.fillText('N I G H T', drawX + p.w/2, drawY + p.h/2 - 10);
+                ctx.font = '700 16px Montserrat'; ctx.fillStyle = '#fde047';
+                ctx.fillText('C I T Y', drawX + p.w/2, drawY + p.h/2 + 20);
+                ctx.shadowBlur = 0;
+            }
+        }
+    }
+}
+
+const Background = {
+    draw(ctx, width, height, camX, camY) {
+        if (!AssetCache.sky) return;
+        ctx.drawImage(AssetCache.sky, 0, 0, width, height);
+
+        let p1 = -(camX * 0.05) % 2400; if(p1 > 0) p1 -= 2400;
+        ctx.drawImage(AssetCache.backCity, p1, height - AssetCache.backCity.height);
+        ctx.drawImage(AssetCache.backCity, p1 + 2400, height - AssetCache.backCity.height);
+
+        let p2 = -(camX * 0.15) % 2400; if(p2 > 0) p2 -= 2400;
+        ctx.drawImage(AssetCache.midCity, p2, height - AssetCache.midCity.height);
+        ctx.drawImage(AssetCache.midCity, p2 + 2400, height - AssetCache.midCity.height);
+
+        let p3 = -(camX * 0.3) % 2400; if(p3 > 0) p3 -= 2400;
+        ctx.drawImage(AssetCache.foreCity, p3, height - AssetCache.foreCity.height);
+        ctx.drawImage(AssetCache.foreCity, p3 + 2400, height - AssetCache.foreCity.height);
+    }
+}
+
+const Game = {
+    canvas: null, ctx: null, player: null, world: null,
+    lastTime: 0, camX: 0, camY: 0, targetCamY: 0, cameraShake: 0,
+    score: 0, distance: 0, flowMeter: 0, combo: 1.0, comboTimer: 0,
+    
+    init() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.resize(); 
+        
+        AssetCache.init(Math.max(1200, window.innerWidth), Math.max(800, window.innerHeight));
+        
+        window.addEventListener('resize', () => this.resize());
+        Input.init(); this.bindUI();
+        
+        this.lastTime = performance.now();
+        requestAnimationFrame((t) => this.loop(t));
+    },
+
+    resize() { 
+        this.canvas.width = Math.max(1, window.innerWidth); 
+        this.canvas.height = Math.max(1, window.innerHeight); 
+    },
+
+    bindUI() {
+        const bindBtn = (id, handler) => {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            const safeHandler = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                handler(e);
+            };
+            btn.onclick = safeHandler;
+            btn.addEventListener('touchstart', safeHandler, {passive: false});
+        };
+
+        bindBtn('btnStart', () => { 
+            document.getElementById('mainMenu').style.display = 'none'; this.startPlay(); 
+        });
+        bindBtn('btnRestart', () => { 
+            document.getElementById('gameOverModal').style.display = 'none'; this.startPlay(); 
+        });
+        bindBtn('btnGoMenu', () => { 
+            document.getElementById('gameOverModal').style.display = 'none'; 
+            document.getElementById('mainMenu').style.display = 'flex'; 
+            GAME_STATE = 'MENU'; 
+        });
+    },
+
+    startPlay() {
+        this.player = new Player(); this.world = new World(); Particles.clear();
+        this.score = 0; this.distance = 0; this.flowMeter = 0; this.combo = 1.0; this.comboTimer = 0;
+        this.camX = 0; this.camY = this.player.y - this.canvas.height/2 + 100;
+        this.cameraShake = 0;
+        
+        document.getElementById('hud').style.display = 'flex';
+        GAME_STATE = 'PLAYING'; this.lastTime = performance.now();
+        AudioSys.init();
+
+        const hint = document.getElementById('swipeHint');
+        hint.style.opacity = '1'; setTimeout(() => hint.style.opacity = '0', 6000);
+    },
+
+    showComboText(text, classNames = "text-cyan-400 text-glow-cyan text-4xl") {
+        const el = document.getElementById('comboText');
+        el.innerText = text;
+        el.className = `absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black italic opacity-0 transition-opacity duration-300 pointer-events-none text-center w-full z-10 ${classNames}`;
+        void el.offsetWidth; 
+        el.style.opacity = 1; el.style.transform = `translate(-50%, -50%) scale(1.2)`;
+        setTimeout(() => { el.style.transform = `translate(-50%, -50%) scale(1.0)`; }, 50);
+        setTimeout(() => el.style.opacity = 0, 1000);
+    },
+
+    addScore(pts) {
+        if (GAME_STATE !== 'PLAYING') return;
+        this.score += Math.floor(pts * this.combo);
+        this.comboTimer = 2.0;
+    },
+
+    addFlow(amt) {
+        if (GAME_STATE !== 'PLAYING') return;
+        this.flowMeter = Math.min(100, this.flowMeter + amt);
+        this.combo = 1.0 + (this.flowMeter / 100) * 2.5;
+        this.comboTimer = 2.0;
+    },
+
+    gameOver() {
+        if (GAME_STATE === 'GAMEOVER') return;
+        GAME_STATE = 'GAMEOVER';
+        document.getElementById('hud').style.display = 'none';
+        document.getElementById('gameOverModal').style.display = 'flex';
+        document.getElementById('goDistance').innerText = Math.floor(this.distance) + 'm';
+        document.getElementById('goScore').innerText = this.score;
+    },
+
+    update(dt) {
+        if (GAME_STATE !== 'PLAYING') return;
+        
+        if (this.comboTimer > 0) {
+            this.comboTimer -= dt;
+            if (this.comboTimer <= 0) { this.combo = 1.0; this.flowMeter = Math.max(0, this.flowMeter - 15); }
+        } else {
+            this.flowMeter = Math.max(0, this.flowMeter - dt * 8);
+        }
+
+        if (this.cameraShake > 0) this.cameraShake *= 0.9;
+        if (this.cameraShake < 0.5) this.cameraShake = 0;
+
+        this.world.generateAhead(this.camX);
+        this.player.update(dt, this.world);
+        Particles.updateAndDraw(dt, this.ctx, this.camX, this.camY);
+        
+        this.distance = Math.max(this.distance, this.player.x / 100);
+        
+        let targetX = this.player.x - this.canvas.width * 0.35;
+        this.camX += (targetX - this.camX) * dt * 8;
+        
+        this.targetCamY = this.player.y - this.canvas.height * 0.5;
+        this.camY += (this.targetCamY - this.camY) * dt * 5;
+
+        if (this.player.state === 'RUNNING' || this.player.state === 'SLIDING') {
+            this.addScore(dt * 20);
+        }
+    },
+
+    draw() {
+        const ctx = this.ctx; const w = this.canvas.width; const h = this.canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        
+        if (GAME_STATE === 'MENU') {
+            Background.draw(ctx, w, h, Date.now()*0.08, 0);
+            return;
+        }
+
+        ctx.save();
+        if (this.cameraShake > 0) {
+            ctx.translate((Math.random()-0.5)*this.cameraShake, (Math.random()-0.5)*this.cameraShake);
+        }
+
+        Background.draw(ctx, w, h, this.camX, this.camY);
+        this.world.draw(ctx, this.camX, this.camY);
+        this.player.draw(ctx, this.camX, this.camY);
+        
+        ctx.restore();
+        this.updateUI();
+    },
+    
+    updateUI() {
+        document.getElementById('distanceEl').innerText = Math.floor(this.distance) + 'm';
+        document.getElementById('scoreEl').innerText = Math.floor(this.score);
+        
+        const flowBar = document.getElementById('flowBar');
+        flowBar.style.width = this.flowMeter + '%';
+        
+        const comboEl = document.getElementById('comboEl');
+        if (this.combo > 1.0) {
+            comboEl.innerText = 'x' + this.combo.toFixed(1);
+            comboEl.style.opacity = 1;
+        } else {
+            comboEl.style.opacity = 0;
+        }
+    },
+
+    loop(timestamp) {
+        if (!timestamp) timestamp = performance.now();
+        let dt = (timestamp - this.lastTime) / 1000;
+        this.lastTime = timestamp;
+        
+        if (dt > 0.1) dt = 0.1;
+        if (dt < 0) dt = 0;
+
+        this.update(dt);
+        this.draw();
+        requestAnimationFrame((t) => this.loop(t));
+    }
+};
+
+Game.init();
+</script>
+</body>
+</html>
+
+
