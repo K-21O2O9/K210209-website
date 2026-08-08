@@ -3,19 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bloodbound - Multiplayer Tactical Command</title>
+    <title>BLOODBOUND - 2 Player Multiplayer</title>
     <!-- Tailwind for rapid UI layout -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Three.js for 3D rendering -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Three.js for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #050505; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
         #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; touch-action: none; }
         
+        .modal-blur { backdrop-filter: blur(8px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+
         /* UI Layer */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
         .pointer-events-auto { pointer-events: auto; }
@@ -30,128 +35,69 @@
         .rolling { animation: roll 0.5s ease-out; }
         
         .die-btn { 
-            width: 76px;
-            height: 76px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #2a2a30 0%, #151518 100%);
-            border: 2px solid #3f3f46;
-            border-bottom-width: 4px;
-            border-radius: 16px;
-            color: white;
-            box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.8), 0 6px 12px rgba(0,0,0,0.6);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            position: relative;
-            overflow: hidden;
+            width: 76px; height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #2a2a30 0%, #151518 100%); border: 2px solid #3f3f46; border-bottom-width: 4px;
+            border-radius: 16px; color: white; box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.8), 0 6px 12px rgba(0,0,0,0.6);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden;
         }
-        .die-btn::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.15); border-radius: 16px 16px 0 0;
-        }
-        .die-btn:hover {
-            border-color: #71717a;
-            transform: translateY(-3px);
-            box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 6px rgba(0,0,0,0.8), 0 8px 16px rgba(0,0,0,0.7);
-        }
-        .die-btn.selected { 
-            border-color: #fbbf24;
-            background: linear-gradient(135deg, #4d3a08 0%, #241c04 100%);
-            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4), inset 0 0 15px rgba(251, 191, 36, 0.2), 0 10px 20px rgba(0,0,0,0.8);
-            transform: translateY(-8px) scale(1.05); 
-        }
+        .die-btn::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.15); border-radius: 16px 16px 0 0; }
+        .die-btn:hover { border-color: #71717a; transform: translateY(-3px); box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 6px rgba(0,0,0,0.8), 0 8px 16px rgba(0,0,0,0.7); }
+        .die-btn.selected { border-color: #fbbf24; background: linear-gradient(135deg, #4d3a08 0%, #241c04 100%); box-shadow: 0 0 20px rgba(251, 191, 36, 0.4), inset 0 0 15px rgba(251, 191, 36, 0.2), 0 10px 20px rgba(0,0,0,0.8); transform: translateY(-8px) scale(1.05); }
         .die-btn.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; transform: scale(0.9); border-bottom-width: 2px; margin-top: 2px;}
         
-        .die-icon {
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            color: #e4e4e7;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
-            position: relative;
-            z-index: 10;
-        }
-        .die-btn.selected .die-icon {
-            color: #fef3c7;
-            text-shadow: 0 0 15px rgba(251, 191, 36, 0.8);
-        }
+        .die-icon { font-size: 22px; font-weight: 900; letter-spacing: 1px; color: #e4e4e7; text-shadow: 0 2px 5px rgba(0,0,0,0.8); position: relative; z-index: 10; }
+        .die-btn.selected .die-icon { color: #fef3c7; text-shadow: 0 0 15px rgba(251, 191, 36, 0.8); }
 
-        /* Fancy End Turn Button */
-        .fancy-action-btn {
-            background: linear-gradient(to bottom, #7f1d1d, #450a0a);
-            border: 2px solid #b91c1c;
-            border-bottom-width: 4px;
-            border-radius: 12px;
-            box-shadow: inset 0 1px 0 rgba(255,100,100,0.3), 0 6px 12px rgba(0,0,0,0.6), 0 0 15px rgba(153, 27, 27, 0.3);
-            color: #fca5a5;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            transition: all 0.15s ease;
-            font-weight: 900;
-            padding: 16px 24px;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            width: 100%;
-        }
-        .fancy-action-btn:hover {
-            background: linear-gradient(to bottom, #991b1b, #450a0a);
-            border-color: #ef4444;
-            color: #fef2f2;
-            box-shadow: inset 0 1px 0 rgba(255,100,100,0.4), 0 8px 16px rgba(0,0,0,0.7), 0 0 20px rgba(185, 28, 28, 0.5);
-        }
-        .fancy-action-btn:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
-            box-shadow: inset 0 3px 6px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.6);
-            margin-top: 2px;
-            margin-bottom: -2px;
-        }
-        .fancy-action-btn.facing-mode {
-            background: linear-gradient(to bottom, #047857, #064e3b);
-            border-color: #10b981;
-            color: #a7f3d0;
-            box-shadow: inset 0 1px 0 rgba(100,255,150,0.3), 0 6px 12px rgba(0,0,0,0.6), 0 0 15px rgba(4, 120, 87, 0.3);
-        }
-        .fancy-action-btn.facing-mode:hover {
-            background: linear-gradient(to bottom, #059669, #064e3b);
-            border-color: #34d399;
-            color: #ffffff;
-        }
+        .fancy-action-btn { background: linear-gradient(to bottom, #7f1d1d, #450a0a); border: 2px solid #b91c1c; border-bottom-width: 4px; border-radius: 12px; box-shadow: inset 0 1px 0 rgba(255,100,100,0.3), 0 6px 12px rgba(0,0,0,0.6), 0 0 15px rgba(153, 27, 27, 0.3); color: #fca5a5; text-shadow: 0 2px 4px rgba(0,0,0,0.8); transition: all 0.15s ease; font-weight: 900; padding: 16px 24px; text-transform: uppercase; letter-spacing: 0.2em; width: 100%; }
+        .fancy-action-btn:hover { background: linear-gradient(to bottom, #991b1b, #450a0a); border-color: #ef4444; color: #fef2f2; box-shadow: inset 0 1px 0 rgba(255,100,100,0.4), 0 8px 16px rgba(0,0,0,0.7), 0 0 20px rgba(185, 28, 28, 0.5); }
+        .fancy-action-btn:active { transform: translateY(2px); border-bottom-width: 2px; box-shadow: inset 0 3px 6px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.6); margin-top: 2px; margin-bottom: -2px; }
+        .fancy-action-btn.facing-mode { background: linear-gradient(to bottom, #047857, #064e3b); border-color: #10b981; color: #a7f3d0; box-shadow: inset 0 1px 0 rgba(100,255,150,0.3), 0 6px 12px rgba(0,0,0,0.6), 0 0 15px rgba(4, 120, 87, 0.3); }
+        .fancy-action-btn.facing-mode:hover { background: linear-gradient(to bottom, #059669, #064e3b); border-color: #34d399; color: #ffffff; }
+        .fancy-action-btn:disabled { opacity: 0.5; pointer-events: none; filter: grayscale(100%); }
 
-        /* Toggle UI Button */
-        .toggle-btn {
-            background: linear-gradient(135deg, #2a2a30 0%, #151518 100%);
-            border: 2px solid #3f3f46;
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.6);
-            transition: all 0.2s;
-            cursor: pointer;
-        }
+        .toggle-btn { background: linear-gradient(135deg, #2a2a30 0%, #151518 100%); border: 2px solid #3f3f46; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.6); transition: all 0.2s; cursor: pointer; }
         .toggle-btn:active { transform: scale(0.9); }
         .toggle-btn svg { width: 24px; height: 24px; fill: #d4d4d8; transition: fill 0.2s; }
         .toggle-btn.off svg { fill: #ef4444; }
 
-        /* Notification Toast */
+        /* Notification Toast (Game) */
         #toast { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(180deg, rgba(20,20,20,0.95) 0%, rgba(0,0,0,0.95) 100%); border: 2px solid #c2410c; padding: 15px 40px; border-radius: 12px; font-size: 24px; font-weight: 900; text-align: center; opacity: 0; transition: opacity 0.3s; text-transform: uppercase; letter-spacing: 3px; z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(194, 65, 12, 0.3); text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none;}
-        .modal-blur { backdrop-filter: blur(8px); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
     </style>
 </head>
-<body>
+<body class="bg-slate-950">
 
+    <!-- Toast Notification Container (Network) -->
+    <div id="net-toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Status Bar (Multiplayer) -->
+    <header class="absolute top-0 w-full bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex justify-between items-center z-[60] shadow-lg pointer-events-auto">
+        <div class="flex items-center gap-3">
+            <div class="font-black text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-400">
+                <i class="fa-solid fa-droplet text-red-500 mr-1.5"></i>BLOODBOUND
+            </div>
+            <span id="room-badge" class="hidden text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700 font-mono flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                ROOM: <strong id="current-room-code" class="text-red-400">------</strong>
+            </span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="config-btn" class="text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 p-2 rounded-lg text-xs transition border border-slate-700" title="Supabase Credentials">
+                <i class="fa-solid fa-gear text-sm"></i>
+            </button>
+            <button id="leave-game-btn" class="hidden text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-rose-800/50 flex items-center gap-1.5">
+                <i class="fa-solid fa-right-from-bracket"></i> Leave
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
     <canvas id="game-canvas"></canvas>
     <div id="hp-container"></div>
 
-    <!-- Top Status Bar & Multiplayer Room Header -->
-    <div id="ui-layer">
-        <div class="w-full p-4 flex justify-between items-start bg-gradient-to-b from-black/95 via-black/70 to-transparent pointer-events-auto">
-            <div class="flex items-center space-x-3 drop-shadow-lg">
+    <!-- Gameplay UI Layer -->
+    <div id="ui-layer" class="hidden pt-[60px]">
+        <div class="w-full p-5 flex justify-between items-start bg-gradient-to-b from-black/95 via-black/70 to-transparent pointer-events-none">
+            <div class="flex items-center space-x-3 pointer-events-auto drop-shadow-lg">
                 <button id="toggle-names-btn" class="toggle-btn" aria-label="Toggle HP/Names">
                     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
@@ -159,107 +105,85 @@
                 </button>
                 <div>
                     <h1 class="text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-gray-100 to-gray-400 uppercase" style="font-family: serif; -webkit-text-stroke: 1px rgba(0,0,0,0.5);">Bloodbound</h1>
-                    <div id="turn-indicator" class="text-xs text-yellow-400 font-extrabold tracking-widest mt-0.5 text-shadow">PLAYER 1 TURN</div>
+                    <div id="turn-indicator" class="text-sm text-yellow-400 font-extrabold tracking-widest mt-1 text-shadow">WAITING...</div>
                 </div>
-                <span id="room-badge" class="hidden text-xs bg-slate-900/80 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700 font-mono flex items-center gap-1.5 ml-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    ROOM: <strong id="current-room-code" class="text-blue-400">------</strong>
-                </span>
             </div>
-
-            <div class="flex items-center space-x-2">
-                <div class="flex flex-col items-end drop-shadow-md mr-3">
-                    <div class="text-[10px] text-gray-300 font-bold tracking-widest">ACTION POINTS</div>
-                    <div class="flex space-x-1.5 mt-1" id="ap-container"></div>
-                </div>
-                <button id="config-btn" class="toggle-btn" title="Supabase Credentials" style="width: 38px; height: 38px;">
-                    <i class="fa-solid fa-gear text-sm text-slate-300"></i>
-                </button>
-                <button id="menu-tutorial-btn" class="toggle-btn" title="Tutorial" style="width: 38px; height: 38px;">
-                    <i class="fa-solid fa-book-open text-sm text-blue-400"></i>
-                </button>
-                <button id="leave-game-btn" class="hidden text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 px-3 py-2 rounded-xl text-xs font-semibold transition border border-rose-800/50 flex items-center gap-1.5">
-                    <i class="fa-solid fa-right-from-bracket"></i> Leave
-                </button>
+            <div class="flex flex-col items-end drop-shadow-md pointer-events-auto">
+                <div class="text-[11px] text-gray-300 font-bold tracking-widest">ACTION POINTS</div>
+                <div class="flex space-x-1.5 mt-1.5" id="ap-container"></div>
             </div>
         </div>
 
         <div id="toast">Your Turn</div>
 
-        <!-- Action Controls & Dice Tray -->
-        <div id="game-controls-panel" class="w-full p-6 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-auto pb-8">
+        <div class="w-full p-6 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-auto pb-8">
             <div id="unit-info" class="mb-5 text-center drop-shadow-md">
-                <h2 id="unit-name" class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 tracking-wide uppercase">Unit Name</h2>
-                <p id="unit-desc" class="text-sm text-gray-300 font-medium">Drag to rotate and zoom.</p>
+                <h2 id="unit-name" class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 tracking-wide uppercase">Waiting</h2>
+                <p id="unit-desc" class="text-sm text-gray-300 font-medium">Waiting for players...</p>
             </div>
 
             <div class="flex justify-center space-x-5 mb-6" id="dice-container"></div>
 
             <div class="flex justify-between w-full max-w-md mx-auto">
-                <button id="btn-end-turn" class="fancy-action-btn">End Turn</button>
+                <button id="btn-end-turn" class="fancy-action-btn" style="display: none;">End Turn</button>
             </div>
         </div>
     </div>
 
     <!-- OVERLAY 1: MAIN MENU -->
-    <div id="main-menu" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
-        <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
-            <div class="absolute -right-12 -top-12 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -left-12 -bottom-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
+    <div id="main-menu" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 modal-blur">
+        <div class="max-w-md w-full mx-4 bg-slate-900 border border-red-900 rounded-2xl p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
+            <div class="absolute -right-12 -top-12 w-40 h-40 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
+            
             <div>
-                <div class="inline-flex p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-3 text-3xl">
-                    <i class="fa-solid fa-chess-board"></i>
+                <div class="inline-flex p-3 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 mb-3 text-3xl">
+                    <i class="fa-solid fa-droplet"></i>
                 </div>
                 <h1 class="text-3xl font-extrabold tracking-tight text-white uppercase font-serif">Bloodbound</h1>
-                <p class="text-xs text-slate-400 mt-1">3D Multiplayer Tactical Command Engine</p>
+                <p class="text-xs text-slate-400 mt-1">2-Player Online Strategy</p>
             </div>
 
             <!-- Primary Buttons -->
             <div id="menu-actions" class="space-y-3">
-                <button id="play-btn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2">
+                <button id="play-btn" class="w-full bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2">
                     <i class="fa-solid fa-play"></i> PLAY MULTIPLAYER
-                </button>
-                <button id="tutorial-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-6 rounded-xl border border-slate-700 transition text-sm flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-graduation-cap text-blue-400"></i> HOW TO PLAY (TUTORIAL)
                 </button>
             </div>
 
             <!-- Play Submenu (Join / Create) -->
             <div id="play-submenu" class="hidden space-y-4 pt-2">
                 <div class="grid grid-cols-2 gap-3">
-                    <button id="create-room-btn" class="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
-                        <i class="fa-solid fa-plus-circle text-2xl text-indigo-400"></i>
+                    <button id="create-room-btn" class="bg-red-900/20 hover:bg-red-900/40 border border-red-800/40 text-red-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-2xl text-red-500"></i>
                         <span class="text-xs">CREATE ROOM</span>
                     </button>
-                    <button id="show-join-input-btn" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
-                        <i class="fa-solid fa-right-to-bracket text-2xl text-emerald-400"></i>
+                    <button id="show-join-input-btn" class="bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/40 text-emerald-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket text-2xl text-emerald-500"></i>
                         <span class="text-xs">JOIN ROOM</span>
                     </button>
                 </div>
-
+                <!-- Join Code Box -->
                 <div id="join-box" class="hidden space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <label class="block text-xs font-semibold text-slate-400 text-left">ENTER 6-CHAR ROOM CODE:</label>
                     <div class="flex gap-2">
-                        <input id="room-code-input" type="text" maxlength="6" placeholder="X8Y2A9" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-center text-sm font-mono font-bold tracking-widest text-blue-400 uppercase focus:outline-none focus:border-blue-500">
-                        <button id="confirm-join-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition">JOIN</button>
+                        <input id="room-code-input" type="text" maxlength="6" placeholder="X8Y2A9" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-center text-sm font-mono font-bold tracking-widest text-red-400 uppercase focus:outline-none focus:border-red-500">
+                        <button id="confirm-join-btn" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-lg text-xs transition">JOIN</button>
                     </div>
                 </div>
-
                 <button id="back-to-menu-btn" class="text-xs text-slate-500 hover:text-slate-300 transition underline">&larr; Back to Main Menu</button>
             </div>
 
             <div class="text-[11px] text-slate-500 border-t border-slate-800/80 pt-4 flex items-center justify-between">
-                <span>Multiplayer Mode: <span id="supabase-status" class="text-amber-400 font-medium">Local Simulator</span></span>
+                <span>Supabase: <span id="supabase-status" class="text-amber-400 font-medium">Local Simulator</span></span>
                 <button id="supabase-config-link" class="text-blue-400 hover:underline">Change Keys</button>
             </div>
         </div>
     </div>
 
-    <!-- OVERLAY 2: LOBBY / WAITING ROOM -->
-    <div id="lobby-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
+    <!-- OVERLAY 2: LOBBY -->
+    <div id="lobby-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="max-w-sm w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-center space-y-6">
-            <div class="w-16 h-16 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 mx-auto flex items-center justify-center text-2xl animate-spin">
+            <div class="w-16 h-16 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 mx-auto flex items-center justify-center text-2xl animate-spin">
                 <i class="fa-solid fa-spinner"></i>
             </div>
             <div>
@@ -267,10 +191,20 @@
                 <p class="text-xs text-slate-400 mt-1">Share this room code with Player 2</p>
             </div>
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
-                <span id="lobby-code-display" class="font-mono text-2xl font-black text-blue-400 tracking-widest">------</span>
+                <span id="lobby-code-display" class="font-mono text-2xl font-black text-red-400 tracking-widest">------</span>
                 <button id="copy-code-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
                     <i class="fa-regular fa-copy"></i> Copy
                 </button>
+            </div>
+            <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-800 text-left text-xs space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Player 1 (Host - Blue):</span>
+                    <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Connected</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Player 2 (Red):</span>
+                    <span id="p2-status-text" class="text-amber-400 font-semibold animate-pulse">Waiting...</span>
+                </div>
             </div>
             <button id="cancel-lobby-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold py-2.5 rounded-lg border border-slate-700 text-xs transition">
                 Cancel & Return
@@ -278,67 +212,42 @@
         </div>
     </div>
 
-    <!-- OVERLAY 3: TUTORIAL MODAL -->
-    <div id="tutorial-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
-        <div class="max-w-2xl w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-book-open text-blue-400"></i> Bloodbound Tactical Guide
-                </h3>
-                <button id="close-tutorial-btn" class="text-slate-400 hover:text-white p-1 rounded-lg"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
-            <div class="overflow-y-auto custom-scrollbar my-4 space-y-6 text-sm text-slate-300 pr-2">
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-                    <h4 class="font-bold text-blue-400 text-base flex items-center gap-2"><i class="fa-solid fa-crown text-amber-400"></i> Victory Condition</h4>
-                    <p class="text-xs leading-relaxed text-slate-300">Defeat the enemy Commander (Player 1 (Blue) vs Player 2 (Red)) or eliminate all opposing units to achieve absolute victory in 3D tactical combat.</p>
-                </div>
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-                    <h4 class="font-bold text-indigo-400 text-sm">Dice & Actions</h4>
-                    <ul class="text-xs space-y-1.5 list-disc list-inside text-slate-300">
-                        <li>Each unit turn rolls dynamic dice (Move, Attack, Magic, Dash, Defend, Wild).</li>
-                        <li>Click a die to activate its specific action, then click highlighted valid board tiles or enemy units.</li>
-                        <li>Positional combat applies: attacking from behind yields higher accuracy and damage bonuses.</li>
-                    </ul>
-                </div>
-            </div>
-            <button id="tutorial-got-it-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition text-xs">GOT IT, LET'S PLAY!</button>
-        </div>
-    </div>
-
-    <!-- OVERLAY 4: GAME OVER MODAL -->
-    <div id="gameover-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
+    <!-- OVERLAY 3: GAME OVER -->
+    <div id="gameover-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center space-y-6">
             <div id="gameover-icon-bg" class="w-20 h-20 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 mx-auto flex items-center justify-center text-4xl">
                 <i id="gameover-icon" class="fa-solid fa-trophy"></i>
             </div>
             <div>
                 <h2 id="gameover-title" class="text-2xl font-black text-white">VICTORY!</h2>
-                <p id="gameover-sub" class="text-xs text-slate-400 mt-1">Match ended successfully.</p>
+                <p id="gameover-sub" class="text-xs text-slate-400 mt-1">Enemy Commander defeated.</p>
             </div>
-            <div id="rematch-status-box" class="hidden text-xs bg-slate-950 p-3 rounded-lg border border-slate-800 text-amber-400 font-semibold animate-pulse">Opponent requested a rematch!</div>
-            <div class="grid grid-cols-2 gap-3 pt-2">
-                <button id="rematch-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-rotate-right"></i> REMATCH</button>
-                <button id="quit-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 rounded-xl border border-slate-700 transition text-xs">QUIT TO MENU</button>
+            <div class="pt-2">
+                <button id="quit-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 rounded-xl border border-slate-700 transition text-xs">
+                    QUIT TO MENU
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- OVERLAY 5: SUPABASE CONFIG MODAL -->
-    <div id="supabase-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
+    <!-- OVERLAY 4: SUPABASE CONFIG -->
+    <div id="supabase-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-base font-bold text-white flex items-center gap-2"><i class="fa-solid fa-database text-emerald-400"></i> Supabase Setup</h3>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-database text-emerald-400"></i> Supabase Setup
+                </h3>
                 <button id="close-supabase-btn" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-slate-400">Enter your Supabase credentials for remote online 2-player multiplayer across devices. Leave empty to use local tab simulator.</p>
+            <p class="text-xs text-slate-400">Enter Supabase credentials. If empty, runs Local Broadcast Simulator.</p>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Supabase URL</label>
-                    <input id="sb-url-input" type="text" placeholder="https://xyz.supabase.co" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500">
+                    <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">URL</label>
+                    <input id="sb-url-input" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200">
                 </div>
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Supabase Anon Key</label>
-                    <input id="sb-key-input" type="password" placeholder="eyJhbGciOi..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500">
+                    <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Anon Key</label>
+                    <input id="sb-key-input" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200">
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-2">
@@ -347,8 +256,8 @@
         </div>
     </div>
 
-    <!-- OVERLAY 6: CUSTOM CONFIRM MODAL -->
-    <div id="confirm-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/90 modal-blur">
+    <!-- OVERLAY 5: CONFIRM -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-w-sm w-full mx-4">
             <h3 class="text-lg font-bold text-white text-center">Are you sure?</h3>
             <p id="confirm-message" class="text-sm text-slate-400 text-center"></p>
@@ -360,55 +269,32 @@
     </div>
 
 <script>
-    /** --- TOAST & CONFIRM UTILS --- **/
-    function showToast(msg, type = 'info') {
-        const toastEl = document.getElementById('toast');
-        toastEl.innerText = msg;
-        toastEl.style.color = type === 'error' ? '#ef4444' : '#facc15';
-        toastEl.style.opacity = 1;
-        toastEl.style.transform = 'translate(-50%, -50%) scale(1.1)';
-        setTimeout(() => {
-            toastEl.style.opacity = 0;
-            toastEl.style.transform = 'translate(-50%, -50%) scale(1)';
-        }, 1800);
-    }
-
-    function showConfirm(message, onYes) {
-        const modal = document.getElementById('confirm-modal');
-        document.getElementById('confirm-message').textContent = message;
-        modal.classList.remove('hidden');
-        
-        const yesBtn = document.getElementById('confirm-yes-btn');
-        const noBtn = document.getElementById('confirm-no-btn');
-        
-        const handleYes = () => { cleanup(); onYes(); };
-        const handleNo = () => { cleanup(); };
-        
-        const cleanup = () => {
-            modal.classList.add('hidden');
-            yesBtn.removeEventListener('click', handleYes);
-            noBtn.removeEventListener('click', handleNo);
-        };
-        
-        yesBtn.addEventListener('click', handleYes);
-        noBtn.addEventListener('click', handleNo);
-    }
-
-    /** --- MULTIPLAYER & SUPABASE STATE --- **/
+    /** --- SUPABASE & NETWORK LOGIC --- **/
     let supabaseClient = null;
     let realtimeChannel = null;
     let isLocalSimulator = true;
     let roomCode = null;
-    let playerNumber = 1; // 1 = Host / Player 1 (Blue), 2 = Joiner / Player 2 (Red)
-    let isMultiplayerActive = false;
-    let rematchRequestedByMe = false;
-    let rematchRequestedByOpponent = false;
+    let playerNumber = 1; // 1 = Blue (P1), 2 = Red (P2)
+    
+    function showNetToast(message, type = 'info') {
+        const container = document.getElementById('net-toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        const colors = type === 'error' ? 'bg-rose-600 border-rose-500' : 'bg-slate-800 border-slate-700';
+        toast.className = `px-4 py-2 rounded-lg shadow-lg border text-white text-sm font-semibold transition-all duration-300 opacity-0 transform -translate-y-4 ${colors}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.remove('opacity-0', '-translate-y-4'));
+        setTimeout(() => {
+            toast.classList.add('opacity-0', '-translate-y-4');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
 
     function initSupabase() {
         const url = localStorage.getItem('sb_url') || 'https://oqboqzcjsnhuvxecwonb.supabase.co';
         const key = localStorage.getItem('sb_key') || 'sb_publishable_buFfG1jbB8kPnYlFl5UvNg_hHnV3xmH';
         const statusEl = document.getElementById('supabase-status');
-
         if (url && key && window.supabase) {
             try {
                 supabaseClient = window.supabase.createClient(url, key);
@@ -429,25 +315,21 @@
 
     function setupRealtimeChannel(code) {
         roomCode = code;
-        isMultiplayerActive = true;
         document.getElementById('current-room-code').textContent = code;
         document.getElementById('room-badge').classList.remove('hidden');
-        document.getElementById('leave-game-btn').classList.remove('hidden');
 
         if (isLocalSimulator) {
             window.addEventListener('storage', handleSimulatorStorage);
             return;
         }
 
-        const channelName = `bloodbound_pvp_${code}`;
+        const channelName = `tactics_room_${code}`;
         realtimeChannel = supabaseClient.channel(channelName, {
             config: { broadcast: { self: false } }
         });
 
         realtimeChannel
-            .on('broadcast', { event: 'game_event' }, payload => {
-                handleRemoteEvent(payload.payload);
-            })
+            .on('broadcast', { event: 'game_event' }, payload => handleRemoteEvent(payload.payload))
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED' && playerNumber === 2) {
                     broadcastEvent('PLAYER_JOINED', { pNumber: 2 });
@@ -457,27 +339,18 @@
 
     function broadcastEvent(eventType, payloadData) {
         const packet = { event: eventType, sender: playerNumber, data: payloadData };
-
         if (isLocalSimulator) {
-            localStorage.setItem('bloodbound_sim_' + roomCode, JSON.stringify({ packet, time: Date.now() }));
+            localStorage.setItem('sim_event_' + roomCode, JSON.stringify({ packet, time: Date.now() }));
             return;
         }
-
         if (realtimeChannel) {
-            realtimeChannel.send({
-                type: 'broadcast',
-                event: 'game_event',
-                payload: packet
-            });
+            realtimeChannel.send({ type: 'broadcast', event: 'game_event', payload: packet });
         }
     }
 
     function handleSimulatorStorage(e) {
-        if (e.key === 'bloodbound_sim_' + roomCode && e.newValue) {
-            try {
-                const parsed = JSON.parse(e.newValue);
-                handleRemoteEvent(parsed.packet);
-            } catch(err) {}
+        if (e.key === 'sim_event_' + roomCode && e.newValue) {
+            try { handleRemoteEvent(JSON.parse(e.newValue).packet); } catch(err) {}
         }
     }
 
@@ -489,85 +362,56 @@
             case 'PLAYER_JOINED':
                 if (playerNumber === 1) {
                     document.getElementById('lobby-modal').classList.add('hidden');
-                    showToast('Player 2 connected!', '#10b981');
-                    // Sync initial symmetrical PvP board state to Player 2
-                    broadcastEvent('START_GAME_SYNC', { 
-                        unitsState: units.map(u => ({ id: u.id, name: u.name, team: u.team, maxHp: u.maxHp, hp: u.hp, atk: u.atk, moveRange: u.moveRange, dashRange: u.dashRange, atkRange: u.atkRange, accuracy: u.accuracy, actions: u.actions, x: u.x, z: u.z })),
-                        p1Order: p1TurnOrder.map(u => u.id),
-                        p2Order: p2TurnOrder.map(u => u.id),
-                        p1Idx: p1TurnIndex,
-                        p2Idx: p2TurnIndex,
-                        turnTeam: currentTurnTeam
-                    });
+                    startGameSession(true); 
                 }
                 break;
-
-            case 'START_GAME_SYNC':
+            case 'GAME_START':
                 if (playerNumber === 2) {
+                    syncBoardUnits(data.units);
+                    applyNewTurn(data.turnQueue, data.turnIndex);
                     document.getElementById('lobby-modal').classList.add('hidden');
-                    rebuildUnitsFromState(data.unitsState);
-                    p1TurnIndex = data.p1Idx;
-                    p2TurnIndex = data.p2Idx;
-                    currentTurnTeam = data.turnTeam;
-                    showToast('Match started!', '#10b981');
-                    setupTurnForActiveTeam();
+                    document.getElementById('main-menu').classList.add('hidden');
+                    document.getElementById('ui-layer').classList.remove('hidden');
+                    document.getElementById('leave-game-btn').classList.remove('hidden');
                 }
                 break;
-
-            case 'EXECUTE_ACTION':
-                receiveRemoteAction(data);
+            case 'NEW_TURN':
+                applyNewTurn(data.turnQueue, data.turnIndex);
                 break;
-
-            case 'SWITCH_TURN':
-                currentTurnTeam = data.nextTeam;
-                setupTurnForActiveTeam();
+            case 'SYNC_DICE':
+                diceRolled = data.dice;
+                renderRemoteDice();
                 break;
-
-            case 'SET_FACING':
-                const u = units.find(item => item.id === data.unitId);
-                if(u) u.lookAtTile(data.x, data.z);
+            case 'SELECT_DIE':
+                selectedDieIndex = data.index;
+                Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+                if(diceContainer.children[selectedDieIndex]) diceContainer.children[selectedDieIndex].classList.add('selected');
                 break;
-
-            case 'REMATCH_REQUEST':
-                rematchRequestedByOpponent = true;
-                document.getElementById('rematch-status-box').classList.remove('hidden');
-                if (rematchRequestedByMe) resetGameForRematch();
+            case 'ACTION_INTENT':
+                selectedDieIndex = data.dieIndex;
+                executeAction(data);
                 break;
-
-            case 'REMATCH_ACCEPT':
-                resetGameForRematch();
+            case 'SYNC_FACING':
+                if(activeUnit) { activeUnit.lookAtTile(data.x, data.z); }
                 break;
-
+            case 'TURN_ENDED':
+                if (playerNumber === 1) requestAdvanceTurn();
+                break;
             case 'PLAYER_LEFT':
-                showToast('Opponent disconnected.', '#ef4444');
+                showNetToast('Opponent disconnected or left.', 'error');
                 leaveGame();
                 break;
         }
     }
 
-    function rebuildUnitsFromState(stateArr) {
-        units.forEach(u => {
-            scene.remove(u.mesh);
-            if(u.uiEl) u.uiEl.remove();
-        });
-        units = [];
-        for(let x=0; x<BOARD_SIZE; x++) {
-            for(let z=0; z<BOARD_SIZE; z++) tiles[x][z].unit = null;
-        }
-
-        stateArr.forEach(s => {
-            const visColor = s.team === 'player1' ? (s.name === 'Commander' ? 0xfacc15 : 0x3b82f6) : (s.name === 'Commander' ? 0xf43f5e : 0x991b1b);
-            const newU = new Unit({ name: s.name, team: s.team, hp: s.maxHp, atk: s.atk, moveRange: s.moveRange, dashRange: s.dashRange, atkRange: s.atkRange, accuracy: s.accuracy, actions: s.actions, visual: { color: visColor } }, s.x, s.z);
-            newU.id = s.id;
-            newU.hp = s.hp;
-            units.push(newU);
-        });
-
-        p1TurnOrder = shuffleArray(units.filter(u => u.team === 'player1'));
-        p2TurnOrder = shuffleArray(units.filter(u => u.team === 'player2'));
+    function leaveGame() {
+        broadcastEvent('PLAYER_LEFT', {});
+        if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel);
+        window.removeEventListener('storage', handleSimulatorStorage);
+        location.reload(); 
     }
 
-    /** --- SYSTEM & UTILS --- **/
+    /** --- 3D ENGINE, UTILS, VISUALS --- **/
     const ALL_DICE_FACES = {
         'move': { id: 'move', abbr: 'MOV', name: 'MOVE' },
         'attack': { id: 'attack', abbr: 'ATK', name: 'ATTACK' },
@@ -579,61 +423,33 @@
 
     const Tweens = [];
     function tween(obj, props, duration, easing = (t)=>t, onUpdate = null, onComplete = null) {
-        const startProps = {};
-        for (let k in props) startProps[k] = obj[k];
+        const startProps = {}; for (let k in props) startProps[k] = obj[k];
         Tweens.push({ obj, startProps, targetProps: props, duration, elapsed: 0, easing, onUpdate, onComplete });
     }
     function tweenAsync(obj, props, duration, easing = (t)=>t, onUpdate = null) {
-        return new Promise(resolve => {
-            tween(obj, props, duration, easing, onUpdate, resolve);
-        });
+        return new Promise(resolve => tween(obj, props, duration, easing, onUpdate, resolve));
     }
-    
     function updateTweens(dt) {
         for (let i = Tweens.length - 1; i >= 0; i--) {
             let t = Tweens[i];
             t.elapsed += dt;
             let progress = Math.min(t.elapsed / t.duration, 1);
             let e = t.easing(progress);
-            for (let k in t.targetProps) {
-                t.obj[k] = t.startProps[k] + (t.targetProps[k] - t.startProps[k]) * e;
-            }
+            for (let k in t.targetProps) t.obj[k] = t.startProps[k] + (t.targetProps[k] - t.startProps[k]) * e;
             if (t.onUpdate) t.onUpdate();
-            if (progress >= 1) {
-                if (t.onComplete) t.onComplete();
-                Tweens.splice(i, 1);
-            }
+            if (progress >= 1) { if (t.onComplete) t.onComplete(); Tweens.splice(i, 1); }
         }
     }
-    const Easing = {
-        Linear: t => t,
-        OutQuad: t => t * (2 - t),
-        InQuad: t => t * t,
-        OutElastic: t => t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1
-    };
-
+    const Easing = { Linear: t=>t, OutQuad: t=>t*(2-t), InQuad: t=>t*t, OutElastic: t => t===0?0:t===1?1:Math.pow(2,-10*t)*Math.sin((t*10-0.75)*((2*Math.PI)/3))+1 };
     function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
+        let arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
+            [arr[i], arr[j]] = [arr[j], arr[i]];
         }
-        return array;
+        return arr;
     }
 
-    /** --- UI TOGGLE LOGIC --- **/
-    let namesVisible = true;
-    const toggleBtn = document.getElementById('toggle-names-btn');
-    
-    toggleBtn.addEventListener('click', () => {
-        namesVisible = !namesVisible;
-        if(namesVisible) toggleBtn.classList.remove('off');
-        else toggleBtn.classList.add('off');
-        units.forEach(u => {
-            if (!u.hpForceVisible) u.uiEl.style.opacity = namesVisible ? '1' : '0';
-        });
-    });
-
-    /** --- 3D ENGINE SETUP & BOARD SPECS --- **/
     const TILE_SCALE = 1.4;
     const BOARD_SIZE = 8;
     const CENTER_POS = ((BOARD_SIZE - 1) / 2) * TILE_SCALE;
@@ -643,68 +459,38 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050508);
     scene.fog = new THREE.Fog(0x050508, 15, 60);
 
     const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 150);
-    
-    let targetCamTheta = Math.PI / 4;
-    let targetCamPhi = Math.PI / 3;
-    let targetCamRadius = 24;
-    
-    let camTheta = targetCamTheta;
-    let camPhi = targetCamPhi;
-    let camRadius = targetCamRadius;
+    let targetCamTheta = Math.PI / 4, targetCamPhi = Math.PI / 3, targetCamRadius = 24;
+    let camTheta = targetCamTheta, camPhi = targetCamPhi, camRadius = targetCamRadius;
     let cameraShake = { x: 0, y: 0, z: 0, intensity: 0 };
     
-    const ambientLight = new THREE.AmbientLight(0x202030, 2.0);
-    scene.add(ambientLight);
-
+    scene.add(new THREE.AmbientLight(0x202030, 2.0));
     const dirLight = new THREE.DirectionalLight(0xfffaed, 3.0);
     dirLight.position.set(CENTER_POS + 5, 20, CENTER_POS + 5);
     dirLight.castShadow = true;
-    dirLight.shadow.camera.left = -15;
-    dirLight.shadow.camera.right = 15;
-    dirLight.shadow.camera.top = 15;
-    dirLight.shadow.camera.bottom = -15;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
     scene.add(dirLight);
 
     class ParticleSystem {
-        constructor() {
-            this.particles = [];
-            const geo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-            const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            this.meshTemplate = new THREE.Mesh(geo, mat);
-        }
+        constructor() { this.particles = []; this.meshTemplate = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.1), new THREE.MeshBasicMaterial({color:0xff0000})); }
         spawnBurst(pos, colorHex, count, speed = 1) {
             for(let i=0; i<count; i++) {
                 const p = this.meshTemplate.clone();
-                p.material = p.material.clone();
-                p.material.color.setHex(colorHex);
+                p.material = p.material.clone(); p.material.color.setHex(colorHex);
                 p.position.copy(pos);
-                const vx = (Math.random() - 0.5) * speed;
-                const vy = (Math.random() * 0.5 + 0.5) * speed;
-                const vz = (Math.random() - 0.5) * speed;
                 scene.add(p);
-                this.particles.push({ mesh: p, vel: new THREE.Vector3(vx, vy, vz), life: 1.0 });
+                this.particles.push({ mesh: p, vel: new THREE.Vector3((Math.random()-0.5)*speed, (Math.random()*0.5+0.5)*speed, (Math.random()-0.5)*speed), life: 1.0 });
             }
         }
         update(dt) {
             for(let i = this.particles.length-1; i>=0; i--) {
-                let p = this.particles[i];
-                p.life -= dt * 2;
-                p.vel.y -= dt * 3;
-                p.mesh.position.addScaledVector(p.vel, dt);
-                p.mesh.scale.setScalar(p.life);
-                if(p.life <= 0) {
-                    scene.remove(p.mesh);
-                    this.particles.splice(i, 1);
-                }
+                let p = this.particles[i]; p.life -= dt * 2; p.vel.y -= dt * 3; p.mesh.position.addScaledVector(p.vel, dt); p.mesh.scale.setScalar(p.life);
+                if(p.life <= 0) { scene.remove(p.mesh); this.particles.splice(i, 1); }
             }
         }
     }
@@ -715,37 +501,17 @@
     function spawnFloatingText(unit, text, color, emptyTargetPos = null) {
         const el = document.createElement('div');
         el.innerText = text;
-        el.style.position = 'absolute';
-        el.style.color = color;
-        el.style.fontWeight = '900';
-        el.style.fontSize = '24px';
-        el.style.textShadow = '0px 2px 4px black, 0px 0px 8px rgba(0,0,0,0.8)';
-        el.style.pointerEvents = 'none';
-        el.style.zIndex = '100';
-        el.style.transition = 'all 1s ease-out';
-        
-        let pos = emptyTargetPos ? emptyTargetPos.clone() : unit.mesh.position.clone();
-        pos.y += 2.5;
-        pos.project(camera);
-        const x = (pos.x * .5 + .5) * window.innerWidth;
-        const y = (pos.y * -.5 + .5) * window.innerHeight;
-        
-        el.style.left = `${x}px`;
-        el.style.top = `${y}px`;
+        Object.assign(el.style, { position: 'absolute', color: color, fontWeight: '900', fontSize: '24px', textShadow: '0px 2px 4px black, 0px 0px 8px rgba(0,0,0,0.8)', pointerEvents: 'none', zIndex: '100', transition: 'all 1s ease-out', opacity: '1' });
+        let pos = emptyTargetPos ? emptyTargetPos.clone() : unit.mesh.position.clone(); pos.y += 2.5; pos.project(camera);
+        el.style.left = `${(pos.x * .5 + .5) * window.innerWidth}px`; el.style.top = `${(pos.y * -.5 + .5) * window.innerHeight}px`;
         el.style.transform = 'translate(-50%, -50%) scale(0.5)';
-        el.style.opacity = '1';
         document.body.appendChild(el);
-        
-        setTimeout(() => { el.style.transform = 'translate(-50%, -150%) scale(1.2)'; }, 10);
-        setTimeout(() => { el.style.opacity = '0'; }, 500);
-        setTimeout(() => { el.remove(); }, 1050);
+        setTimeout(() => el.style.transform = 'translate(-50%, -150%) scale(1.2)', 10);
+        setTimeout(() => el.style.opacity = '0', 500); setTimeout(() => el.remove(), 1050);
     }
 
-    /** --- BOARD & SYMMETRICAL PVP ROSTERS --- **/
-    const tiles = [];
-    const tileMeshes = [];
-    let units = [];
-
+    /** --- BOARD & UNITS --- **/
+    let tiles = [], tileMeshes = [], units = [];
     const matTileDark = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.9, metalness: 0.1 });
     const matTileLight = new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.9, metalness: 0.1 });
     const matTileHighlight = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5, transparent: true, opacity: 0.5 });
@@ -755,305 +521,147 @@
     const matTileActive = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, emissive: 0xa16207, emissiveIntensity: 0.5 });
 
     const boardGroup = new THREE.Group();
-    const tileGeo = new THREE.BoxGeometry(0.96 * TILE_SCALE, 0.2, 0.96 * TILE_SCALE);
     for (let x = 0; x < BOARD_SIZE; x++) {
         tiles[x] = [];
         for (let z = 0; z < BOARD_SIZE; z++) {
             const isLight = (x + z) % 2 === 0;
-            const mesh = new THREE.Mesh(tileGeo, isLight ? matTileLight : matTileDark);
-            mesh.position.set(x * TILE_SCALE, 0, z * TILE_SCALE);
-            mesh.receiveShadow = true;
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.96 * TILE_SCALE, 0.2, 0.96 * TILE_SCALE), isLight ? matTileLight : matTileDark);
+            mesh.position.set(x * TILE_SCALE, 0, z * TILE_SCALE); mesh.receiveShadow = true;
             mesh.userData = { x, z, originalMat: mesh.material };
-            boardGroup.add(mesh);
-            tiles[x][z] = { mesh, unit: null, type: 'normal' };
-            tileMeshes.push(mesh);
+            boardGroup.add(mesh); tiles[x][z] = { mesh, unit: null }; tileMeshes.push(mesh);
         }
     }
     scene.add(boardGroup);
 
     class Unit {
-        constructor(config, x, z) {
-            this.id = Math.random().toString(36).substr(2, 9);
-            this.name = config.name;
-            this.team = config.team; // 'player1' or 'player2'
-            this.maxHp = config.hp;
-            this.hp = config.hp;
-            this.atk = config.atk;
-            this.moveRange = config.moveRange;
-            this.dashRange = config.dashRange;
-            this.atkRange = config.atkRange;
-            this.actions = config.actions;
-            this.accuracy = config.accuracy;
-            this.x = x;
-            this.z = z;
-            this.isDefending = false;
-            this.hpForceVisible = false;
+        constructor(config, id, x, z, team) {
+            this.id = id; this.name = config.name; this.team = team;
+            this.maxHp = config.maxHp; this.hp = config.maxHp; this.atk = config.atk;
+            this.moveRange = config.moveRange; this.dashRange = config.dashRange;
+            this.atkRange = config.atkRange; this.actions = config.actions; this.accuracy = config.accuracy;
+            this.x = x; this.z = z; this.isDefending = false; this.hpForceVisible = false;
 
             this.parts = {};
-            this.mesh = this.buildRiggedHumanoid(config.visual);
+            this.mesh = this.buildRiggedHumanoid(team === 1 ? config.color1 : config.color2, team);
             this.mesh.position.set(x * TILE_SCALE, 0.2, z * TILE_SCALE);
             scene.add(this.mesh);
             
-            const shieldGeo = new THREE.SphereGeometry(0.6, 16, 16);
-            const shieldMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.3, wireframe: true });
-            this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
-            this.shieldMesh.position.y = 0.8;
-            this.shieldMesh.visible = false;
+            this.shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.3, wireframe: true }));
+            this.shieldMesh.position.y = 0.8; this.shieldMesh.visible = false;
             this.mesh.add(this.shieldMesh);
 
-            this.uiEl = document.createElement('div');
-            this.uiEl.className = 'hp-bar';
+            this.uiEl = document.createElement('div'); this.uiEl.className = 'hp-bar';
             this.uiEl.innerHTML = `<div>${this.name}</div><div class="hp-fill" style="width:100%"></div>`;
             this.uiEl.style.opacity = namesVisible ? '1' : '0';
             document.getElementById('hp-container').appendChild(this.uiEl);
 
             tiles[x][z].unit = this;
             this.updateUIPosition();
+            if(team === 2) this.mesh.rotation.y = Math.PI;
         }
 
-        buildRiggedHumanoid(vis) {
+        buildRiggedHumanoid(colorHex, team) {
             const group = new THREE.Group();
-            const matBody = new THREE.MeshStandardMaterial({ color: vis.color, roughness: 0.6, metalness: 0.2 });
-            const matSkin = new THREE.MeshStandardMaterial({ color: 0xffdcb3, roughness: 0.4 });
-            const matDark = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
-            const matMetal = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
-
-            const torsoGeo = new THREE.BoxGeometry(0.5, 0.7, 0.35);
-            const torso = new THREE.Mesh(torsoGeo, matBody);
-            torso.position.y = 0.85;
-            torso.castShadow = true;
-            group.add(torso);
-            this.parts.torso = torso;
-
-            const legGeo = new THREE.BoxGeometry(0.18, 0.4, 0.18);
-            const legR = new THREE.Mesh(legGeo, matBody);
-            legR.position.set(0.15, -0.55, 0);
-            legR.castShadow = true;
-            torso.add(legR);
-            this.parts.legR = legR;
-
-            const legL = new THREE.Mesh(legGeo, matBody);
-            legL.position.set(-0.15, -0.55, 0);
-            legL.castShadow = true;
-            torso.add(legL);
-            this.parts.legL = legL;
-
-            const headGeo = new THREE.BoxGeometry(0.35, 0.35, 0.35);
-            const head = new THREE.Mesh(headGeo, this.team === 'player2' ? matDark : matSkin);
-            head.position.y = 0.6;
-            head.castShadow = true;
-            torso.add(head);
-            this.parts.head = head;
+            const matBody = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.6, metalness: 0.2 });
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.35), matBody); torso.position.y = 0.85; torso.castShadow = true; group.add(torso); this.parts.torso = torso;
             
-            const visorGeo = new THREE.BoxGeometry(0.36, 0.1, 0.1);
-            const matEye = new THREE.MeshStandardMaterial({ color: this.team === 'player2' ? 0xff0000 : 0xffffff, emissive: this.team === 'player2' ? 0xff0000 : 0x000000 });
-            const visor = new THREE.Mesh(visorGeo, matEye);
-            visor.position.set(0, 0, 0.15);
-            head.add(visor);
+            const legR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.4, 0.18), matBody); legR.position.set(0.15, -0.55, 0); legR.castShadow = true; torso.add(legR); this.parts.legR = legR;
+            const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.4, 0.18), matBody); legL.position.set(-0.15, -0.55, 0); legL.castShadow = true; torso.add(legL); this.parts.legL = legL;
 
-            const armRGroup = new THREE.Group();
-            armRGroup.position.set(0.35, 0.25, 0); 
-            const armGeo = new THREE.BoxGeometry(0.2, 0.5, 0.2);
-            const armR = new THREE.Mesh(armGeo, matBody);
-            armR.position.y = -0.25; 
-            armR.castShadow = true;
-            armRGroup.add(armR);
-            torso.add(armRGroup);
-            this.parts.armR = armRGroup;
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), new THREE.MeshStandardMaterial({ color: 0xffdcb3, roughness: 0.4 })); head.position.y = 0.6; head.castShadow = true; torso.add(head); this.parts.head = head;
+            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: team === 2 ? 0xff0000 : 0xffffff, emissive: team === 2 ? 0xff0000 : 0x000000 })); visor.position.set(0, 0, 0.15); head.add(visor);
 
-            const armLGroup = new THREE.Group();
-            armLGroup.position.set(-0.35, 0.25, 0); 
-            const armL = new THREE.Mesh(armGeo, matBody);
-            armL.position.y = -0.25;
-            armL.castShadow = true;
-            armLGroup.add(armL);
-            torso.add(armLGroup);
-            this.parts.armL = armLGroup;
+            const armRGroup = new THREE.Group(); armRGroup.position.set(0.35, 0.25, 0); 
+            const armR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), matBody); armR.position.y = -0.25; armR.castShadow = true; armRGroup.add(armR); torso.add(armRGroup); this.parts.armR = armRGroup;
+            const armLGroup = new THREE.Group(); armLGroup.position.set(-0.35, 0.25, 0); 
+            const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), matBody); armL.position.y = -0.25; armL.castShadow = true; armLGroup.add(armL); torso.add(armLGroup); this.parts.armL = armLGroup;
 
-            if (this.name === 'Vanguard' || this.name === 'Commander' || this.team === 'player2') {
-                const swordGeo = new THREE.BoxGeometry(0.1, 0.8, 0.2);
-                const sword = new THREE.Mesh(swordGeo, matMetal);
-                sword.position.set(0, -0.4, 0.2);
-                sword.rotation.x = Math.PI / 2;
-                armRGroup.add(sword);
-                if(this.name === 'Vanguard' || this.name === 'Commander') {
-                    const shieldBoxGeo = new THREE.BoxGeometry(0.1, 0.8, 0.6);
-                    const shieldBox = new THREE.Mesh(shieldBoxGeo, matBody);
-                    shieldBox.position.set(-0.2, -0.2, 0);
-                    armLGroup.add(shieldBox);
-                }
-            } else if (this.name === 'Mage') {
-                const staffGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.2);
-                const staffMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 });
-                const staff = new THREE.Mesh(staffGeo, staffMat);
-                staff.position.set(0, -0.2, 0.2);
-                staff.rotation.x = Math.PI / 2;
-                const gemGeo = new THREE.SphereGeometry(0.15);
-                const gemMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, emissive: 0x0ea5e9 });
-                const gem = new THREE.Mesh(gemGeo, gemMat);
-                gem.position.y = 0.6;
-                staff.add(gem);
-                armRGroup.add(staff);
-            } else if (this.name === 'Archer') {
-                const bowGeo = new THREE.BoxGeometry(0.1, 1.0, 0.1);
-                const bowMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
-                const bow = new THREE.Mesh(bowGeo, bowMat);
-                bow.position.set(0, -0.2, 0.2);
-                armLGroup.add(bow);
-            } else if (this.name === 'Assassin') {
-                const daggerGeo = new THREE.BoxGeometry(0.05, 0.4, 0.1);
-                const dagger1 = new THREE.Mesh(daggerGeo, matMetal);
-                dagger1.position.set(0, -0.2, 0.2);
-                dagger1.rotation.x = Math.PI / 2;
-                armRGroup.add(dagger1);
-                const dagger2 = dagger1.clone();
-                armLGroup.add(dagger2);
+            const matMetal = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
+            if (this.name === 'Vanguard' || this.name === 'Commander') {
+                const sword = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.2), matMetal); sword.position.set(0, -0.4, 0.2); sword.rotation.x = Math.PI / 2; armRGroup.add(sword);
+                const shieldBox = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.6), matBody); shieldBox.position.set(-0.2, -0.2, 0); armLGroup.add(shieldBox);
             }
-            group.userData.unitMesh = true; 
-            return group;
+            else if (this.name === 'Mage') {
+                const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.2), new THREE.MeshStandardMaterial({ color: 0x5c4033 })); staff.position.set(0, -0.2, 0.2); staff.rotation.x = Math.PI / 2;
+                const gem = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshStandardMaterial({ color: 0x0ea5e9, emissive: 0x0ea5e9 })); gem.position.y = 0.6; staff.add(gem); armRGroup.add(staff);
+            }
+            else if (this.name === 'Archer') {
+                const bow = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 0.1), new THREE.MeshStandardMaterial({ color: 0x8b5a2b })); bow.position.set(0, -0.2, 0.2); armLGroup.add(bow);
+            }
+            else if (this.name === 'Assassin') {
+                const dagger1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.4, 0.1), matMetal); dagger1.position.set(0, -0.2, 0.2); dagger1.rotation.x = Math.PI / 2; armRGroup.add(dagger1);
+                const dagger2 = dagger1.clone(); armLGroup.add(dagger2);
+            }
+            group.userData.unitMesh = true; return group;
         }
 
         updateUIPosition() {
-            const pos = this.mesh.position.clone();
-            pos.y += 1.8;
-            pos.project(camera);
-            const x = (pos.x * .5 + .5) * window.innerWidth;
-            const y = (pos.y * -.5 + .5) * window.innerHeight;
-            this.uiEl.style.left = `${x}px`;
-            this.uiEl.style.top = `${y}px`;
+            const pos = this.mesh.position.clone(); pos.y += 1.8; pos.project(camera);
+            this.uiEl.style.left = `${(pos.x * .5 + .5) * window.innerWidth}px`; this.uiEl.style.top = `${(pos.y * -.5 + .5) * window.innerHeight}px`;
         }
-
-        setDefending(val) {
-            this.isDefending = val;
-            this.shieldMesh.visible = val;
-        }
-
+        setDefending(val) { this.isDefending = val; this.shieldMesh.visible = val; }
         takeDamage(amount) {
-            if(this.isDefending) {
-                amount = Math.max(1, Math.floor(amount / 2));
-                vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0x3b82f6, 10, 2);
-            }
+            if(this.isDefending) { amount = Math.max(1, Math.floor(amount / 2)); vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0x3b82f6, 10, 2); }
             this.hp = Math.max(0, this.hp - amount);
             this.uiEl.querySelector('.hp-fill').style.width = `${(this.hp / this.maxHp) * 100}%`;
-            
-            this.hpForceVisible = true;
-            this.uiEl.style.opacity = '1';
+            this.hpForceVisible = true; this.uiEl.style.opacity = '1';
             if (this.hpForceTimeout) clearTimeout(this.hpForceTimeout);
-            this.hpForceTimeout = setTimeout(() => {
-                this.hpForceVisible = false;
-                if (!namesVisible) this.uiEl.style.opacity = '0';
-            }, 2000);
-
+            this.hpForceTimeout = setTimeout(() => { this.hpForceVisible = false; if (!namesVisible) this.uiEl.style.opacity = '0'; }, 2000);
             vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0xe11d48, 20, 3);
             triggerShake(0.2);
-
-            const bodyMat = this.parts.torso.material;
-            const ogColor = bodyMat.color.getHex();
-            bodyMat.color.setHex(0xff0000);
-            setTimeout(() => { if(this.hp>0 && this.mesh) bodyMat.color.setHex(ogColor); }, 150);
-
+            const ogColor = this.parts.torso.material.color.getHex(); this.parts.torso.material.color.setHex(0xff0000);
+            setTimeout(() => { if(this.hp>0 && this.mesh) this.parts.torso.material.color.setHex(ogColor); }, 150);
             if (this.hp <= 0) this.die();
         }
-
         die() {
-            tiles[this.x][this.z].unit = null;
-            this.uiEl.style.opacity = '0';
+            tiles[this.x][this.z].unit = null; this.uiEl.style.opacity = '0';
             tween(this.parts.torso.rotation, {x: -Math.PI/2}, 0.4, Easing.OutQuad);
-            
             setTimeout(() => {
                 vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.2, 0)), 0xff0000, 60, 6);
                 tween(this.mesh.position, {y: -2}, 0.5, Easing.InQuad, null, () => {
-                    scene.remove(this.mesh);
-                    this.uiEl.remove();
-                    units = units.filter(u => u !== this);
-                    triggerShake(0.4);
-                    checkWinCondition();
+                    scene.remove(this.mesh); this.uiEl.remove();
+                    units = units.filter(u => u !== this); triggerShake(0.4); checkWinCondition();
                 });
             }, 400);
         }
-
         lookAtTile(tx, tz) {
-            const dx = (tx * TILE_SCALE) - this.mesh.position.x;
-            const dz = (tz * TILE_SCALE) - this.mesh.position.z;
+            const dx = (tx * TILE_SCALE) - this.mesh.position.x; const dz = (tz * TILE_SCALE) - this.mesh.position.z;
             if(dx === 0 && dz === 0) return; 
-            
-            const angle = Math.atan2(dx, dz);
-            let currentY = this.mesh.rotation.y;
-            let diff = angle - currentY;
-            while(diff < -Math.PI) diff += Math.PI * 2;
-            while(diff > Math.PI) diff -= Math.PI * 2;
-            tween(this.mesh.rotation, { y: currentY + diff }, 0.2, Easing.OutQuad);
+            let angle = Math.atan2(dx, dz); let diff = angle - this.mesh.rotation.y;
+            while(diff < -Math.PI) diff += Math.PI * 2; while(diff > Math.PI) diff -= Math.PI * 2;
+            tween(this.mesh.rotation, { y: this.mesh.rotation.y + diff }, 0.2, Easing.OutQuad);
         }
     }
 
-    const UNIT_TYPES_P1 = {
-        commander: { name: 'Commander', team: 'player1', hp: 12, atk: 4, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.95, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0xfacc15 } },
-        vanguard: { name: 'Vanguard', team: 'player1', hp: 15, atk: 3, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.90, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x3b82f6 } },
-        assassin: { name: 'Assassin', team: 'player1', hp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x8b5cf6 } },
-        archer: { name: 'Archer', team: 'player1', hp: 8, atk: 3, moveRange: 2, dashRange: 4, atkRange: 4, accuracy: 0.92, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x10b981 } },
-        mage: { name: 'Mage', team: 'player1', hp: 6, atk: 4, moveRange: 2, dashRange: 4, atkRange: 3, accuracy: 0.85, actions: ['move', 'dash', 'magic', 'defend', 'wild'], visual: { color: 0x0ea5e9 } }
+    const UNIT_TYPES = {
+        commander: { name: 'Commander', maxHp: 12, atk: 4, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.95, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x2563eb, color2: 0xdc2626 },
+        vanguard: { name: 'Vanguard', maxHp: 15, atk: 3, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.90, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x3b82f6, color2: 0xef4444 },
+        assassin: { name: 'Assassin', maxHp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x8b5cf6, color2: 0xb91c1c },
+        archer: { name: 'Archer', maxHp: 8, atk: 3, moveRange: 2, dashRange: 4, atkRange: 4, accuracy: 0.92, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x10b981, color2: 0xf87171 },
+        mage: { name: 'Mage', maxHp: 6, atk: 4, moveRange: 2, dashRange: 4, atkRange: 3, accuracy: 0.85, actions: ['move', 'dash', 'magic', 'defend', 'wild'], color1: 0x0ea5e9, color2: 0xfca5a5 }
     };
 
-    const UNIT_TYPES_P2 = {
-        commander: { name: 'Commander', team: 'player2', hp: 12, atk: 4, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.95, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0xf43f5e } },
-        vanguard: { name: 'Vanguard', team: 'player2', hp: 15, atk: 3, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.90, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x991b1b } },
-        assassin: { name: 'Assassin', team: 'player2', hp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x7c2d12 } },
-        archer: { name: 'Archer', team: 'player2', hp: 8, atk: 3, moveRange: 2, dashRange: 4, atkRange: 4, accuracy: 0.92, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0xbe123c } },
-        mage: { name: 'Mage', team: 'player2', hp: 6, atk: 4, moveRange: 2, dashRange: 4, atkRange: 3, accuracy: 0.85, actions: ['move', 'dash', 'magic', 'defend', 'wild'], visual: { color: 0xe11d48 } }
-    };
-
-    function initBoardUnits() {
-        units.forEach(u => {
-            scene.remove(u.mesh);
-            if(u.uiEl) u.uiEl.remove();
-        });
-        units = [];
-        for(let x=0; x<BOARD_SIZE; x++) {
-            for(let z=0; z<BOARD_SIZE; z++) tiles[x][z].unit = null;
-        }
-
-        // Player 1 Roster (Bottom Side - z = 7 & 6)
-        units.push(new Unit(UNIT_TYPES_P1.commander, 3, 7));
-        units.push(new Unit(UNIT_TYPES_P1.vanguard, 2, 6));
-        units.push(new Unit(UNIT_TYPES_P1.vanguard, 4, 6));
-        units.push(new Unit(UNIT_TYPES_P1.assassin, 1, 7));
-        units.push(new Unit(UNIT_TYPES_P1.archer, 5, 7));
-
-        // Player 2 Symmetrical Roster (Top Side - z = 0 & 1)
-        units.push(new Unit(UNIT_TYPES_P2.commander, 4, 0));
-        units.push(new Unit(UNIT_TYPES_P2.vanguard, 3, 1));
-        units.push(new Unit(UNIT_TYPES_P2.vanguard, 5, 1));
-        units.push(new Unit(UNIT_TYPES_P2.assassin, 6, 0));
-        units.push(new Unit(UNIT_TYPES_P2.archer, 2, 0));
-    }
-
-    /** --- GAME STATE & TURN LOGIC --- **/
+    /** --- MULTIPLAYER GAME LOOP & TURNS --- **/
     let state = 'IDLE'; 
-    let ap = 0;
-    let diceRolled = [];
-    let activeUnit = null;
-    let selectedDieIndex = -1;
-    let highlightMeshes = [];
+    let ap = 0; let diceRolled = []; let activeUnit = null; let selectedDieIndex = -1; let highlightMeshes = [];
+    let turnQueue = []; let currentTurnIndex = 0;
     
-    let p1TurnOrder = [];
-    let p2TurnOrder = [];
-    let p1TurnIndex = 0;
-    let p2TurnIndex = 0;
-    let currentTurnTeam = 'player1'; // 'player1' or 'player2'
+    let namesVisible = true;
+    document.getElementById('toggle-names-btn').addEventListener('click', () => {
+        namesVisible = !namesVisible;
+        document.getElementById('toggle-names-btn').classList.toggle('off', !namesVisible);
+        units.forEach(u => { if (!u.hpForceVisible) u.uiEl.style.opacity = namesVisible ? '1' : '0'; });
+    });
 
-    initBoardUnits();
-    p1TurnOrder = shuffleArray(units.filter(u => u.team === 'player1'));
-    p2TurnOrder = shuffleArray(units.filter(u => u.team === 'player2'));
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    const toastEl = document.getElementById('toast');
     const apContainer = document.getElementById('ap-container');
     const diceContainer = document.getElementById('dice-container');
-    const unitInfo = document.getElementById('unit-info');
     const btnEndTurn = document.getElementById('btn-end-turn');
-
+    
+    function showToast(msg, color = 'white') {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.color = color; t.style.opacity = 1; t.style.transform = 'translate(-50%, -50%) scale(1.1)';
+        setTimeout(() => { t.style.opacity = 0; t.style.transform = 'translate(-50%, -50%) scale(1)'; }, 1500);
+    }
     function updateAPUI() {
         apContainer.innerHTML = '';
         for(let i=0; i<3; i++) {
@@ -1062,691 +670,521 @@
         }
     }
 
-    function rollDice() {
-        diceRolled = [];
-        diceContainer.innerHTML = '';
+    function generateUnitId() { return 'u_' + Math.random().toString(36).substr(2, 9); }
+
+    function startGameSession(isHost) {
+        if(isHost) {
+            const rosterDef = [
+                { type: UNIT_TYPES.commander, x: 3, z: 7 }, { type: UNIT_TYPES.vanguard, x: 2, z: 6 }, { type: UNIT_TYPES.vanguard, x: 4, z: 6 },
+                { type: UNIT_TYPES.assassin, x: 1, z: 7 }, { type: UNIT_TYPES.archer, x: 5, z: 7 }, { type: UNIT_TYPES.mage, x: 4, z: 7 }
+            ];
+            const syncData = [];
+            rosterDef.forEach(r => syncData.push({ id: generateUnitId(), typeKey: Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k]===r.type), x: r.x, z: r.z, team: 1 }));
+            rosterDef.forEach(r => syncData.push({ id: generateUnitId(), typeKey: Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k]===r.type), x: BOARD_SIZE - 1 - r.x, z: BOARD_SIZE - 1 - r.z, team: 2 }));
+            
+            syncBoardUnits(syncData);
+            turnQueue = shuffleArray(units.map(u => u.id));
+            currentTurnIndex = 0;
+            
+            broadcastEvent('GAME_START', { units: syncData, turnQueue, turnIndex: currentTurnIndex });
+            
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('ui-layer').classList.remove('hidden');
+            document.getElementById('leave-game-btn').classList.remove('hidden');
+            applyNewTurn(turnQueue, currentTurnIndex);
+        }
+    }
+
+    function syncBoardUnits(unitConfigs) {
+        units.forEach(u => { scene.remove(u.mesh); u.uiEl.remove(); });
+        units = [];
+        for(let tx=0; tx<BOARD_SIZE; tx++) for(let tz=0; tz<BOARD_SIZE; tz++) tiles[tx][tz].unit = null;
+        unitConfigs.forEach(c => units.push(new Unit(UNIT_TYPES[c.typeKey], c.id, c.x, c.z, c.team)));
+    }
+
+    function requestAdvanceTurn() {
+        if (playerNumber === 1) { // Host resolves queue logic
+            let nextIndex = currentTurnIndex + 1;
+            let nQueue = turnQueue;
+            if (nextIndex >= nQueue.length) {
+                nQueue = shuffleArray(units.map(u => u.id));
+                nextIndex = 0;
+            }
+            broadcastEvent('NEW_TURN', { turnQueue: nQueue, turnIndex: nextIndex });
+            applyNewTurn(nQueue, nextIndex);
+        }
+    }
+
+    function applyNewTurn(queue, index) {
+        turnQueue = queue; currentTurnIndex = index;
+        startTurn();
+    }
+
+    function startTurn() {
+        if (checkWinCondition()) return;
+        state = 'PLAYER_TURN'; ap = 3;
+        activeUnit = units.find(u => u.id === turnQueue[currentTurnIndex]);
+
+        if (!activeUnit) { if(playerNumber === 1) requestAdvanceTurn(); return; }
+
+        activeUnit.setDefending(false); clearHighlights(); updateAPUI();
+
+        const isMyTurn = (activeUnit.team === playerNumber);
         
+        document.getElementById('unit-name').innerText = activeUnit.name;
+        
+        if (isMyTurn) {
+            document.getElementById('turn-indicator').innerText = "YOUR TURN";
+            document.getElementById('turn-indicator').classList.replace('text-red-500', 'text-yellow-400');
+            document.getElementById('unit-desc').innerText = "Select an action.";
+            btnEndTurn.style.display = 'block'; btnEndTurn.innerText = "End Turn"; btnEndTurn.classList.remove('facing-mode');
+            showToast("Your Turn", '#facc15');
+            rollDice();
+            broadcastEvent('SYNC_DICE', { dice: diceRolled });
+        } else {
+            document.getElementById('turn-indicator').innerText = "OPPONENT'S TURN";
+            document.getElementById('turn-indicator').classList.replace('text-yellow-400', 'text-red-500');
+            document.getElementById('unit-desc').innerText = "Opponent is deciding...";
+            btnEndTurn.style.display = 'none';
+            showToast("Enemy Acts", '#ef4444');
+            diceContainer.innerHTML = ''; 
+        }
+
+        tween(activeUnit.mesh.scale, {y: 1.3}, 0.15, Easing.OutQuad, null, () => tween(activeUnit.mesh.scale, {y: 1.0}, 0.15, Easing.InQuad));
+    }
+
+    function rollDice() {
+        diceRolled = []; diceContainer.innerHTML = '';
         const movActs = activeUnit.actions.filter(a => a === 'move' || a === 'dash');
         const offActs = activeUnit.actions.filter(a => a === 'attack' || a === 'magic');
         const utilActs = activeUnit.actions.filter(a => a === 'defend' || a === 'wild');
-        
-        const generatedFaces = [];
-        if(movActs.length > 0) generatedFaces.push(movActs[Math.floor(Math.random() * movActs.length)]);
-        if(offActs.length > 0) generatedFaces.push(offActs[Math.floor(Math.random() * offActs.length)]);
-        if(utilActs.length > 0) generatedFaces.push(utilActs[Math.floor(Math.random() * utilActs.length)]);
-        
-        while(generatedFaces.length < 3) {
-            generatedFaces.push(activeUnit.actions[Math.floor(Math.random() * activeUnit.actions.length)]);
-        }
-        
-        shuffleArray(generatedFaces);
+        const gen = [];
+        if(movActs.length) gen.push(movActs[Math.floor(Math.random() * movActs.length)]);
+        if(offActs.length) gen.push(offActs[Math.floor(Math.random() * offActs.length)]);
+        if(utilActs.length) gen.push(utilActs[Math.floor(Math.random() * utilActs.length)]);
+        while(gen.length < 3) gen.push(activeUnit.actions[Math.floor(Math.random() * activeUnit.actions.length)]);
+        shuffleArray(gen);
         
         for(let i=0; i<3; i++) {
-            const d = ALL_DICE_FACES[generatedFaces[i]];
-            diceRolled.push({ ...d, used: false });
-            
+            const d = ALL_DICE_FACES[gen[i]]; diceRolled.push({ ...d, used: false });
             const btn = document.createElement('button');
             btn.className = `die-btn rolling`;
             btn.innerHTML = `<span class="die-icon">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-gray-200 relative z-10">${d.name}</span>`;
             btn.onclick = () => selectDie(i, btn);
             diceContainer.appendChild(btn);
-            
             setTimeout(() => btn.classList.remove('rolling'), 500);
         }
     }
 
-    function selectDie(index, btnEl) {
-        if (state !== 'PLAYER_TURN' || diceRolled[index].used) return;
-        
-        // Enforce online player turn restrictions
-        const isMyTeamTurn = (playerNumber === 1 && currentTurnTeam === 'player1') || (playerNumber === 2 && currentTurnTeam === 'player2');
-        if (isMultiplayerActive && !isMyTeamTurn) {
-            showToast("Not your turn / army!", '#ef4444');
-            return;
-        }
+    function renderRemoteDice() {
+        diceContainer.innerHTML = '';
+        diceRolled.forEach((d, i) => {
+            const btn = document.createElement('button');
+            btn.className = `die-btn pointer-events-none ${d.used ? 'used' : ''}`;
+            btn.innerHTML = `<span class="die-icon">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-gray-200 relative z-10">${d.name}</span>`;
+            diceContainer.appendChild(btn);
+        });
+    }
 
+    function selectDie(index, btnEl) {
+        if (state !== 'PLAYER_TURN' || diceRolled[index].used || activeUnit.team !== playerNumber) return;
         selectedDieIndex = index;
         Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
         btnEl.classList.add('selected');
-        
+        broadcastEvent('SELECT_DIE', { index });
+
         const die = diceRolled[index];
         if(die.id === 'defend') {
-            executeActionLocally({type: 'defend'});
+            const intent = { targetInfo: { type: 'defend' }, dieIndex: index };
+            broadcastEvent('ACTION_INTENT', intent);
+            executeAction(intent);
             return;
         }
         showValidTargets(die.id);
     }
 
     function clearHighlights() {
-        tileMeshes.forEach(m => {
-            if (activeUnit && m.userData.x === activeUnit.x && m.userData.z === activeUnit.z) {
-                m.material = matTileActive;
-            } else {
-                m.material = m.userData.originalMat;
-            }
-        });
+        tileMeshes.forEach(m => m.material = (activeUnit && m.userData.x === activeUnit.x && m.userData.z === activeUnit.z) ? matTileActive : m.userData.originalMat);
         highlightMeshes = [];
     }
 
     function showValidTargets(actionType) {
         clearHighlights();
-        const isMove = actionType === 'move' || actionType === 'wild';
-        const isDash = actionType === 'dash' || actionType === 'wild';
-        const isAttack = actionType === 'attack' || actionType === 'magic' || actionType === 'wild';
-        
+        const isMove = actionType === 'move' || actionType === 'wild', isDash = actionType === 'dash' || actionType === 'wild', isAttack = actionType === 'attack' || actionType === 'magic' || actionType === 'wild';
         let maxRange = 0;
-        if (isDash) maxRange = Math.max(maxRange, activeUnit.dashRange);
-        if (isMove) maxRange = Math.max(maxRange, activeUnit.moveRange);
+        if (isDash) maxRange = Math.max(maxRange, activeUnit.dashRange); if (isMove) maxRange = Math.max(maxRange, activeUnit.moveRange);
 
         let distMap = {};
-        for(let ix = 0; ix < BOARD_SIZE; ix++) {
-            distMap[ix] = {};
-            for(let iz = 0; iz < BOARD_SIZE; iz++) distMap[ix][iz] = 999;
-        }
-        
+        for(let ix = 0; ix < BOARD_SIZE; ix++) { distMap[ix] = {}; for(let iz = 0; iz < BOARD_SIZE; iz++) distMap[ix][iz] = 999; }
         if (isMove || isDash) {
-            let queue = [{x: activeUnit.x, z: activeUnit.z, d: 0}];
-            distMap[activeUnit.x][activeUnit.z] = 0;
-            
+            let queue = [{x: activeUnit.x, z: activeUnit.z, d: 0}]; distMap[activeUnit.x][activeUnit.z] = 0;
             while(queue.length > 0) {
-                let {x, z, d} = queue.shift();
-                if (d >= maxRange) continue;
-                
-                const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
-                for (let i = 0; i < dirs.length; i++) {
-                    let nx = x + dirs[i][0];
-                    let nz = z + dirs[i][1];
+                let {x, z, d} = queue.shift(); if (d >= maxRange) continue;
+                [[0,1],[0,-1],[1,0],[-1,0]].forEach(dir => {
+                    let nx = x + dir[0], nz = z + dir[1];
                     if (nx >= 0 && nx < BOARD_SIZE && nz >= 0 && nz < BOARD_SIZE) {
                         let tile = tiles[nx][nz];
-                        let isEnemy = tile.unit && tile.unit.team !== activeUnit.team;
-                        let cost = d + 1;
-                        if (!isEnemy && cost < distMap[nx][nz]) {
-                            distMap[nx][nz] = cost;
-                            queue.push({x: nx, z: nz, d: cost});
+                        if ((!tile.unit || tile.unit.team === activeUnit.team) && d + 1 < distMap[nx][nz]) { // Allow passing through allies
+                            distMap[nx][nz] = d + 1; queue.push({x: nx, z: nz, d: d + 1});
                         }
                     }
-                }
+                });
             }
         }
-
         for (let x = 0; x < BOARD_SIZE; x++) {
             for (let z = 0; z < BOARD_SIZE; z++) {
-                const manhattanDist = Math.abs(x - activeUnit.x) + Math.abs(z - activeUnit.z);
-                const pathDist = distMap[x][z];
-                const tile = tiles[x][z];
+                const manhattanDist = Math.abs(x - activeUnit.x) + Math.abs(z - activeUnit.z), pathDist = distMap[x][z], tile = tiles[x][z];
                 let highlighted = false;
-
-                if (isDash && pathDist <= activeUnit.dashRange && pathDist > 0 && !tile.unit) {
-                    tile.mesh.material = matTileHighlight;
-                    highlightMeshes.push({x, z, type: 'dash'});
-                    highlighted = true;
-                } else if (!highlighted && isMove && pathDist <= activeUnit.moveRange && pathDist > 0 && !tile.unit) {
-                    tile.mesh.material = matTileHighlight;
-                    highlightMeshes.push({x, z, type: 'move'});
-                }
-                
+                if (isDash && pathDist <= activeUnit.dashRange && pathDist > 0 && !tile.unit) { tile.mesh.material = matTileHighlight; highlightMeshes.push({x, z, type: 'dash'}); highlighted = true; }
+                else if (!highlighted && isMove && pathDist <= activeUnit.moveRange && pathDist > 0 && !tile.unit) { tile.mesh.material = matTileHighlight; highlightMeshes.push({x, z, type: 'move'}); }
                 const canTarget = !tile.unit || tile.unit.team !== activeUnit.team;
                 if (isAttack && manhattanDist <= activeUnit.atkRange && manhattanDist > 0 && canTarget) {
                     if (actionType === 'magic' && activeUnit.name !== 'Mage' && actionType !== 'wild') continue;
                     if (actionType === 'attack' && activeUnit.name === 'Mage' && actionType !== 'wild') continue;
-
-                    tile.mesh.material = matTileAttack;
-                    highlightMeshes.push({x, z, type: 'attack'});
+                    tile.mesh.material = matTileAttack; highlightMeshes.push({x, z, type: 'attack'});
                 }
             }
         }
     }
 
-    /** --- CAMERA & POINTER HANDLING --- **/
-    const activePointers = {};
-    let initialPinchDist = -1;
-    let initialDownX = 0;
-    let initialDownY = 0;
-    let isDraggingCam = false;
+    /** --- INPUT & CAMERA --- **/
+    const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2();
+    const activePointers = {}; let initialPinchDist = -1, initialDownX = 0, initialDownY = 0, isDraggingCam = false;
 
-    window.addEventListener('pointerdown', (e) => {
+    window.addEventListener('pointerdown', e => {
         if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return;
         activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-        if (Object.keys(activePointers).length === 1) {
-            initialDownX = e.clientX;
-            initialDownY = e.clientY;
-            isDraggingCam = false;
-        }
+        if (Object.keys(activePointers).length === 1) { initialDownX = e.clientX; initialDownY = e.clientY; isDraggingCam = false; }
     });
 
-    window.addEventListener('pointermove', (e) => {
+    window.addEventListener('pointermove', e => {
         if(activePointers[e.pointerId]) {
-            const prev = activePointers[e.pointerId];
-            const deltaX = e.clientX - prev.x;
-            const deltaY = e.clientY - prev.y;
+            const prev = activePointers[e.pointerId]; const deltaX = e.clientX - prev.x, deltaY = e.clientY - prev.y;
             activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-            
             const pointerIds = Object.keys(activePointers);
             if (pointerIds.length === 1 && e.buttons === 1 && !e.target.closest('#ui-layer')) {
                 if(Math.hypot(e.clientX - initialDownX, e.clientY - initialDownY) > 5) isDraggingCam = true;
-                targetCamTheta -= deltaX * 0.01;
-                targetCamPhi -= deltaY * 0.01;
-                targetCamPhi = Math.max(0.1, Math.min(Math.PI/2 - 0.05, targetCamPhi));
-                return;
+                targetCamTheta -= deltaX * 0.01; targetCamPhi = Math.max(0.1, Math.min(Math.PI/2 - 0.05, targetCamPhi - deltaY * 0.01)); return;
             } else if (pointerIds.length === 2 && !e.target.closest('#ui-layer')) {
                 isDraggingCam = true;
-                const p1 = activePointers[pointerIds[0]];
-                const p2 = activePointers[pointerIds[1]];
+                const p1 = activePointers[pointerIds[0]], p2 = activePointers[pointerIds[1]];
                 const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-                if (initialPinchDist > 0) {
-                    const pinchDelta = initialPinchDist - dist;
-                    targetCamRadius += pinchDelta * 0.05;
-                    targetCamRadius = Math.max(8, Math.min(45, targetCamRadius));
-                }
-                initialPinchDist = dist;
-                return;
+                if (initialPinchDist > 0) targetCamRadius = Math.max(8, Math.min(45, targetCamRadius + (initialPinchDist - dist) * 0.05));
+                initialPinchDist = dist; return;
             }
         }
 
-        if(state !== 'PLAYER_TURN' || selectedDieIndex === -1 || activeUnit.name !== 'Mage' || isDraggingCam) return;
+        if(state !== 'PLAYER_TURN' || selectedDieIndex === -1 || activeUnit.name !== 'Mage' || isDraggingCam || activeUnit.team !== playerNumber) return;
         const die = diceRolled[selectedDieIndex];
         if(die.id !== 'magic' && die.id !== 'wild') return;
 
-        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
 
-        highlightMeshes.forEach(h => {
-            if (h.type === 'attack') tiles[h.x][h.z].mesh.material = matTileAttack;
-            else tiles[h.x][h.z].mesh.material = matTileHighlight;
-        });
+        highlightMeshes.forEach(h => tiles[h.x][h.z].mesh.material = h.type === 'attack' ? matTileAttack : matTileHighlight);
+        for(let tx=0; tx<BOARD_SIZE; tx++) for(let tz=0; tz<BOARD_SIZE; tz++) if(tiles[tx][tz].mesh.material === matTileAoE) tiles[tx][tz].mesh.material = (activeUnit && tx===activeUnit.x && tz===activeUnit.z) ? matTileActive : tiles[tx][tz].mesh.userData.originalMat;
 
         const tileIntersects = raycaster.intersectObjects(tileMeshes);
         if (tileIntersects.length > 0) {
             const {x, z} = tileIntersects[0].object.userData;
-            const targetHighlight = highlightMeshes.find(h => h.x === x && h.z === z && h.type === 'attack');
-            if (targetHighlight) {
-                const aoe = [{x,z}, {x:x+1,z}, {x:x-1,z}, {x,z:z+1}, {x,z:z-1}];
-                aoe.forEach(pos => {
-                    if(pos.x >= 0 && pos.x < BOARD_SIZE && pos.z >= 0 && pos.z < BOARD_SIZE) {
-                        tiles[pos.x][pos.z].mesh.material = matTileAoE;
-                    }
+            if (highlightMeshes.find(h => h.x === x && h.z === z && h.type === 'attack')) {
+                [{x,z}, {x:x+1,z}, {x:x-1,z}, {x,z:z+1}, {x,z:z-1}].forEach(p => {
+                    if(p.x >= 0 && p.x < BOARD_SIZE && p.z >= 0 && p.z < BOARD_SIZE) tiles[p.x][p.z].mesh.material = matTileAoE;
                 });
                 tiles[x][z].mesh.material = matTileAttack;
             }
         }
     });
 
-    window.addEventListener('pointerup', (e) => {
-        delete activePointers[e.pointerId];
-        if (Object.keys(activePointers).length < 2) initialPinchDist = -1;
+    window.addEventListener('pointerup', e => {
+        delete activePointers[e.pointerId]; if (Object.keys(activePointers).length < 2) initialPinchDist = -1;
         if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return;
+        if (Math.hypot(e.clientX - initialDownX, e.clientY - initialDownY) > 10 || isDraggingCam) { isDraggingCam = false; return; }
 
-        const totalDragDist = Math.hypot(e.clientX - initialDownX, e.clientY - initialDownY);
-        if (totalDragDist > 10 || isDraggingCam) {
-            isDraggingCam = false;
-            return;
-        }
+        if((state !== 'PLAYER_TURN' && state !== 'CHOOSE_FACING') || activeUnit.team !== playerNumber) return;
 
-        if(state !== 'PLAYER_TURN' && state !== 'CHOOSE_FACING') return;
-
-        if (isMultiplayerActive) {
-            const isMyTeamTurn = (playerNumber === 1 && currentTurnTeam === 'player1') || (playerNumber === 2 && currentTurnTeam === 'player2');
-            if (!isMyTeamTurn && state === 'PLAYER_TURN') {
-                showToast("Not your turn / army!", '#ef4444');
-                return;
-            }
-        }
-
-        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
 
         if(state === 'CHOOSE_FACING') {
             const tileIntersects = raycaster.intersectObjects(tileMeshes);
             if (tileIntersects.length > 0) {
                 const {x, z} = tileIntersects[0].object.userData;
-                const highlight = highlightMeshes.find(h => h.x === x && h.z === z && h.type === 'face');
-                if (highlight) {
+                if (highlightMeshes.find(h => h.x === x && h.z === z && h.type === 'face')) {
                     activeUnit.lookAtTile(x, z);
-                    broadcastEvent('SET_FACING', { unitId: activeUnit.id, x, z });
+                    broadcastEvent('SYNC_FACING', { x, z });
                     endPlayerTurnPhase();
                 }
             }
             return;
         }
 
-        const unitMeshes = units.map(u => u.parts.torso);
-        const unitIntersects = raycaster.intersectObjects(unitMeshes, true);
-        
-        if (unitIntersects.length > 0) {
-            let clickedMesh = unitIntersects[0].object;
-            while(clickedMesh.parent && !clickedMesh.userData.unitMesh) {
-                clickedMesh = clickedMesh.parent;
-            }
-            const unit = units.find(u => u.mesh === clickedMesh);
-            if (unit && unit.team !== activeUnit.team && selectedDieIndex !== -1) {
-                 const hl = highlightMeshes.find(h => h.x === unit.x && h.z === unit.z && h.type === 'attack');
-                 if(hl) { executeActionLocally(hl); return; }
-            }
-        }
-
         const tileIntersects = raycaster.intersectObjects(tileMeshes);
         if (tileIntersects.length > 0) {
-            const tileMesh = tileIntersects[0].object;
-            const {x, z} = tileMesh.userData;
+            const {x, z} = tileIntersects[0].object.userData;
             const highlight = highlightMeshes.find(h => h.x === x && h.z === z);
             if (highlight && selectedDieIndex !== -1) {
-                executeActionLocally(highlight);
+                const actionType = diceRolled[selectedDieIndex].id;
+                const hitResults = generateHitResults(actionType, highlight.x, highlight.z);
+                const intent = { targetInfo: highlight, dieIndex: selectedDieIndex, hitResults };
+                broadcastEvent('ACTION_INTENT', intent);
+                executeAction(intent);
             } else {
-                clearHighlights();
-                Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
-                selectedDieIndex = -1;
+                clearHighlights(); Array.from(diceContainer.children).forEach(c => c.classList.remove('selected')); selectedDieIndex = -1;
             }
         }
     });
+    
+    window.addEventListener('pointercancel', e => { delete activePointers[e.pointerId]; initialPinchDist = -1; isDraggingCam = false; });
+    window.addEventListener('wheel', e => { if(!e.target.closest('#ui-layer')) targetCamRadius = Math.max(8, Math.min(45, targetCamRadius + e.deltaY * 0.02)); });
 
-    window.addEventListener('pointercancel', (e) => {
-        delete activePointers[e.pointerId];
-        initialPinchDist = -1;
-        isDraggingCam = false;
-    });
-
-    window.addEventListener('wheel', (e) => {
-        if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return;
-        targetCamRadius += e.deltaY * 0.02;
-        targetCamRadius = Math.max(8, Math.min(45, targetCamRadius));
-    });
-
-    /** --- COMBAT & ACTION EXECUTION --- **/
+    /** --- COMBAT EXECUTIONS (DETERMINISTIC) --- **/
     function calculateHit(attacker, target, baseDamage) {
         const targetForward = new THREE.Vector3(Math.sin(target.mesh.rotation.y), 0, Math.cos(target.mesh.rotation.y)).normalize();
         const toAttacker = new THREE.Vector3(attacker.x - target.x, 0, attacker.z - target.z).normalize();
         if(toAttacker.lengthSq() < 0.01) toAttacker.copy(targetForward).negate();
-        
         const dot = targetForward.dot(toAttacker);
-        let hitChance = attacker.accuracy;
-        let damageMult = 1.0;
         
+        let hitChance = attacker.accuracy, damageMult = 1.0;
         if (dot > 0.5) { hitChance = Math.min(attacker.accuracy * 0.85, 1.0); damageMult = 0.95; }
         else if (dot < -0.5) { hitChance = 1.0; damageMult = 1.15; }
         else { hitChance = Math.min(attacker.accuracy * 0.90, 1.0); damageMult = 1.05; }
         
-        const isHit = Math.random() <= hitChance;
-        const finalDamage = Math.max(1, Math.round(baseDamage * damageMult));
-        return { isHit, finalDamage };
+        return { isHit: Math.random() <= hitChance, finalDamage: Math.max(1, Math.round(baseDamage * damageMult)) };
     }
 
-    function executeActionLocally(targetInfo) {
-        broadcastEvent('EXECUTE_ACTION', {
-            unitId: activeUnit.id,
-            dieIndex: selectedDieIndex,
-            target: targetInfo
-        });
-        performActionAnimation(activeUnit, selectedDieIndex, targetInfo);
-    }
-
-    function receiveRemoteAction(data) {
-        const remoteUnit = units.find(u => u.id === data.unitId);
-        if (remoteUnit) {
-            performActionAnimation(remoteUnit, data.dieIndex, data.target);
+    function generateHitResults(actionType, tx, tz) {
+        const results = {};
+        if (actionType === 'magic' || (actionType === 'wild' && activeUnit.name === 'Mage')) {
+            [{tx, tz}, {tx: tx+1, tz}, {tx: tx-1, tz}, {tx, tz: tz+1}, {tx, tz: tz-1}].forEach(t => {
+                if(t.tx >= 0 && t.tx < BOARD_SIZE && t.tz >= 0 && t.tz < BOARD_SIZE) {
+                    let u = tiles[t.tx][t.tz].unit;
+                    if (u && u.team !== activeUnit.team) results[u.id] = calculateHit(activeUnit, u, activeUnit.atk);
+                }
+            });
+        } else {
+            let u = tiles[tx][tz].unit;
+            if (u && u.team !== activeUnit.team) results[u.id] = calculateHit(activeUnit, u, activeUnit.atk);
         }
+        return results;
     }
 
-    async function performActionAnimation(unit, dieIdx, targetInfo) {
-        state = 'ACTION_ANIMATING';
-        clearHighlights();
+    async function executeAction(intent) {
+        state = 'ACTION_ANIMATING'; clearHighlights();
+        const {x, z, type} = intent.targetInfo;
+        const die = diceRolled[intent.dieIndex]; die.used = true;
         
-        const {x, z, type} = targetInfo;
-        const die = diceRolled[dieIdx] || diceRolled[0];
-        
-        if(die) {
-            die.used = true;
-            if(diceContainer.children[dieIdx]) {
-                diceContainer.children[dieIdx].classList.add('used');
-                diceContainer.children[dieIdx].classList.remove('selected');
-            }
-        }
-        ap--;
-        updateAPUI();
+        const dieEl = diceContainer.children[intent.dieIndex];
+        if(dieEl) { dieEl.classList.add('used'); dieEl.classList.remove('selected'); }
+        ap--; updateAPUI();
 
         if (type === 'defend') {
-            unit.setDefending(true);
-            await tweenAsync(unit.mesh.scale, {y: 1.2}, 0.1, Easing.OutQuad);
-            await tweenAsync(unit.mesh.scale, {y: 1.0}, 0.1, Easing.InQuad);
-            finishAction();
-            return;
+            activeUnit.setDefending(true);
+            await tweenAsync(activeUnit.mesh.scale, {y: 1.2}, 0.1, Easing.OutQuad);
+            await tweenAsync(activeUnit.mesh.scale, {y: 1.0}, 0.1, Easing.InQuad);
+            finishAction(); return;
         }
 
-        unit.lookAtTile(x, z);
+        activeUnit.lookAtTile(x, z);
 
         if (type === 'move' || type === 'dash') {
-            tiles[unit.x][unit.z].unit = null;
-            unit.x = x;
-            unit.z = z;
-            tiles[x][z].unit = unit;
-            clearHighlights();
+            tiles[activeUnit.x][activeUnit.z].unit = null; activeUnit.x = x; activeUnit.z = z; tiles[x][z].unit = activeUnit;
+            const speed = type === 'dash' ? 0.35 : 0.5, steps = type === 'dash' ? 4 : 6, stepDur = speed / steps;
             
-            const speed = type === 'dash' ? 0.35 : 0.5; 
-            const steps = type === 'dash' ? 4 : 6;
-            const stepDur = speed / steps;
-            
-            tween(unit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, speed, Easing.Linear, () => unit.updateUIPosition());
-            
+            tween(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, speed, Easing.Linear, () => activeUnit.updateUIPosition());
             for(let i=0; i<steps; i++) {
-                let isRight = i % 2 === 0;
-                let legAngle = type === 'dash' ? 0.8 : 0.5;
-                tween(unit.parts.legR.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear);
-                tween(unit.parts.legL.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear);
-                tween(unit.parts.armR.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear);
-                tween(unit.parts.armL.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear);
-                await tweenAsync(unit.mesh.position, {y: 0.6}, stepDur/2, Easing.OutQuad);
-                await tweenAsync(unit.mesh.position, {y: 0.2}, stepDur/2, Easing.InQuad);
+                let isRight = i % 2 === 0, legAngle = type === 'dash' ? 0.8 : 0.5;
+                tween(activeUnit.parts.legR.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear); tween(activeUnit.parts.legL.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear);
+                tween(activeUnit.parts.armR.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear); tween(activeUnit.parts.armL.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear);
+                await tweenAsync(activeUnit.mesh.position, {y: 0.6}, stepDur/2, Easing.OutQuad); await tweenAsync(activeUnit.mesh.position, {y: 0.2}, stepDur/2, Easing.InQuad);
             }
-
-            tween(unit.parts.legR.rotation, {x: 0}, 0.1);
-            tween(unit.parts.legL.rotation, {x: 0}, 0.1);
-            tween(unit.parts.armR.rotation, {x: 0}, 0.1);
-            tween(unit.parts.armL.rotation, {x: 0}, 0.1);
+            tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1);
+            tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
             finishAction();
         } 
         else if (type === 'attack') {
             const targetUnit = tiles[x][z].unit;
-            let dir = new THREE.Vector3(unit.x - x, 0, unit.z - z).normalize();
-            let startPos = { x: unit.mesh.position.x, z: unit.mesh.position.z };
+            let dir = new THREE.Vector3(activeUnit.x - x, 0, activeUnit.z - z).normalize();
+            let startPos = { x: activeUnit.mesh.position.x, z: activeUnit.mesh.position.z };
             let emptyTargetPos = new THREE.Vector3(x * TILE_SCALE, 0.2, z * TILE_SCALE);
             let oldCamRadius = targetCamRadius;
 
-            if (unit.name === 'Archer') {
+            if (activeUnit.name === 'Archer') {
                 targetCamRadius = Math.max(14, targetCamRadius - 6);
-                await tweenAsync(unit.parts.armL.rotation, { x: -Math.PI/2, y: Math.PI/4 }, 0.3, Easing.OutQuad);
-                await tweenAsync(unit.parts.armR.rotation, { x: -Math.PI/2 }, 0.3, Easing.OutQuad);
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2, y: Math.PI/4 }, 0.3, Easing.OutQuad);
+                await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.3, Easing.OutQuad);
                 
-                const arrowGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.7);
-                const arrowMat = new THREE.MeshStandardMaterial({color: 0xcccccc, metalness: 0.8});
-                const arrow = new THREE.Mesh(arrowGeo, arrowMat);
-                arrow.position.copy(unit.mesh.position).add(new THREE.Vector3(0, 1.2, 0));
-                arrow.lookAt(targetUnit ? targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)) : emptyTargetPos);
-                arrow.rotateX(Math.PI/2);
-                scene.add(arrow);
+                const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7), new THREE.MeshStandardMaterial({color: 0xcccccc, metalness: 0.8}));
+                arrow.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 1.2, 0));
+                arrow.lookAt(targetUnit ? targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)) : emptyTargetPos); arrow.rotateX(Math.PI/2); scene.add(arrow);
+                await tweenAsync(activeUnit.parts.armR.position, { z: -0.2 }, 0.2); await tweenAsync(activeUnit.parts.armR.position, { z: -0.3 }, 0.3);
+                tween(activeUnit.parts.armR.position, { z: 0 }, 0.1); tween(activeUnit.parts.armR.rotation, { x: 0 }, 0.2); tween(activeUnit.parts.armL.rotation, { x: 0, y: 0 }, 0.3);
+                await tweenAsync(arrow.position, {x: x * TILE_SCALE, z: z * TILE_SCALE}, 0.15, Easing.InQuad); scene.remove(arrow);
 
-                await tweenAsync(unit.parts.armR.position, { z: -0.3 }, 0.3);
-                tween(unit.parts.armR.position, { z: 0 }, 0.1);
-                tween(unit.parts.armR.rotation, { x: 0 }, 0.2);
-                tween(unit.parts.armL.rotation, { x: 0, y: 0 }, 0.3);
-                
-                await tweenAsync(arrow.position, {x: x * TILE_SCALE, z: z * TILE_SCALE}, 0.15, Easing.InQuad);
-                scene.remove(arrow);
-
-                if (targetUnit) {
-                    const { isHit, finalDamage } = calculateHit(unit, targetUnit, unit.atk);
-                    if(isHit) {
-                        targetUnit.takeDamage(finalDamage);
-                        spawnFloatingText(targetUnit, `-${finalDamage}`, '#ef4444');
-                    } else {
-                        spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
-                    }
+                if (targetUnit && intent.hitResults[targetUnit.id]) {
+                    const res = intent.hitResults[targetUnit.id];
+                    if(res.isHit) { targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: -0.3}, 0.1); setTimeout(() => tween(targetUnit.parts.torso.rotation, {x: 0}, 0.2), 100); }
+                    else spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
                 }
-                targetCamRadius = oldCamRadius;
-                finishAction();
-            } else {
+                targetCamRadius = oldCamRadius; finishAction();
+            } 
+            else if (activeUnit.name === 'Mage') {
+                targetCamRadius = Math.max(12, targetCamRadius - 10); triggerShake(0.1);
+                await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI }, 0.4, Easing.OutQuad);
+                const spell = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({color: 0x0ea5e9, transparent: true, opacity: 0.8}));
+                spell.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 2.5, 0)); scene.add(spell);
+                tween(spell.rotation, {y: Math.PI*4}, 0.6); tween(spell.scale, {x: 2, y: 2, z: 2}, 0.6, Easing.OutQuad);
+                vfx.spawnBurst(spell.position, 0x0ea5e9, 20, 0.5); await new Promise(r => setTimeout(r, 600));
+                tween(spell.scale, {x: 0.5, y: 0.5, z: 0.5}, 0.2);
+                await tweenAsync(spell.position, {x: x * TILE_SCALE, y: 0.2, z: z * TILE_SCALE}, 0.2, Easing.InQuad); scene.remove(spell);
+
+                [{tx: x, tz: z}, {tx: x+1, tz: z}, {tx: x-1, tz: z}, {tx: x, tz: z+1}, {tx: x, tz: z-1}].forEach(t => {
+                    if(t.tx >= 0 && t.tx < BOARD_SIZE && t.tz >= 0 && t.tz < BOARD_SIZE) {
+                        let u = tiles[t.tx][t.tz].unit;
+                        if(u && intent.hitResults[u.id]) {
+                            const res = intent.hitResults[u.id];
+                            if(res.isHit) { u.takeDamage(res.finalDamage); spawnFloatingText(u, `-${res.finalDamage}`, '#ef4444'); tween(u.parts.torso.rotation, {x: -0.4, z: (Math.random()-0.5)}, 0.1); setTimeout(() => { if(u.mesh) tween(u.parts.torso.rotation, {x: 0, z: 0}, 0.3); }, 150); }
+                            else spawnFloatingText(u, 'MISSED', '#d1d5db');
+                        }
+                        vfx.spawnBurst(new THREE.Vector3(t.tx * TILE_SCALE, 0.5, t.tz * TILE_SCALE), 0x0ea5e9, 25, 6);
+                    }
+                });
+                triggerShake(0.8); targetCamRadius = oldCamRadius; await tweenAsync(activeUnit.parts.armR.rotation, { x: 0 }, 0.4, Easing.OutQuad); finishAction();
+            }
+            else if (activeUnit.name === 'Assassin') {
+                targetCamRadius = Math.max(10, targetCamRadius - 12);
+                await tweenAsync(activeUnit.mesh.scale, {x: 0.1, y: 0.1, z: 0.1}, 0.15, Easing.InQuad); activeUnit.mesh.visible = false; vfx.spawnBurst(startPos, 0x8b5cf6, 15, 2);
+                activeUnit.mesh.position.set(x * TILE_SCALE, 2.0, z * TILE_SCALE); activeUnit.mesh.visible = true; activeUnit.parts.armR.rotation.x = -Math.PI; activeUnit.parts.armL.rotation.x = -Math.PI;
+                await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.1, Easing.OutQuad);
+                tween(activeUnit.mesh.position, {y: 0.2}, 0.15, Easing.InQuad); tween(activeUnit.parts.armR.rotation, {x: 0}, 0.15, Easing.InQuad); await tweenAsync(activeUnit.parts.armL.rotation, {x: 0}, 0.15, Easing.InQuad);
+
+                if(targetUnit && intent.hitResults[targetUnit.id]) {
+                    const res = intent.hitResults[targetUnit.id];
+                    if(res.isHit) { targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: 0.5}, 0.1); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.3); }, 150); }
+                    else spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
+                } else vfx.spawnBurst(emptyTargetPos, 0x8b5cf6, 15, 2);
+                
+                await new Promise(r=>setTimeout(r, 200)); await tweenAsync(activeUnit.mesh.scale, {x: 0.1, y: 0.1, z: 0.1}, 0.15, Easing.InQuad); activeUnit.mesh.position.set(startPos.x, 0.2, startPos.z);
+                targetCamRadius = oldCamRadius; await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.15, Easing.OutQuad); finishAction();
+            }
+            else {
                 targetCamRadius = Math.max(12, targetCamRadius - 8);
-                let clashPos = { x: startPos.x - dir.x*(0.6 * TILE_SCALE), z: startPos.z - dir.z*(0.6 * TILE_SCALE) };
-                await tweenAsync(unit.mesh.position, clashPos, 0.2, Easing.OutQuad);
+                let clashPos = { x: startPos.x - dir.x*(0.6 * TILE_SCALE), z: startPos.z - dir.z*(0.6 * TILE_SCALE) }; await tweenAsync(activeUnit.mesh.position, clashPos, 0.2, Easing.OutQuad);
 
                 if (targetUnit) {
                     for(let i=0; i<3; i++) {
-                        tween(unit.parts.armR.rotation, { x: -Math.PI/2 - 0.5 + Math.random()*0.5 }, 0.1);
-                        await tweenAsync(unit.mesh.position, {x: clashPos.x - dir.x*0.1, z: clashPos.z - dir.z*0.1}, 0.1);
-                        await tweenAsync(unit.mesh.position, {x: clashPos.x + dir.x*0.1, z: clashPos.z + dir.z*0.1}, 0.1);
+                        tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2 - 0.5 + Math.random()*0.5 }, 0.1); if (targetUnit.parts.armL) tween(targetUnit.parts.armL.rotation, { x: -Math.PI/2 + Math.random()*0.5 }, 0.1);
+                        tween(activeUnit.parts.torso.rotation, { y: Math.random()*0.2 - 0.1 }, 0.1); if (targetUnit.parts.torso) tween(targetUnit.parts.torso.rotation, { y: Math.random()*0.2 - 0.1 }, 0.1);
+                        await tweenAsync(activeUnit.mesh.position, {x: clashPos.x - dir.x*0.1, z: clashPos.z - dir.z*0.1}, 0.1); await tweenAsync(activeUnit.mesh.position, {x: clashPos.x + dir.x*0.1, z: clashPos.z + dir.z*0.1}, 0.1);
                     }
-                    await tweenAsync(unit.parts.armR.rotation, {x: -Math.PI}, 0.2, Easing.InQuad);
-                    await tweenAsync(unit.parts.armR.rotation, {x: 0}, 0.1, Easing.OutElastic);
+                    await tweenAsync(activeUnit.parts.armR.rotation, {x: -Math.PI}, 0.2, Easing.InQuad); await tweenAsync(activeUnit.parts.armR.rotation, {x: 0}, 0.1, Easing.OutElastic);
 
-                    const { isHit, finalDamage } = calculateHit(unit, targetUnit, unit.atk);
-                    if(isHit) {
-                        targetUnit.takeDamage(finalDamage);
-                        spawnFloatingText(targetUnit, `-${finalDamage}`, '#ef4444');
+                    const res = intent.hitResults[targetUnit.id];
+                    if(res && res.isHit) {
+                        targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: -0.4}, 0.1); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.3); }, 100);
+                        if (activeUnit.name === 'Vanguard' && targetUnit.hp > 0) {
+                            let kx = Math.round(x - dir.x), kz = Math.round(z - dir.z);
+                            if (kx >= 0 && kx < BOARD_SIZE && kz >= 0 && kz < BOARD_SIZE && !tiles[kx][kz].unit) {
+                                tiles[x][z].unit = null; targetUnit.x = kx; targetUnit.z = kz; tiles[kx][kz].unit = targetUnit; tween(targetUnit.mesh.position, {x: kx * TILE_SCALE, z: kz * TILE_SCALE}, 0.2, Easing.OutQuad, () => targetUnit.updateUIPosition());
+                            }
+                        }
                     } else {
-                        spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
+                        spawnFloatingText(targetUnit, 'MISSED', '#d1d5db'); tween(targetUnit.mesh.position, {x: targetUnit.mesh.position.x - dir.z*0.5, z: targetUnit.mesh.position.z + dir.x*0.5}, 0.15, Easing.OutQuad); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.mesh.position, {x: x*TILE_SCALE, z: z*TILE_SCALE}, 0.2, Easing.InQuad); }, 150);
                     }
-                }
-                targetCamRadius = oldCamRadius;
-                await tweenAsync(unit.mesh.position, { x: startPos.x, z: startPos.z }, 0.3, Easing.OutElastic);
+                    if(targetUnit.mesh) { tween(targetUnit.parts.armL.rotation, { x: 0 }, 0.2); tween(targetUnit.parts.torso.rotation, { y: 0 }, 0.2); }
+                } else { await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.1, Easing.InQuad); await tweenAsync(activeUnit.parts.armR.rotation, { x: 0 }, 0.2, Easing.OutQuad); vfx.spawnBurst(emptyTargetPos, 0xcccccc, 5, 1); }
+
+                tween(activeUnit.parts.torso.rotation, { y: 0 }, 0.2); targetCamRadius = oldCamRadius; await tweenAsync(activeUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.3, Easing.OutElastic);
                 finishAction();
             }
         }
     }
 
     function triggerFacingPhase() {
-        state = 'CHOOSE_FACING';
-        clearHighlights();
-        diceContainer.innerHTML = '';
-        
-        btnEndTurn.innerText = "Confirm Direction";
-        btnEndTurn.classList.add('facing-mode');
-        showToast('Choose Facing', '#10b981');
-        document.getElementById('unit-desc').innerText = "Select an adjacent tile to set unit facing.";
-
-        const dirs = [ {x:0,z:1}, {x:0,z:-1}, {x:1,z:0}, {x:-1,z:0} ];
-        dirs.forEach(d => {
-            let tx = activeUnit.x + d.x;
-            let tz = activeUnit.z + d.z;
-            if (tx >= 0 && tx < BOARD_SIZE && tz >= 0 && tz < BOARD_SIZE) {
-                tiles[tx][tz].mesh.material = matTileFacing;
-                highlightMeshes.push({x: tx, z: tz, type: 'face'});
-            }
+        state = 'CHOOSE_FACING'; clearHighlights(); diceContainer.innerHTML = '';
+        btnEndTurn.innerText = "Confirm Direction"; btnEndTurn.classList.add('facing-mode');
+        showToast('Choose Facing', '#10b981'); document.getElementById('unit-desc').innerText = "Select an adjacent tile to set unit facing.";
+        [{x:0,z:1}, {x:0,z:-1}, {x:1,z:0}, {x:-1,z:0}].forEach(d => {
+            let tx = activeUnit.x + d.x, tz = activeUnit.z + d.z;
+            if (tx >= 0 && tx < BOARD_SIZE && tz >= 0 && tz < BOARD_SIZE) { tiles[tx][tz].mesh.material = matTileFacing; highlightMeshes.push({x: tx, z: tz, type: 'face'}); }
         });
     }
 
     function endPlayerTurnPhase() {
-        clearHighlights();
-        btnEndTurn.innerText = "End Turn";
-        btnEndTurn.classList.remove('facing-mode');
-        
-        // Switch turn team between Player 1 and Player 2
-        currentTurnTeam = currentTurnTeam === 'player1' ? 'player2' : 'player1';
-        broadcastEvent('SWITCH_TURN', { nextTeam: currentTurnTeam });
-        setupTurnForActiveTeam();
+        clearHighlights(); btnEndTurn.innerText = "End Turn"; btnEndTurn.classList.remove('facing-mode');
+        broadcastEvent('TURN_ENDED', {});
+        requestAdvanceTurn();
     }
 
     function finishAction() {
         if(checkWinCondition()) return;
-        if (ap <= 0 || diceRolled.every(d => d.used)) {
-            const isMyTeamTurn = (playerNumber === 1 && currentTurnTeam === 'player1') || (playerNumber === 2 && currentTurnTeam === 'player2');
-            if (isMyTeamTurn) {
-                triggerFacingPhase();
-            } else {
-                // Opponent unit finished action
-                advanceActiveTeamTurn();
-            }
-        } else {
-            state = 'PLAYER_TURN';
-            selectedDieIndex = -1;
-        }
+        if (ap <= 0 || diceRolled.every(d => d.used)) triggerFacingPhase();
+        else { state = 'PLAYER_TURN'; selectedDieIndex = -1; Array.from(diceContainer.children).forEach(c => c.classList.remove('selected')); }
     }
 
-    btnEndTurn.addEventListener('click', () => {
-        if(state === 'PLAYER_TURN') {
-            triggerFacingPhase();
-        } else if (state === 'CHOOSE_FACING') {
-            endPlayerTurnPhase();
-        }
-    });
-
-    function setupTurnForActiveTeam() {
-        if(checkWinCondition()) return;
-        state = 'PLAYER_TURN';
-        ap = 3;
-        btnEndTurn.innerText = "End Turn";
-        btnEndTurn.classList.remove('facing-mode');
-
-        if (currentTurnTeam === 'player1') {
-            p1TurnIndex++;
-            p1TurnOrder = p1TurnOrder.filter(u => units.includes(u));
-            if (p1TurnOrder.length === 0 || p1TurnIndex >= p1TurnOrder.length) {
-                let players = units.filter(u => u.team === 'player1');
-                if (players.length === 0) return;
-                p1TurnOrder = shuffleArray([...players]);
-                p1TurnIndex = 0;
-            }
-            activeUnit = p1TurnOrder[p1TurnIndex];
-        } else {
-            p2TurnIndex++;
-            p2TurnOrder = p2TurnOrder.filter(u => units.includes(u));
-            if (p2TurnOrder.length === 0 || p2TurnIndex >= p2TurnOrder.length) {
-                let players = units.filter(u => u.team === 'player2');
-                if (players.length === 0) return;
-                p2TurnOrder = shuffleArray([...players]);
-                p2TurnIndex = 0;
-            }
-            activeUnit = p2TurnOrder[p2TurnIndex];
-        }
-
-        activeUnit.setDefending(false);
-        clearHighlights();
-
-        const isMyTurn = (playerNumber === 1 && currentTurnTeam === 'player1') || (playerNumber === 2 && currentTurnTeam === 'player2');
-        document.getElementById('turn-indicator').innerText = isMyTurn ? (activeUnit.name.toUpperCase() + "'S TURN") : "OPPONENT TURN";
-        document.getElementById('unit-name').innerText = activeUnit.name;
-        document.getElementById('unit-desc').innerText = isMyTurn ? "Select an action." : "Waiting for opponent...";
-        updateAPUI();
-        rollDice();
-    }
-
-    function advanceActiveTeamTurn() {
-        currentTurnTeam = currentTurnTeam === 'player1' ? 'player2' : 'player1';
-        setupTurnForActiveTeam();
-    }
+    btnEndTurn.addEventListener('click', () => { if(state === 'PLAYER_TURN') triggerFacingPhase(); else if (state === 'CHOOSE_FACING') endPlayerTurnPhase(); });
 
     function checkWinCondition() {
         if(state === 'GAME_OVER') return true;
-        let p1Units = units.filter(u => u.team === 'player1');
-        let p2Units = units.filter(u => u.team === 'player2');
-        let comm1 = units.find(u => u.team === 'player1' && u.name === 'Commander');
-        let comm2 = units.find(u => u.team === 'player2' && u.name === 'Commander');
+        let p1Comm = units.find(u => u.team === 1 && u.name === 'Commander');
+        let p2Comm = units.find(u => u.team === 2 && u.name === 'Commander');
         
-        if (p1Units.length === 0 || !comm1) {
-            triggerGameOver(2); // P2 wins
-            return true;
-        }
-        if (p2Units.length === 0 || !comm2) {
-            triggerGameOver(1); // P1 wins
-            return true;
-        }
+        if (!p1Comm) { state = 'GAME_OVER'; showGameOver(2); return true; }
+        if (!p2Comm) { state = 'GAME_OVER'; showGameOver(1); return true; }
         return false;
     }
 
-    function triggerGameOver(winnerNum) {
-        state = 'GAME_OVER';
+    function showGameOver(winnerNum) {
+        document.getElementById('ui-layer').style.pointerEvents = 'none';
         const modal = document.getElementById('gameover-modal');
         const title = document.getElementById('gameover-title');
-        const sub = document.getElementById('gameover-sub');
-        const icon = document.getElementById('gameover-icon');
         const iconBg = document.getElementById('gameover-icon-bg');
         modal.classList.remove('hidden');
-
         if (winnerNum === playerNumber) {
-            title.textContent = 'VICTORY!';
-            title.className = 'text-2xl font-black text-emerald-400';
-            sub.textContent = 'You triumphed in tactical combat!';
-            icon.className = 'fa-solid fa-trophy';
+            title.textContent = 'VICTORY!'; title.className = 'text-2xl font-black text-emerald-400';
             iconBg.className = 'w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center text-4xl';
         } else {
-            title.textContent = 'DEFEAT';
-            title.className = 'text-2xl font-black text-rose-500';
-            sub.textContent = 'Your forces were overwhelmed.';
-            icon.className = 'fa-solid fa-skull';
+            title.textContent = 'DEFEAT'; title.className = 'text-2xl font-black text-rose-500';
+            document.getElementById('gameover-icon').className = 'fa-solid fa-skull';
             iconBg.className = 'w-20 h-20 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 mx-auto flex items-center justify-center text-4xl';
         }
     }
 
-    function resetGameForRematch() {
-        document.getElementById('gameover-modal').classList.add('hidden');
-        document.getElementById('rematch-status-box').classList.add('hidden');
-        initBoardUnits();
-        p1TurnOrder = shuffleArray(units.filter(u => u.team === 'player1'));
-        p2TurnOrder = shuffleArray(units.filter(u => u.team === 'player2'));
-        p1TurnIndex = 0;
-        p2TurnIndex = 0;
-        currentTurnTeam = 'player1';
-        setupTurnForActiveTeam();
-    }
-
-    function leaveGame() {
-        broadcastEvent('PLAYER_LEFT', {});
-        if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel);
-        window.removeEventListener('storage', handleSimulatorStorage);
-
-        isMultiplayerActive = false;
-        document.getElementById('leave-game-btn').classList.add('hidden');
-        document.getElementById('gameover-modal').classList.add('hidden');
-        document.getElementById('lobby-modal').classList.add('hidden');
-        document.getElementById('room-badge').classList.add('hidden');
-        document.getElementById('main-menu').classList.remove('hidden');
-        initBoardUnits();
-    }
-
-    /** --- MAIN ANIMATION & EVENT BINDINGS --- **/
+    /** --- MAIN LOOP & EVENTS --- **/
     const clock = new THREE.Clock();
-
     function animate() {
-        requestAnimationFrame(animate);
-        let dt = clock.getDelta();
-
-        updateTweens(dt);
-        vfx.update(dt);
+        requestAnimationFrame(animate); let dt = clock.getDelta();
+        updateTweens(dt); vfx.update(dt);
         
-        camTheta += (targetCamTheta - camTheta) * 0.1;
-        camPhi += (targetCamPhi - camPhi) * 0.1;
-        camRadius += (targetCamRadius - camRadius) * 0.1;
-        
-        let targetX = CENTER_POS + camRadius * Math.sin(camPhi) * Math.sin(camTheta);
-        let targetY = camRadius * Math.cos(camPhi);
-        let targetZ = CENTER_POS + camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+        camTheta += (targetCamTheta - camTheta) * 0.1; camPhi += (targetCamPhi - camPhi) * 0.1; camRadius += (targetCamRadius - camRadius) * 0.1;
+        let targetX = CENTER_POS + camRadius * Math.sin(camPhi) * Math.sin(camTheta), targetY = camRadius * Math.cos(camPhi), targetZ = CENTER_POS + camRadius * Math.sin(camPhi) * Math.cos(camTheta);
         
         if (cameraShake.intensity > 0) {
-            camera.position.x = targetX + (Math.random() - 0.5) * cameraShake.intensity;
-            camera.position.y = targetY + (Math.random() - 0.5) * cameraShake.intensity;
-            camera.position.z = targetZ + (Math.random() - 0.5) * cameraShake.intensity;
-            cameraShake.intensity -= dt * 2;
-            if(cameraShake.intensity < 0) cameraShake.intensity = 0;
-        } else {
-            camera.position.set(targetX, targetY, targetZ);
-        }
+            camera.position.set(targetX + (Math.random()-0.5)*cameraShake.intensity, targetY + (Math.random()-0.5)*cameraShake.intensity, targetZ + (Math.random()-0.5)*cameraShake.intensity);
+            cameraShake.intensity = Math.max(0, cameraShake.intensity - dt * 2);
+        } else camera.position.set(targetX, targetY, targetZ);
         camera.lookAt(CENTER_POS, 0, CENTER_POS);
         
         units.forEach(u => {
             u.updateUIPosition();
             if (state !== 'ACTION_ANIMATING' && u.parts && u.parts.torso) {
                  u.parts.torso.position.y = 0.85 + Math.sin(clock.elapsedTime * 4 + u.mesh.position.x) * 0.03;
-                 u.parts.armR.rotation.z = Math.sin(clock.elapsedTime * 3) * 0.05;
-                 u.parts.armL.rotation.z = -Math.sin(clock.elapsedTime * 3) * 0.05;
+                 u.parts.armR.rotation.z = Math.sin(clock.elapsedTime * 3) * 0.05; u.parts.armL.rotation.z = -Math.sin(clock.elapsedTime * 3) * 0.05;
             }
         });
-
         renderer.render(scene, camera);
     }
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
 
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
+    // Menu Controls Init
     window.addEventListener('DOMContentLoaded', () => {
-        initSupabase();
-        setupTurnForActiveTeam();
-        animate();
+        initSupabase(); animate();
 
-        // Main Menu UI Handlers
-        const playBtn = document.getElementById('play-btn');
-        const menuActions = document.getElementById('menu-actions');
-        const playSubmenu = document.getElementById('play-submenu');
-
-        playBtn.addEventListener('click', () => {
-            menuActions.classList.add('hidden');
-            playSubmenu.classList.remove('hidden');
+        document.getElementById('play-btn').addEventListener('click', () => {
+            document.getElementById('menu-actions').classList.add('hidden'); document.getElementById('play-submenu').classList.remove('hidden');
         });
-
         document.getElementById('back-to-menu-btn').addEventListener('click', () => {
-            playSubmenu.classList.add('hidden');
-            menuActions.classList.remove('hidden');
+            document.getElementById('play-submenu').classList.add('hidden'); document.getElementById('menu-actions').classList.remove('hidden');
         });
 
         document.getElementById('create-room-btn').addEventListener('click', () => {
@@ -1755,95 +1193,38 @@
             setupRealtimeChannel(code);
             document.getElementById('lobby-code-display').textContent = code;
             document.getElementById('lobby-modal').classList.remove('hidden');
-            document.getElementById('main-menu').classList.add('hidden');
         });
-
-        document.getElementById('show-join-input-btn').addEventListener('click', () => {
-            document.getElementById('join-box').classList.toggle('hidden');
-        });
-
+        document.getElementById('show-join-input-btn').addEventListener('click', () => document.getElementById('join-box').classList.toggle('hidden'));
         document.getElementById('confirm-join-btn').addEventListener('click', () => {
             const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
-            if (codeInput.length !== 6) {
-                showToast('Please enter a valid 6-character room code.', '#ef4444');
-                return;
-            }
-            playerNumber = 2;
-            setupRealtimeChannel(codeInput);
-            document.getElementById('main-menu').classList.add('hidden');
-            showToast('Joined room successfully!', '#10b981');
+            if (codeInput.length !== 6) return showNetToast('Please enter a valid 6-character room code.', 'error');
+            playerNumber = 2; setupRealtimeChannel(codeInput);
         });
-
         document.getElementById('copy-code-btn').addEventListener('click', () => {
-            const code = document.getElementById('lobby-code-display').textContent;
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(code);
-            } else {
-                const temp = document.createElement("input");
-                temp.value = code;
-                document.body.appendChild(temp);
-                temp.select();
-                document.execCommand("copy");
-                document.body.removeChild(temp);
-            }
-            showToast('Room code copied: ' + code);
+            navigator.clipboard.writeText(document.getElementById('lobby-code-display').textContent);
+            showNetToast('Room code copied!');
         });
-
         document.getElementById('cancel-lobby-btn').addEventListener('click', () => {
             document.getElementById('lobby-modal').classList.add('hidden');
-            document.getElementById('main-menu').classList.remove('hidden');
             if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel);
         });
-
-        // Tutorial Modal
-        const tutorialModal = document.getElementById('tutorial-modal');
-        const openTutorial = () => tutorialModal.classList.remove('hidden');
-        const closeTutorial = () => tutorialModal.classList.add('hidden');
-        document.getElementById('tutorial-btn').addEventListener('click', openTutorial);
-        document.getElementById('menu-tutorial-btn').addEventListener('click', openTutorial);
-        document.getElementById('close-tutorial-btn').addEventListener('click', closeTutorial);
-        document.getElementById('tutorial-got-it-btn').addEventListener('click', closeTutorial);
-
-        // Leave & Rematch
         document.getElementById('leave-game-btn').addEventListener('click', () => {
-            showConfirm('Are you sure you want to leave the match?', () => leaveGame());
+            document.getElementById('confirm-modal').classList.remove('hidden');
+            document.getElementById('confirm-message').textContent = 'Are you sure you want to leave the match?';
         });
+        document.getElementById('confirm-yes-btn').addEventListener('click', () => { document.getElementById('confirm-modal').classList.add('hidden'); leaveGame(); });
+        document.getElementById('confirm-no-btn').addEventListener('click', () => document.getElementById('confirm-modal').classList.add('hidden'));
+        document.getElementById('quit-btn').addEventListener('click', leaveGame);
 
-        document.getElementById('rematch-btn').addEventListener('click', () => {
-            rematchRequestedByMe = true;
-            broadcastEvent('REMATCH_REQUEST', {});
-            document.getElementById('rematch-status-box').classList.remove('hidden');
-            document.getElementById('rematch-status-box').textContent = 'Waiting for opponent to accept...';
-            if (rematchRequestedByOpponent) {
-                broadcastEvent('REMATCH_ACCEPT', {});
-                resetGameForRematch();
-            }
-        });
-
-        document.getElementById('quit-btn').addEventListener('click', () => leaveGame());
-
-        // Supabase Config Modal
         const sbModal = document.getElementById('supabase-modal');
-        const openSbModal = () => {
-            document.getElementById('sb-url-input').value = localStorage.getItem('sb_url') || '';
-            document.getElementById('sb-key-input').value = localStorage.getItem('sb_key') || '';
-            sbModal.classList.remove('hidden');
-        };
-        document.getElementById('config-btn').addEventListener('click', openSbModal);
-        document.getElementById('supabase-config-link').addEventListener('click', openSbModal);
+        const openSbModal = () => { document.getElementById('sb-url-input').value = localStorage.getItem('sb_url') || ''; document.getElementById('sb-key-input').value = localStorage.getItem('sb_key') || ''; sbModal.classList.remove('hidden'); };
+        document.getElementById('config-btn').addEventListener('click', openSbModal); document.getElementById('supabase-config-link').addEventListener('click', openSbModal);
         document.getElementById('close-supabase-btn').addEventListener('click', () => sbModal.classList.add('hidden'));
-
         document.getElementById('save-sb-btn').addEventListener('click', () => {
-            const url = document.getElementById('sb-url-input').value.trim();
-            const key = document.getElementById('sb-key-input').value.trim();
-            localStorage.setItem('sb_url', url);
-            localStorage.setItem('sb_key', key);
-            initSupabase();
-            sbModal.classList.add('hidden');
-            showToast('Supabase credentials saved successfully.', '#10b981');
+            localStorage.setItem('sb_url', document.getElementById('sb-url-input').value.trim()); localStorage.setItem('sb_key', document.getElementById('sb-key-input').value.trim());
+            initSupabase(); sbModal.classList.add('hidden'); showNetToast('Credentials saved.');
         });
     });
 </script>
 </body>
 </html>
-
