@@ -152,7 +152,6 @@
     <div id="ui-layer">
         <div class="w-full p-4 flex justify-between items-start bg-gradient-to-b from-black/95 via-black/70 to-transparent pointer-events-auto">
             <div class="flex items-center space-x-3 drop-shadow-lg">
-                <!-- Toggle UI Button -->
                 <button id="toggle-names-btn" class="toggle-btn" aria-label="Toggle HP/Names">
                     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
@@ -160,7 +159,7 @@
                 </button>
                 <div>
                     <h1 class="text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-gray-100 to-gray-400 uppercase" style="font-family: serif; -webkit-text-stroke: 1px rgba(0,0,0,0.5);">Bloodbound</h1>
-                    <div id="turn-indicator" class="text-xs text-yellow-400 font-extrabold tracking-widest mt-0.5 text-shadow">HOST TURN</div>
+                    <div id="turn-indicator" class="text-xs text-yellow-400 font-extrabold tracking-widest mt-0.5 text-shadow">PLAYER 1 TURN</div>
                 </div>
                 <span id="room-badge" class="hidden text-xs bg-slate-900/80 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700 font-mono flex items-center gap-1.5 ml-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -291,7 +290,7 @@
             <div class="overflow-y-auto custom-scrollbar my-4 space-y-6 text-sm text-slate-300 pr-2">
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
                     <h4 class="font-bold text-blue-400 text-base flex items-center gap-2"><i class="fa-solid fa-crown text-amber-400"></i> Victory Condition</h4>
-                    <p class="text-xs leading-relaxed text-slate-300">Defeat the enemy Commander or all opposing units to achieve absolute victory in 3D tactical combat.</p>
+                    <p class="text-xs leading-relaxed text-slate-300">Defeat the enemy Commander (Player 1 (Blue) vs Player 2 (Red)) or eliminate all opposing units to achieve absolute victory in 3D tactical combat.</p>
                 </div>
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
                     <h4 class="font-bold text-indigo-400 text-sm">Dice & Actions</h4>
@@ -331,7 +330,7 @@
                 <h3 class="text-base font-bold text-white flex items-center gap-2"><i class="fa-solid fa-database text-emerald-400"></i> Supabase Setup</h3>
                 <button id="close-supabase-btn" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-slate-400">Enter your Supabase credentials for remote online 2-player multiplayer across devices. Leave empty to use local tab simulation.</p>
+            <p class="text-xs text-slate-400">Enter your Supabase credentials for remote online 2-player multiplayer across devices. Leave empty to use local tab simulator.</p>
             <div class="space-y-3">
                 <div>
                     <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Supabase URL</label>
@@ -400,7 +399,7 @@
     let realtimeChannel = null;
     let isLocalSimulator = true;
     let roomCode = null;
-    let playerNumber = 1; // 1 = Host/Player 1, 2 = Joiner/Player 2
+    let playerNumber = 1; // 1 = Host / Player 1 (Blue), 2 = Joiner / Player 2 (Red)
     let isMultiplayerActive = false;
     let rematchRequestedByMe = false;
     let rematchRequestedByOpponent = false;
@@ -440,7 +439,7 @@
             return;
         }
 
-        const channelName = `bloodbound_room_${code}`;
+        const channelName = `bloodbound_pvp_${code}`;
         realtimeChannel = supabaseClient.channel(channelName, {
             config: { broadcast: { self: false } }
         });
@@ -490,15 +489,15 @@
             case 'PLAYER_JOINED':
                 if (playerNumber === 1) {
                     document.getElementById('lobby-modal').classList.add('hidden');
-                    showToast('Opponent connected!', '#10b981');
-                    // Sync initial board state to P2
+                    showToast('Player 2 connected!', '#10b981');
+                    // Sync initial symmetrical PvP board state to Player 2
                     broadcastEvent('START_GAME_SYNC', { 
                         unitsState: units.map(u => ({ id: u.id, name: u.name, team: u.team, maxHp: u.maxHp, hp: u.hp, atk: u.atk, moveRange: u.moveRange, dashRange: u.dashRange, atkRange: u.atkRange, accuracy: u.accuracy, actions: u.actions, x: u.x, z: u.z })),
-                        turnOrderP1: playerTurnOrder.map(u => u.id),
-                        turnOrderP2: enemyTurnOrder.map(u => u.id),
-                        pIndex: playerTurnIndex,
-                        eIndex: enemyTurnIndex,
-                        activeTeam: activeUnit ? activeUnit.team : 'player'
+                        p1Order: p1TurnOrder.map(u => u.id),
+                        p2Order: p2TurnOrder.map(u => u.id),
+                        p1Idx: p1TurnIndex,
+                        p2Idx: p2TurnIndex,
+                        turnTeam: currentTurnTeam
                     });
                 }
                 break;
@@ -506,11 +505,12 @@
             case 'START_GAME_SYNC':
                 if (playerNumber === 2) {
                     document.getElementById('lobby-modal').classList.add('hidden');
-                    // Rebuild units on client 2
                     rebuildUnitsFromState(data.unitsState);
-                    playerTurnIndex = data.pIndex;
-                    enemyTurnIndex = data.eIndex;
+                    p1TurnIndex = data.p1Idx;
+                    p2TurnIndex = data.p2Idx;
+                    currentTurnTeam = data.turnTeam;
                     showToast('Match started!', '#10b981');
+                    setupTurnForActiveTeam();
                 }
                 break;
 
@@ -518,8 +518,9 @@
                 receiveRemoteAction(data);
                 break;
 
-            case 'END_TURN':
-                switchTurnRemote(data.nextState);
+            case 'SWITCH_TURN':
+                currentTurnTeam = data.nextTeam;
+                setupTurnForActiveTeam();
                 break;
 
             case 'SET_FACING':
@@ -555,18 +556,16 @@
         }
 
         stateArr.forEach(s => {
-            const visColor = s.team === 'player' ? (s.name === 'Commander' ? 0xfacc15 : 0x3b82f6) : 0x991b1b;
+            const visColor = s.team === 'player1' ? (s.name === 'Commander' ? 0xfacc15 : 0x3b82f6) : (s.name === 'Commander' ? 0xf43f5e : 0x991b1b);
             const newU = new Unit({ name: s.name, team: s.team, hp: s.maxHp, atk: s.atk, moveRange: s.moveRange, dashRange: s.dashRange, atkRange: s.atkRange, accuracy: s.accuracy, actions: s.actions, visual: { color: visColor } }, s.x, s.z);
             newU.id = s.id;
             newU.hp = s.hp;
             units.push(newU);
         });
 
-        playerTurnOrder = shuffleArray(units.filter(u => u.team === 'player'));
-        enemyTurnOrder = shuffleArray(units.filter(u => u.team === 'enemy'));
-        startPlayerTurn();
+        p1TurnOrder = shuffleArray(units.filter(u => u.team === 'player1'));
+        p2TurnOrder = shuffleArray(units.filter(u => u.team === 'player2'));
     }
-
 
     /** --- SYSTEM & UTILS --- **/
     const ALL_DICE_FACES = {
@@ -742,7 +741,7 @@
         setTimeout(() => { el.remove(); }, 1050);
     }
 
-    /** --- BOARD & UNITS --- **/
+    /** --- BOARD & SYMMETRICAL PVP ROSTERS --- **/
     const tiles = [];
     const tileMeshes = [];
     let units = [];
@@ -776,7 +775,7 @@
         constructor(config, x, z) {
             this.id = Math.random().toString(36).substr(2, 9);
             this.name = config.name;
-            this.team = config.team; 
+            this.team = config.team; // 'player1' or 'player2'
             this.maxHp = config.hp;
             this.hp = config.hp;
             this.atk = config.atk;
@@ -840,14 +839,14 @@
             this.parts.legL = legL;
 
             const headGeo = new THREE.BoxGeometry(0.35, 0.35, 0.35);
-            const head = new THREE.Mesh(headGeo, this.team === 'enemy' ? matDark : matSkin);
+            const head = new THREE.Mesh(headGeo, this.team === 'player2' ? matDark : matSkin);
             head.position.y = 0.6;
             head.castShadow = true;
             torso.add(head);
             this.parts.head = head;
             
             const visorGeo = new THREE.BoxGeometry(0.36, 0.1, 0.1);
-            const matEye = new THREE.MeshStandardMaterial({ color: this.team === 'enemy' ? 0xff0000 : 0xffffff, emissive: this.team === 'enemy' ? 0xff0000 : 0x000000 });
+            const matEye = new THREE.MeshStandardMaterial({ color: this.team === 'player2' ? 0xff0000 : 0xffffff, emissive: this.team === 'player2' ? 0xff0000 : 0x000000 });
             const visor = new THREE.Mesh(visorGeo, matEye);
             visor.position.set(0, 0, 0.15);
             head.add(visor);
@@ -871,7 +870,7 @@
             torso.add(armLGroup);
             this.parts.armL = armLGroup;
 
-            if (this.name === 'Vanguard' || this.name === 'Commander' || this.team === 'enemy') {
+            if (this.name === 'Vanguard' || this.name === 'Commander' || this.team === 'player2') {
                 const swordGeo = new THREE.BoxGeometry(0.1, 0.8, 0.2);
                 const sword = new THREE.Mesh(swordGeo, matMetal);
                 sword.position.set(0, -0.4, 0.2);
@@ -987,14 +986,20 @@
         }
     }
 
-    const UNIT_TYPES = {
-        commander: { name: 'Commander', team: 'player', hp: 12, atk: 4, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.95, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0xfacc15 } },
-        vanguard: { name: 'Vanguard', team: 'player', hp: 15, atk: 3, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.90, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x3b82f6 } },
-        assassin: { name: 'Assassin', team: 'player', hp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x8b5cf6 } },
-        archer: { name: 'Archer', team: 'player', hp: 8, atk: 3, moveRange: 2, dashRange: 4, atkRange: 4, accuracy: 0.92, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x10b981 } },
-        mage: { name: 'Mage', team: 'player', hp: 6, atk: 4, moveRange: 2, dashRange: 4, atkRange: 3, accuracy: 0.85, actions: ['move', 'dash', 'magic', 'defend', 'wild'], visual: { color: 0x0ea5e9 } },
-        grunt: { name: 'Corrupt', team: 'enemy', hp: 6, atk: 2, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.80, actions: ['move', 'attack'], visual: { color: 0x991b1b } },
-        brute: { name: 'Demon', team: 'enemy', hp: 12, atk: 4, moveRange: 2, dashRange: 3, atkRange: 1, accuracy: 0.75, actions: ['move', 'attack'], visual: { color: 0x7f1d1d } }
+    const UNIT_TYPES_P1 = {
+        commander: { name: 'Commander', team: 'player1', hp: 12, atk: 4, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.95, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0xfacc15 } },
+        vanguard: { name: 'Vanguard', team: 'player1', hp: 15, atk: 3, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.90, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x3b82f6 } },
+        assassin: { name: 'Assassin', team: 'player1', hp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x8b5cf6 } },
+        archer: { name: 'Archer', team: 'player1', hp: 8, atk: 3, moveRange: 2, dashRange: 4, atkRange: 4, accuracy: 0.92, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x10b981 } },
+        mage: { name: 'Mage', team: 'player1', hp: 6, atk: 4, moveRange: 2, dashRange: 4, atkRange: 3, accuracy: 0.85, actions: ['move', 'dash', 'magic', 'defend', 'wild'], visual: { color: 0x0ea5e9 } }
+    };
+
+    const UNIT_TYPES_P2 = {
+        commander: { name: 'Commander', team: 'player2', hp: 12, atk: 4, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.95, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0xf43f5e } },
+        vanguard: { name: 'Vanguard', team: 'player2', hp: 15, atk: 3, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.90, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x991b1b } },
+        assassin: { name: 'Assassin', team: 'player2', hp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x7c2d12 } },
+        archer: { name: 'Archer', team: 'player2', hp: 8, atk: 3, moveRange: 2, dashRange: 4, atkRange: 4, accuracy: 0.92, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0xbe123c } },
+        mage: { name: 'Mage', team: 'player2', hp: 6, atk: 4, moveRange: 2, dashRange: 4, atkRange: 3, accuracy: 0.85, actions: ['move', 'dash', 'magic', 'defend', 'wild'], visual: { color: 0xe11d48 } }
     };
 
     function initBoardUnits() {
@@ -1007,18 +1012,19 @@
             for(let z=0; z<BOARD_SIZE; z++) tiles[x][z].unit = null;
         }
 
-        units.push(new Unit(UNIT_TYPES.commander, 3, 7));
-        units.push(new Unit(UNIT_TYPES.vanguard, 2, 6));
-        units.push(new Unit(UNIT_TYPES.vanguard, 4, 6));
-        units.push(new Unit(UNIT_TYPES.assassin, 1, 7));
-        units.push(new Unit(UNIT_TYPES.archer, 5, 7));
-        units.push(new Unit(UNIT_TYPES.mage, 4, 7));
+        // Player 1 Roster (Bottom Side - z = 7 & 6)
+        units.push(new Unit(UNIT_TYPES_P1.commander, 3, 7));
+        units.push(new Unit(UNIT_TYPES_P1.vanguard, 2, 6));
+        units.push(new Unit(UNIT_TYPES_P1.vanguard, 4, 6));
+        units.push(new Unit(UNIT_TYPES_P1.assassin, 1, 7));
+        units.push(new Unit(UNIT_TYPES_P1.archer, 5, 7));
 
-        units.push(new Unit(UNIT_TYPES.brute, 3, 0));
-        units.push(new Unit(UNIT_TYPES.brute, 4, 0));
-        units.push(new Unit(UNIT_TYPES.grunt, 1, 1));
-        units.push(new Unit(UNIT_TYPES.grunt, 6, 1));
-        units.push(new Unit(UNIT_TYPES.grunt, 2, 2));
+        // Player 2 Symmetrical Roster (Top Side - z = 0 & 1)
+        units.push(new Unit(UNIT_TYPES_P2.commander, 4, 0));
+        units.push(new Unit(UNIT_TYPES_P2.vanguard, 3, 1));
+        units.push(new Unit(UNIT_TYPES_P2.vanguard, 5, 1));
+        units.push(new Unit(UNIT_TYPES_P2.assassin, 6, 0));
+        units.push(new Unit(UNIT_TYPES_P2.archer, 2, 0));
     }
 
     /** --- GAME STATE & TURN LOGIC --- **/
@@ -1029,14 +1035,15 @@
     let selectedDieIndex = -1;
     let highlightMeshes = [];
     
-    let playerTurnOrder = [];
-    let enemyTurnOrder = [];
-    let playerTurnIndex = 0;
-    let enemyTurnIndex = 0;
+    let p1TurnOrder = [];
+    let p2TurnOrder = [];
+    let p1TurnIndex = 0;
+    let p2TurnIndex = 0;
+    let currentTurnTeam = 'player1'; // 'player1' or 'player2'
 
     initBoardUnits();
-    playerTurnOrder = shuffleArray(units.filter(u => u.team === 'player'));
-    enemyTurnOrder = shuffleArray(units.filter(u => u.team === 'enemy'));
+    p1TurnOrder = shuffleArray(units.filter(u => u.team === 'player1'));
+    p2TurnOrder = shuffleArray(units.filter(u => u.team === 'player2'));
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -1091,6 +1098,13 @@
     function selectDie(index, btnEl) {
         if (state !== 'PLAYER_TURN' || diceRolled[index].used) return;
         
+        // Enforce online player turn restrictions
+        const isMyTeamTurn = (playerNumber === 1 && currentTurnTeam === 'player1') || (playerNumber === 2 && currentTurnTeam === 'player2');
+        if (isMultiplayerActive && !isMyTeamTurn) {
+            showToast("Not your turn / army!", '#ef4444');
+            return;
+        }
+
         selectedDieIndex = index;
         Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
         btnEl.classList.add('selected');
@@ -1271,11 +1285,8 @@
 
         if(state !== 'PLAYER_TURN' && state !== 'CHOOSE_FACING') return;
 
-        // Multiplayer Turn restriction:
-        // P1 plays Player units, P2 plays Enemy units (or vice versa depending on setup).
-        // By default in Bloodbound, P1 controls Player army, P2 controls Enemy army if online!
         if (isMultiplayerActive) {
-            const isMyTeamTurn = (playerNumber === 1 && activeUnit.team === 'player') || (playerNumber === 2 && activeUnit.team === 'enemy');
+            const isMyTeamTurn = (playerNumber === 1 && currentTurnTeam === 'player1') || (playerNumber === 2 && currentTurnTeam === 'player2');
             if (!isMyTeamTurn && state === 'PLAYER_TURN') {
                 showToast("Not your turn / army!", '#ef4444');
                 return;
@@ -1362,7 +1373,6 @@
     }
 
     function executeActionLocally(targetInfo) {
-        // Broadcast action before animation if multiplayer
         broadcastEvent('EXECUTE_ACTION', {
             unitId: activeUnit.id,
             dieIndex: selectedDieIndex,
@@ -1528,34 +1538,22 @@
         clearHighlights();
         btnEndTurn.innerText = "End Turn";
         btnEndTurn.classList.remove('facing-mode');
-        playerTurnIndex++;
         
-        // Switch turn to Enemy / Player 2 team
-        const nextState = 'ENEMY_TURN';
-        broadcastEvent('END_TURN', { nextState });
-        switchTurnRemote(nextState);
-    }
-
-    function switchTurnRemote(nextState) {
-        clearHighlights();
-        if (nextState === 'ENEMY_TURN') {
-            startEnemyTurn();
-        } else {
-            startPlayerTurn();
-        }
+        // Switch turn team between Player 1 and Player 2
+        currentTurnTeam = currentTurnTeam === 'player1' ? 'player2' : 'player1';
+        broadcastEvent('SWITCH_TURN', { nextTeam: currentTurnTeam });
+        setupTurnForActiveTeam();
     }
 
     function finishAction() {
         if(checkWinCondition()) return;
         if (ap <= 0 || diceRolled.every(d => d.used)) {
-            if(activeUnit.team === 'player' && (!isMultiplayerActive || playerNumber === 1)) {
+            const isMyTeamTurn = (playerNumber === 1 && currentTurnTeam === 'player1') || (playerNumber === 2 && currentTurnTeam === 'player2');
+            if (isMyTeamTurn) {
                 triggerFacingPhase();
-            } else if(activeUnit.team === 'enemy' && (!isMultiplayerActive || playerNumber === 2)) {
-                enemyTurnIndex++;
-                startPlayerTurn();
             } else {
-                // Remote unit finished turn
-                state = 'IDLE';
+                // Opponent unit finished action
+                advanceActiveTeamTurn();
             }
         } else {
             state = 'PLAYER_TURN';
@@ -1571,68 +1569,63 @@
         }
     });
 
-    function startPlayerTurn() {
+    function setupTurnForActiveTeam() {
         if(checkWinCondition()) return;
         state = 'PLAYER_TURN';
         ap = 3;
         btnEndTurn.innerText = "End Turn";
         btnEndTurn.classList.remove('facing-mode');
-        
-        playerTurnOrder = playerTurnOrder.filter(u => units.includes(u));
-        if (playerTurnOrder.length === 0 || playerTurnIndex >= playerTurnOrder.length) {
-            let players = units.filter(u => u.team === 'player');
-            if (players.length === 0) return;
-            playerTurnOrder = shuffleArray([...players]);
-            playerTurnIndex = 0;
+
+        if (currentTurnTeam === 'player1') {
+            p1TurnIndex++;
+            p1TurnOrder = p1TurnOrder.filter(u => units.includes(u));
+            if (p1TurnOrder.length === 0 || p1TurnIndex >= p1TurnOrder.length) {
+                let players = units.filter(u => u.team === 'player1');
+                if (players.length === 0) return;
+                p1TurnOrder = shuffleArray([...players]);
+                p1TurnIndex = 0;
+            }
+            activeUnit = p1TurnOrder[p1TurnIndex];
+        } else {
+            p2TurnIndex++;
+            p2TurnOrder = p2TurnOrder.filter(u => units.includes(u));
+            if (p2TurnOrder.length === 0 || p2TurnIndex >= p2TurnOrder.length) {
+                let players = units.filter(u => u.team === 'player2');
+                if (players.length === 0) return;
+                p2TurnOrder = shuffleArray([...players]);
+                p2TurnIndex = 0;
+            }
+            activeUnit = p2TurnOrder[p2TurnIndex];
         }
-        
-        activeUnit = playerTurnOrder[playerTurnIndex];
-        activeUnit.setDefending(false); 
+
+        activeUnit.setDefending(false);
         clearHighlights();
 
-        document.getElementById('turn-indicator').innerText = (isMultiplayerActive && playerNumber === 2) ? "OPPONENT TURN" : (activeUnit.name.toUpperCase() + "'S TURN");
+        const isMyTurn = (playerNumber === 1 && currentTurnTeam === 'player1') || (playerNumber === 2 && currentTurnTeam === 'player2');
+        document.getElementById('turn-indicator').innerText = isMyTurn ? (activeUnit.name.toUpperCase() + "'S TURN") : "OPPONENT TURN";
         document.getElementById('unit-name').innerText = activeUnit.name;
-        document.getElementById('unit-desc').innerText = "Select an action.";
+        document.getElementById('unit-desc').innerText = isMyTurn ? "Select an action." : "Waiting for opponent...";
         updateAPUI();
         rollDice();
     }
 
-    function startEnemyTurn() {
-        if(checkWinCondition()) return;
-        state = 'ENEMY_TURN';
-        ap = 3;
-        
-        enemyTurnOrder = enemyTurnOrder.filter(u => units.includes(u));
-        if (enemyTurnOrder.length === 0 || enemyTurnIndex >= enemyTurnOrder.length) {
-            let enemies = units.filter(u => u.team === 'enemy');
-            if (enemies.length === 0) return;
-            enemyTurnOrder = shuffleArray([...enemies]);
-            enemyTurnIndex = 0;
-        }
-        
-        activeUnit = enemyTurnOrder[enemyTurnIndex];
-        activeUnit.setDefending(false);
-        clearHighlights();
-        
-        document.getElementById('turn-indicator').innerText = (isMultiplayerActive && playerNumber === 1) ? "OPPONENT TURN" : "ENEMY / P2 TURN";
-        document.getElementById('unit-name').innerText = activeUnit.name;
-        document.getElementById('unit-desc').innerText = "Active unit ready.";
-        diceContainer.innerHTML = '';
-        updateAPUI();
-        rollDice();
+    function advanceActiveTeamTurn() {
+        currentTurnTeam = currentTurnTeam === 'player1' ? 'player2' : 'player1';
+        setupTurnForActiveTeam();
     }
 
     function checkWinCondition() {
         if(state === 'GAME_OVER') return true;
-        let p = units.filter(u => u.team === 'player');
-        let e = units.filter(u => u.team === 'enemy');
-        let comm = units.find(u => u.name === 'Commander');
+        let p1Units = units.filter(u => u.team === 'player1');
+        let p2Units = units.filter(u => u.team === 'player2');
+        let comm1 = units.find(u => u.team === 'player1' && u.name === 'Commander');
+        let comm2 = units.find(u => u.team === 'player2' && u.name === 'Commander');
         
-        if (p.length === 0 || !comm) {
+        if (p1Units.length === 0 || !comm1) {
             triggerGameOver(2); // P2 wins
             return true;
         }
-        if (e.length === 0) {
+        if (p2Units.length === 0 || !comm2) {
             triggerGameOver(1); // P1 wins
             return true;
         }
@@ -1667,11 +1660,12 @@
         document.getElementById('gameover-modal').classList.add('hidden');
         document.getElementById('rematch-status-box').classList.add('hidden');
         initBoardUnits();
-        playerTurnOrder = shuffleArray(units.filter(u => u.team === 'player'));
-        enemyTurnOrder = shuffleArray(units.filter(u => u.team === 'enemy'));
-        playerTurnIndex = 0;
-        enemyTurnIndex = 0;
-        startPlayerTurn();
+        p1TurnOrder = shuffleArray(units.filter(u => u.team === 'player1'));
+        p2TurnOrder = shuffleArray(units.filter(u => u.team === 'player2'));
+        p1TurnIndex = 0;
+        p2TurnIndex = 0;
+        currentTurnTeam = 'player1';
+        setupTurnForActiveTeam();
     }
 
     function leaveGame() {
@@ -1737,7 +1731,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         initSupabase();
-        startPlayerTurn();
+        setupTurnForActiveTeam();
         animate();
 
         // Main Menu UI Handlers
