@@ -3,792 +3,1250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BLOODBOUND - Vertical Slice</title>
-    <!-- Tailwind for rapid UI layout -->
+    <title>Tactical Command - 2 Player Multiplayer</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Three.js for 3D rendering -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #050505; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; }
-        #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        
-        /* UI Layer */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
-        .pointer-events-auto { pointer-events: auto; }
-        
-        /* Floating HP Bars */
-        #hp-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-        .hp-bar { position: absolute; transform: translate(-50%, -100%); background: rgba(0,0,0,0.8); border: 1px solid #333; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; color: white; transition: top 0.1s, left 0.1s; }
-        .hp-fill { height: 4px; background: #e11d48; border-radius: 2px; margin-top: 2px; transition: width 0.3s; }
-        
-        /* Dice animations */
-        @keyframes roll { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
-        .rolling { animation: roll 0.5s ease-out; }
-        .die-btn { transition: all 0.2s; }
-        .die-btn.selected { box-shadow: 0 0 15px #facc15; border-color: #facc15; transform: translateY(-5px); }
-        .die-btn.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; }
-
-        /* Notification Toast */
-        #toast { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); border: 1px solid #c2410c; padding: 15px 30px; border-radius: 8px; font-size: 20px; font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.3s; text-transform: uppercase; letter-spacing: 2px; z-index: 50;}
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+        }
+        canvas {
+            image-rendering: pixelated;
+            cursor: pointer;
+        }
+        .modal-blur {
+            backdrop-filter: blur(8px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 3px;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.03); }
+        }
+        .glow-effect {
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
     </style>
 </head>
-<body>
+<body class="h-screen w-screen flex flex-col justify-between relative bg-slate-950">
 
-    <!-- 3D Canvas -->
-    <canvas id="game-canvas"></canvas>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- Floating UI for Units -->
-    <div id="hp-container"></div>
-
-    <!-- Main UI -->
-    <div id="ui-layer">
-        <!-- Top Bar: Turn & AP -->
-        <div class="w-full p-4 flex justify-between items-start bg-gradient-to-b from-black/80 to-transparent">
-            <div class="pointer-events-auto">
-                <h1 class="text-2xl font-bold tracking-widest text-gray-200 uppercase" style="font-family: serif;">Bloodbound</h1>
-                <div id="turn-indicator" class="text-sm text-yellow-500 font-bold tracking-wide mt-1">PLAYER TURN</div>
+    <!-- Top Status Bar -->
+    <header class="w-full bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex justify-between items-center z-10 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="font-black text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">
+                <i class="fa-solid fa-shield-halved text-blue-500 mr-1.5"></i>TACTICAL COMMAND
             </div>
-            <div class="flex flex-col items-end">
-                <div class="text-sm text-gray-400">ACTION POINTS</div>
-                <div class="flex space-x-1 mt-1" id="ap-container">
-                    <div class="w-4 h-4 bg-yellow-400 rounded-full shadow-[0_0_10px_#facc15]"></div>
-                    <div class="w-4 h-4 bg-yellow-400 rounded-full shadow-[0_0_10px_#facc15]"></div>
-                    <div class="w-4 h-4 bg-yellow-400 rounded-full shadow-[0_0_10px_#facc15]"></div>
-                </div>
+            <span id="room-badge" class="hidden text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700 font-mono flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                ROOM: <strong id="current-room-code" class="text-blue-400">------</strong>
+            </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button id="config-btn" class="text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 p-2 rounded-lg text-xs transition border border-slate-700" title="Supabase Credentials">
+                <i class="fa-solid fa-gear text-sm"></i>
+            </button>
+            <button id="menu-tutorial-btn" class="text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-book-open text-blue-400"></i> Tutorial
+            </button>
+            <button id="leave-game-btn" class="hidden text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-rose-800/50 flex items-center gap-1.5">
+                <i class="fa-solid fa-right-from-bracket"></i> Leave
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main id="game-container" class="relative flex-1 w-full flex flex-col items-center justify-center p-2 overflow-hidden">
+        
+        <!-- Turn & Match Info Header (In-Game) -->
+        <div id="game-hud" class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-full px-6 py-2 shadow-2xl">
+            <!-- Player 1 Status -->
+            <div id="p1-hud" class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span class="text-xs font-bold text-blue-400 uppercase tracking-wide">P1 (Blue)</span>
+                <span id="p1-commander-hp" class="text-xs font-mono bg-blue-950 text-blue-200 px-2 py-0.5 rounded border border-blue-800">100 HP</span>
+            </div>
+
+            <div class="text-slate-600 font-bold px-1">VS</div>
+
+            <!-- Player 2 Status -->
+            <div id="p2-hud" class="flex items-center gap-2">
+                <span id="p2-commander-hp" class="text-xs font-mono bg-rose-950 text-rose-200 px-2 py-0.5 rounded border border-rose-800">100 HP</span>
+                <span class="text-xs font-bold text-rose-400 uppercase tracking-wide">P2 (Red)</span>
+                <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+            </div>
+
+            <div class="h-4 w-px bg-slate-700 mx-1"></div>
+
+            <!-- Turn Banner -->
+            <div id="turn-indicator" class="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1.5">
+                <i class="fa-solid fa-clock"></i> <span id="turn-text">P1's Turn</span>
             </div>
         </div>
 
-        <!-- Center Message -->
-        <div id="toast">Your Turn</div>
+        <!-- Canvas Strategy Map -->
+        <canvas id="gameCanvas" class="rounded-xl shadow-2xl border border-slate-800 bg-slate-900"></canvas>
 
-        <!-- Bottom Bar: Tactical Dice & Controls -->
-        <div class="w-full p-4 bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-auto">
-            
-            <div id="unit-info" class="mb-4 hidden text-center">
-                <h2 id="unit-name" class="text-lg font-bold text-gray-200">Vanguard</h2>
-                <p id="unit-desc" class="text-xs text-gray-400">Select a die to perform an action.</p>
+        <!-- Selected Unit Stats Bar -->
+        <div id="unit-card" class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-slate-900/95 border border-slate-800 rounded-xl p-3 px-5 shadow-2xl flex items-center gap-6 backdrop-blur">
+            <div class="flex items-center gap-3">
+                <div id="unit-icon-bg" class="w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+                    <i id="unit-icon" class="fa-solid fa-chess-knight"></i>
+                </div>
+                <div>
+                    <h4 id="unit-name" class="font-bold text-sm text-slate-100">Knight</h4>
+                    <p id="unit-owner" class="text-xs text-slate-400">Player 1 Unit</p>
+                </div>
             </div>
 
-            <div class="flex justify-center space-x-4 mb-4" id="dice-container">
-                <!-- Dice generated via JS -->
+            <div class="h-8 w-px bg-slate-800"></div>
+
+            <div class="grid grid-cols-4 gap-4 text-center text-xs">
+                <div>
+                    <span class="text-slate-500 block text-[10px]">HEALTH</span>
+                    <strong id="unit-hp" class="text-emerald-400 font-mono">25/25</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-[10px]">ATTACK</span>
+                    <strong id="unit-atk" class="text-amber-400 font-mono">10</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-[10px]">MOVE</span>
+                    <strong id="unit-mov" class="text-blue-400 font-mono">3</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-[10px]">RANGE</span>
+                    <strong id="unit-rng" class="text-purple-400 font-mono">1</strong>
+                </div>
             </div>
 
-            <div class="flex justify-between w-full">
-                <button id="btn-end-turn" class="bg-red-900/80 hover:bg-red-800 text-white font-bold py-3 px-6 rounded border border-red-700 shadow-lg uppercase tracking-wider text-sm w-full">
-                    End Turn
+            <div class="h-8 w-px bg-slate-800"></div>
+
+            <button id="end-turn-btn" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow-md flex items-center gap-1.5">
+                <i class="fa-solid fa-forward"></i> End Turn
+            </button>
+        </div>
+    </main>
+
+    <!-- OVERLAY 1: MAIN MENU -->
+    <div id="main-menu" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
+        <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
+            <div class="absolute -right-12 -top-12 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-12 -bottom-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div>
+                <div class="inline-flex p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-3 text-3xl">
+                    <i class="fa-solid fa-chess-board"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-white">TACTICAL COMMAND</h1>
+                <p class="text-xs text-slate-400 mt-1">2-Player Online Tactical Strategy Engine</p>
+            </div>
+
+            <!-- Primary Buttons -->
+            <div id="menu-actions" class="space-y-3">
+                <button id="play-btn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> PLAY MULTIPLAYER
+                </button>
+
+                <button id="tutorial-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-6 rounded-xl border border-slate-700 transition text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-blue-400"></i> HOW TO PLAY (TUTORIAL)
+                </button>
+            </div>
+
+            <!-- Play Submenu (Join / Create) -->
+            <div id="play-submenu" class="hidden space-y-4 pt-2">
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="create-room-btn" class="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-2xl text-indigo-400"></i>
+                        <span class="text-xs">CREATE ROOM</span>
+                    </button>
+
+                    <button id="show-join-input-btn" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket text-2xl text-emerald-400"></i>
+                        <span class="text-xs">JOIN ROOM</span>
+                    </button>
+                </div>
+
+                <!-- Join Code Box -->
+                <div id="join-box" class="hidden space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <label class="block text-xs font-semibold text-slate-400 text-left">ENTER 6-CHAR ROOM CODE:</label>
+                    <div class="flex gap-2">
+                        <input id="room-code-input" type="text" maxlength="6" placeholder="X8Y2A9" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-center text-sm font-mono font-bold tracking-widest text-blue-400 uppercase focus:outline-none focus:border-blue-500">
+                        <button id="confirm-join-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition">
+                            JOIN
+                        </button>
+                    </div>
+                </div>
+
+                <button id="back-to-menu-btn" class="text-xs text-slate-500 hover:text-slate-300 transition underline">
+                    &larr; Back to Main Menu
+                </button>
+            </div>
+
+            <div class="text-[11px] text-slate-500 border-t border-slate-800/80 pt-4 flex items-center justify-between">
+                <span>Supabase Realtime: <span id="supabase-status" class="text-amber-400 font-medium">Local Simulator</span></span>
+                <button id="supabase-config-link" class="text-blue-400 hover:underline">Change Keys</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY 2: LOBBY / WAITING ROOM -->
+    <div id="lobby-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
+        <div class="max-w-sm w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-center space-y-6">
+            <div class="w-16 h-16 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 mx-auto flex items-center justify-center text-2xl animate-spin">
+                <i class="fa-solid fa-spinner"></i>
+            </div>
+
+            <div>
+                <h2 class="text-xl font-bold text-white">Waiting for Opponent...</h2>
+                <p class="text-xs text-slate-400 mt-1">Share this room code with Player 2</p>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+                <span id="lobby-code-display" class="font-mono text-2xl font-black text-blue-400 tracking-widest">------</span>
+                <button id="copy-code-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+                    <i class="fa-regular fa-copy"></i> Copy
+                </button>
+            </div>
+
+            <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-800 text-left text-xs space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Player 1 (Host - Blue):</span>
+                    <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Connected</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Player 2 (Red):</span>
+                    <span id="p2-status-text" class="text-amber-400 font-semibold animate-pulse">Waiting...</span>
+                </div>
+            </div>
+
+            <button id="cancel-lobby-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold py-2.5 rounded-lg border border-slate-700 text-xs transition">
+                Cancel & Return
+            </button>
+        </div>
+    </div>
+
+    <!-- OVERLAY 3: TUTORIAL MODAL -->
+    <div id="tutorial-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
+        <div class="max-w-2xl w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-blue-400"></i> Tactical Command - Game Concepts
+                </h3>
+                <button id="close-tutorial-btn" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto custom-scrollbar my-4 space-y-6 text-sm text-slate-300 pr-2">
+                
+                <!-- Section 1: Objective -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <h4 class="font-bold text-blue-400 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-crown text-amber-400"></i> Victory Condition
+                    </h4>
+                    <p class="text-xs leading-relaxed text-slate-300">
+                        Each player controls an army featuring 1 <strong class="text-amber-300">Commander</strong> and 8 tactical units. 
+                        <strong>Defeat the opponent's Commander</strong> to immediately win the match. Protect your Commander at all costs!
+                    </p>
+                </div>
+
+                <!-- Section 2: Units Overview -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-200 text-sm uppercase tracking-wider">Unit Classes & Roster</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3">
+                            <div class="text-amber-400 text-xl pt-1"><i class="fa-solid fa-crown"></i></div>
+                            <div>
+                                <h5 class="font-bold text-xs text-amber-300">COMMANDER (x1)</h5>
+                                <p class="text-[11px] text-slate-400">100 HP | High attack. Loss of Commander ends the game immediately.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3">
+                            <div class="text-blue-400 text-xl pt-1"><i class="fa-solid fa-shield-halved"></i></div>
+                            <div>
+                                <h5 class="font-bold text-xs text-blue-300">KNIGHT (x2)</h5>
+                                <p class="text-[11px] text-slate-400">40 HP | Frontline tank with heavy melee damage.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3">
+                            <div class="text-emerald-400 text-xl pt-1"><i class="fa-solid fa-bow-arrow"></i></div>
+                            <div>
+                                <h5 class="font-bold text-xs text-emerald-300">ARCHER (x2)</h5>
+                                <p class="text-[11px] text-slate-400">22 HP | Long attack range (3 tiles). Fragile in close combat.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3">
+                            <div class="text-purple-400 text-xl pt-1"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div>
+                                <h5 class="font-bold text-xs text-purple-300">MAGE (x2)</h5>
+                                <p class="text-[11px] text-slate-400">18 HP | Mid range (2 tiles). High burst tactical damage.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3 col-span-1 sm:col-span-2">
+                            <div class="text-cyan-400 text-xl pt-1"><i class="fa-solid fa-person-running"></i></div>
+                            <div>
+                                <h5 class="font-bold text-xs text-cyan-300">SCOUT (x2)</h5>
+                                <p class="text-[11px] text-slate-400">25 HP | Exceptional movement range (4 tiles). Ideal for flank attacks.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Controls & Rules -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <h4 class="font-bold text-indigo-400 text-sm">Turn & Movement Controls</h4>
+                    <ul class="text-xs space-y-1.5 list-disc list-inside text-slate-300">
+                        <li><strong>Your Turn:</strong> You can only select and order your own colored units (Blue = P1, Red = P2).</li>
+                        <li><strong>Movement:</strong> Click your unit to view blue highlighted valid movement tiles. Click a highlighted tile to move.</li>
+                        <li><strong>Combat:</strong> Enemy units in red highlighted tiles can be targeted. Click an enemy in range to attack!</li>
+                        <li><strong>End Turn:</strong> Click the "End Turn" button when finished to pass control to your opponent.</li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <button id="tutorial-got-it-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition text-xs">
+                GOT IT, LET'S PLAY!
+            </button>
+        </div>
+    </div>
+
+    <!-- OVERLAY 4: GAME OVER MODAL (REMATCH / QUIT) -->
+    <div id="gameover-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
+        <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center space-y-6">
+            <div id="gameover-icon-bg" class="w-20 h-20 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 mx-auto flex items-center justify-center text-4xl">
+                <i id="gameover-icon" class="fa-solid fa-trophy"></i>
+            </div>
+
+            <div>
+                <h2 id="gameover-title" class="text-2xl font-black text-white">VICTORY!</h2>
+                <p id="gameover-sub" class="text-xs text-slate-400 mt-1">Player 1 defeated the enemy Commander</p>
+            </div>
+
+            <div id="rematch-status-box" class="hidden text-xs bg-slate-950 p-3 rounded-lg border border-slate-800 text-amber-400 font-semibold animate-pulse">
+                Opponent requested a rematch!
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button id="rematch-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i> REMATCH
+                </button>
+                <button id="quit-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 rounded-xl border border-slate-700 transition text-xs">
+                    QUIT TO MENU
                 </button>
             </div>
         </div>
     </div>
 
-<script>
-    /** --- SYSTEM & UTILS --- **/
-    const DICE_FACES = [
-        { id: 'move', icon: '👟', name: 'MOVE' },
-        { id: 'attack', icon: '⚔️', name: 'ATTACK' },
-        { id: 'magic', icon: '✨', name: 'MAGIC' },
-        { id: 'dash', icon: '💨', name: 'DASH' },
-        { id: 'defend', icon: '🛡️', name: 'DEFEND' },
-        { id: 'wild', icon: '🃏', name: 'WILD' }
-    ];
+    <!-- OVERLAY 5: SUPABASE CONFIG MODAL -->
+    <div id="supabase-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
+        <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-database text-emerald-400"></i> Supabase Setup
+                </h3>
+                <button id="close-supabase-btn" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
 
-    // Simple Custom Tweening Engine
-    const Tweens = [];
-    function tween(obj, props, duration, easing = (t)=>t, onUpdate = null, onComplete = null) {
-        const startProps = {};
-        for (let k in props) startProps[k] = obj[k];
-        Tweens.push({ obj, startProps, targetProps: props, duration, elapsed: 0, easing, onUpdate, onComplete });
-    }
-    function updateTweens(dt) {
-        for (let i = Tweens.length - 1; i >= 0; i--) {
-            let t = Tweens[i];
-            t.elapsed += dt;
-            let progress = Math.min(t.elapsed / t.duration, 1);
-            let e = t.easing(progress);
-            for (let k in t.targetProps) {
-                t.obj[k] = t.startProps[k] + (t.targetProps[k] - t.startProps[k]) * e;
+            <p class="text-xs text-slate-400">
+                To connect 2 players across separate browsers/devices, enter your Supabase credentials. If left empty, a local Broadcast Simulator will run for testing on the same machine.
+            </p>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Supabase URL</label>
+                    <input id="sb-url-input" type="text" placeholder="https://xyz.supabase.co" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Supabase Anon Key</label>
+                    <input id="sb-key-input" type="password" placeholder="eyJhbGciOi..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="save-sb-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition">
+                    Save Credentials
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY 6: CUSTOM CONFIRM MODAL -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/90 modal-blur">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-w-sm w-full mx-4">
+            <h3 class="text-lg font-bold text-white text-center">Are you sure?</h3>
+            <p id="confirm-message" class="text-sm text-slate-400 text-center"></p>
+            <div class="flex justify-center gap-3 pt-2">
+                <button id="confirm-yes-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition">Yes, Leave</button>
+                <button id="confirm-no-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO SCRIPT EFFECTS (WEB AUDIO API) -->
+    <script>
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
             }
-            if (t.onUpdate) t.onUpdate();
-            if (progress >= 1) {
-                if (t.onComplete) t.onComplete();
-                Tweens.splice(i, 1);
-            }
-        }
-    }
-    const Easing = {
-        OutQuad: t => t * (2 - t),
-        InQuad: t => t * t,
-        OutElastic: t => t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1
-    };
-
-    /** --- 3D ENGINE SETUP --- **/
-    const canvas = document.getElementById('game-canvas');
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x050508);
-    scene.fog = new THREE.Fog(0x050508, 10, 25);
-
-    // Portrait Tactical Camera
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-    let cameraShake = { x: 0, y: 0, z: 0, intensity: 0 };
-    const baseCamPos = new THREE.Vector3(3.5, 12, 11);
-    const baseCamLook = new THREE.Vector3(3.5, 0, 3.5);
-    camera.position.copy(baseCamPos);
-    camera.lookAt(baseCamLook);
-
-    // Lighting (Premium feel)
-    const ambientLight = new THREE.AmbientLight(0x202030, 1.5);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xfffaed, 2.5);
-    dirLight.position.set(5, 10, 5);
-    dirLight.castShadow = true;
-    dirLight.shadow.camera.left = -5;
-    dirLight.shadow.camera.right = 12;
-    dirLight.shadow.camera.top = 12;
-    dirLight.shadow.camera.bottom = -5;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
-    scene.add(dirLight);
-
-    // Particle System Manager (Blood, Sparks)
-    class ParticleSystem {
-        constructor() {
-            this.particles = [];
-            const geo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-            const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            this.meshTemplate = new THREE.Mesh(geo, mat);
-        }
-        spawnBurst(pos, colorHex, count, speed = 1) {
-            for(let i=0; i<count; i++) {
-                const p = this.meshTemplate.clone();
-                p.material = p.material.clone();
-                p.material.color.setHex(colorHex);
-                p.position.copy(pos);
-                // Random velocity hemisphere upwards
-                const vx = (Math.random() - 0.5) * speed;
-                const vy = (Math.random() * 0.5 + 0.5) * speed;
-                const vz = (Math.random() - 0.5) * speed;
-                scene.add(p);
-                this.particles.push({ mesh: p, vel: new THREE.Vector3(vx, vy, vz), life: 1.0 });
-            }
-        }
-        update(dt) {
-            for(let i = this.particles.length-1; i>=0; i--) {
-                let p = this.particles[i];
-                p.life -= dt * 2;
-                p.vel.y -= dt * 3; // gravity
-                p.mesh.position.addScaledVector(p.vel, dt);
-                p.mesh.scale.setScalar(p.life);
-                if(p.life <= 0) {
-                    scene.remove(p.mesh);
-                    this.particles.splice(i, 1);
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 }
             }
-        }
-    }
-    const vfx = new ParticleSystem();
-
-    function triggerShake(intensity) {
-        cameraShake.intensity = intensity;
-    }
-
-    /** --- GAMEPLAY LOGIC & BOARD --- **/
-    const BOARD_SIZE = 8;
-    const tiles = [];
-    const tileMeshes = [];
-    let units = [];
-
-    // Materials
-    const matTileDark = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.9, metalness: 0.1 });
-    const matTileLight = new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.9, metalness: 0.1 });
-    const matTileHighlight = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5, transparent: true, opacity: 0.5 });
-    const matTileAttack = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5, transparent: true, opacity: 0.5 });
-
-    // Build Board
-    const boardGroup = new THREE.Group();
-    const tileGeo = new THREE.BoxGeometry(0.96, 0.2, 0.96);
-    for (let x = 0; x < BOARD_SIZE; x++) {
-        tiles[x] = [];
-        for (let z = 0; z < BOARD_SIZE; z++) {
-            const isLight = (x + z) % 2 === 0;
-            const mesh = new THREE.Mesh(tileGeo, isLight ? matTileLight : matTileDark);
-            mesh.position.set(x, 0, z);
-            mesh.receiveShadow = true;
-            mesh.userData = { x, z, originalMat: mesh.material };
-            boardGroup.add(mesh);
-            tiles[x][z] = { mesh, unit: null, type: 'normal' };
-            tileMeshes.push(mesh);
-        }
-    }
-    scene.add(boardGroup);
-
-    // Add Central Relic for aesthetic
-    const relicGeo = new THREE.CylinderGeometry(0.3, 0.5, 1, 8);
-    const relicMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8, roughness: 0.2 });
-    const relic = new THREE.Mesh(relicGeo, relicMat);
-    relic.position.set(3.5, 0.5, 3.5);
-    relic.castShadow = true;
-    boardGroup.add(relic);
-    const relicLight = new THREE.PointLight(0x00ffff, 1, 3);
-    relicLight.position.set(3.5, 1.5, 3.5);
-    scene.add(relicLight);
-
-
-    // Unit Definitions
-    class Unit {
-        constructor(config, x, z) {
-            this.id = Math.random().toString(36).substr(2, 9);
-            this.name = config.name;
-            this.team = config.team; // 'player' or 'enemy'
-            this.maxHp = config.hp;
-            this.hp = config.hp;
-            this.atk = config.atk;
-            this.moveRange = config.moveRange;
-            this.atkRange = config.atkRange;
-            this.x = x;
-            this.z = z;
-            this.hasActed = false;
-
-            // Visuals
-            this.mesh = this.buildMesh(config.visual);
-            this.mesh.position.set(x, 0.2, z);
-            scene.add(this.mesh);
-            
-            // HP UI
-            this.uiEl = document.createElement('div');
-            this.uiEl.className = 'hp-bar';
-            this.uiEl.innerHTML = `<div>${this.name}</div><div class="hp-fill" style="width:100%"></div>`;
-            document.getElementById('hp-container').appendChild(this.uiEl);
-
-            tiles[x][z].unit = this;
-            this.updateUIPosition();
-        }
-
-        buildMesh(vis) {
-            const group = new THREE.Group();
-            let geo;
-            if (vis.shape === 'box') geo = new THREE.BoxGeometry(0.6, 1.2, 0.6);
-            else if (vis.shape === 'cylinder') geo = new THREE.CylinderGeometry(0.3, 0.3, 1.2, 16);
-            else geo = new THREE.ConeGeometry(0.4, 1.2, 8);
-            
-            // Main body
-            const mat = new THREE.MeshStandardMaterial({ color: vis.color, roughness: 0.4, metalness: 0.6 });
-            const body = new THREE.Mesh(geo, mat);
-            body.position.y = 0.6;
-            body.castShadow = true;
-            body.receiveShadow = true;
-            group.add(body);
-
-            // Facing indicator
-            const faceGeo = new THREE.BoxGeometry(0.2, 0.2, 0.4);
-            const faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-            const face = new THREE.Mesh(faceGeo, faceMat);
-            face.position.set(0, 0.9, 0.3);
-            group.add(face);
-
-            return group;
-        }
-
-        updateUIPosition() {
-            // Project 3D pos to 2D screen
-            const pos = this.mesh.position.clone();
-            pos.y += 1.5;
-            pos.project(camera);
-            const x = (pos.x * .5 + .5) * window.innerWidth;
-            const y = (pos.y * -.5 + .5) * window.innerHeight;
-            this.uiEl.style.left = `${x}px`;
-            this.uiEl.style.top = `${y}px`;
-        }
-
-        takeDamage(amount) {
-            this.hp = Math.max(0, this.hp - amount);
-            this.uiEl.querySelector('.hp-fill').style.width = `${(this.hp / this.maxHp) * 100}%`;
-            
-            // Blood VFX
-            vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.6, 0)), 0xe11d48, 20, 3);
-            triggerShake(0.2);
-
-            // Flash red
-            const bodyMat = this.mesh.children[0].material;
-            const ogColor = bodyMat.color.getHex();
-            bodyMat.color.setHex(0xff0000);
-            setTimeout(() => { if(this.hp>0) bodyMat.color.setHex(ogColor); }, 150);
-
-            if (this.hp <= 0) this.die();
-        }
-
-        die() {
-            vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.6, 0)), 0xff0000, 50, 5);
-            scene.remove(this.mesh);
-            this.uiEl.remove();
-            tiles[this.x][this.z].unit = null;
-            units = units.filter(u => u !== this);
-            triggerShake(0.4);
-            checkWinCondition();
-        }
-
-        lookAtTile(tx, tz) {
-            this.mesh.lookAt(tx, this.mesh.position.y, tz);
-        }
-    }
-
-    // Configs
-    const UNIT_TYPES = {
-        commander: { name: 'Commander', team: 'player', hp: 12, atk: 4, moveRange: 3, atkRange: 1, visual: { shape: 'box', color: 0xfacc15 } },
-        vanguard: { name: 'Vanguard', team: 'player', hp: 15, atk: 3, moveRange: 2, atkRange: 1, visual: { shape: 'box', color: 0x3b82f6 } },
-        assassin: { name: 'Assassin', team: 'player', hp: 8, atk: 5, moveRange: 4, atkRange: 1, visual: { shape: 'cylinder', color: 0x8b5cf6 } },
-        archer: { name: 'Archer', team: 'player', hp: 8, atk: 3, moveRange: 3, atkRange: 4, visual: { shape: 'cone', color: 0x10b981 } },
-        mage: { name: 'Mage', team: 'player', hp: 6, atk: 4, moveRange: 2, atkRange: 3, visual: { shape: 'cone', color: 0x0ea5e9 } },
-        grunt: { name: 'Corrupt', team: 'enemy', hp: 6, atk: 2, moveRange: 3, atkRange: 1, visual: { shape: 'box', color: 0x991b1b } },
-        brute: { name: 'Demon', team: 'enemy', hp: 12, atk: 4, moveRange: 2, atkRange: 1, visual: { shape: 'box', color: 0x7f1d1d } }
-    };
-
-    // Spawn Units
-    units.push(new Unit(UNIT_TYPES.commander, 3, 7));
-    units.push(new Unit(UNIT_TYPES.vanguard, 2, 6));
-    units.push(new Unit(UNIT_TYPES.vanguard, 4, 6));
-    units.push(new Unit(UNIT_TYPES.assassin, 1, 7));
-    units.push(new Unit(UNIT_TYPES.archer, 5, 7));
-    units.push(new Unit(UNIT_TYPES.mage, 4, 7));
-
-    units.push(new Unit(UNIT_TYPES.brute, 3, 0));
-    units.push(new Unit(UNIT_TYPES.brute, 4, 0));
-    units.push(new Unit(UNIT_TYPES.grunt, 1, 1));
-    units.push(new Unit(UNIT_TYPES.grunt, 6, 1));
-    units.push(new Unit(UNIT_TYPES.grunt, 2, 2));
-
-
-    /** --- GAME STATE & INPUT --- **/
-    let state = 'PLAYER_TURN'; // PLAYER_TURN, ACTION_ANIMATING, ENEMY_TURN, GAME_OVER
-    let ap = 3;
-    let diceRolled = [];
-    let selectedUnit = null;
-    let selectedDieIndex = -1;
-    let highlightMeshes = [];
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    // UI Elements
-    const toastEl = document.getElementById('toast');
-    const apContainer = document.getElementById('ap-container');
-    const diceContainer = document.getElementById('dice-container');
-    const unitInfo = document.getElementById('unit-info');
-    const btnEndTurn = document.getElementById('btn-end-turn');
-
-    function showToast(msg, color = 'white') {
-        toastEl.innerText = msg;
-        toastEl.style.color = color;
-        toastEl.style.opacity = 1;
-        toastEl.style.transform = 'translate(-50%, -50%) scale(1.1)';
-        setTimeout(() => {
-            toastEl.style.opacity = 0;
-            toastEl.style.transform = 'translate(-50%, -50%) scale(1)';
-        }, 1500);
-    }
-
-    function updateAPUI() {
-        apContainer.innerHTML = '';
-        for(let i=0; i<3; i++) {
-            if(i < ap) apContainer.innerHTML += `<div class="w-4 h-4 bg-yellow-400 rounded-full shadow-[0_0_10px_#facc15]"></div>`;
-            else apContainer.innerHTML += `<div class="w-4 h-4 bg-gray-700 rounded-full"></div>`;
-        }
-    }
-
-    function rollDice() {
-        diceRolled = [];
-        diceContainer.innerHTML = '';
-        for(let i=0; i<3; i++) {
-            const d = DICE_FACES[Math.floor(Math.random() * DICE_FACES.length)];
-            diceRolled.push({ ...d, used: false });
-            
-            const btn = document.createElement('button');
-            btn.className = `die-btn w-16 h-16 bg-gray-800 border-2 border-gray-600 rounded-xl flex flex-col items-center justify-center text-white rolling`;
-            btn.innerHTML = `<span class="text-2xl">${d.icon}</span><span class="text-[10px] font-bold mt-1">${d.name}</span>`;
-            btn.onclick = () => selectDie(i, btn);
-            diceContainer.appendChild(btn);
-            
-            // Remove animation class after roll
-            setTimeout(() => btn.classList.remove('rolling'), 500);
-        }
-    }
-
-    function selectDie(index, btnEl) {
-        if (state !== 'PLAYER_TURN' || diceRolled[index].used) return;
-        if (!selectedUnit) { showToast('Select a hero first!', '#facc15'); return; }
-        
-        selectedDieIndex = index;
-        Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
-        btnEl.classList.add('selected');
-        
-        const die = diceRolled[index];
-        showValidTargets(die.id);
-    }
-
-    function clearHighlights() {
-        tileMeshes.forEach(m => m.material = m.userData.originalMat);
-        highlightMeshes = [];
-    }
-
-    function showValidTargets(actionType) {
-        clearHighlights();
-        if(!selectedUnit) return;
-        
-        const isMove = actionType === 'move' || actionType === 'dash' || actionType === 'wild';
-        const isAttack = actionType === 'attack' || actionType === 'magic' || actionType === 'wild';
-        
-        for (let x = 0; x < BOARD_SIZE; x++) {
-            for (let z = 0; z < BOARD_SIZE; z++) {
-                const dist = Math.abs(x - selectedUnit.x) + Math.abs(z - selectedUnit.z);
-                const tile = tiles[x][z];
-                
-                if (isMove && dist <= selectedUnit.moveRange && dist > 0 && !tile.unit) {
-                    if (x===3 && z===3) continue; // Skip relic
-                    tile.mesh.material = matTileHighlight;
-                    highlightMeshes.push({x, z, type: 'move'});
-                }
-                if (isAttack && dist <= selectedUnit.atkRange && dist > 0 && tile.unit && tile.unit.team !== selectedUnit.team) {
-                    tile.mesh.material = matTileAttack;
-                    highlightMeshes.push({x, z, type: 'attack'});
-                }
+            playTone(freq, type = 'sine', duration = 0.1, vol = 0.1) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+            move() { this.init(); this.playTone(300, 'triangle', 0.08, 0.05); }
+            attack() { 
+                this.init(); 
+                this.playTone(150, 'sawtooth', 0.15, 0.12); 
+                setTimeout(() => this.playTone(80, 'square', 0.2, 0.15), 50);
+            }
+            select() { this.init(); this.playTone(520, 'sine', 0.05, 0.04); }
+            win() {
+                this.init();
+                [400, 500, 600, 800].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.2, 0.1), i * 120));
             }
         }
-    }
+        const sfx = new SoundEngine();
+    </script>
 
-    // Input Handling
-    window.addEventListener('pointerdown', (e) => {
-        if(state !== 'PLAYER_TURN') return;
-        if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return; // Ignore UI clicks
-
-        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera);
-
-        // Check units first
-        const unitMeshes = units.map(u => u.mesh.children[0]);
-        const unitIntersects = raycaster.intersectObjects(unitMeshes);
-        
-        if (unitIntersects.length > 0) {
-            const clickedMesh = unitIntersects[0].object.parent;
-            const unit = units.find(u => u.mesh === clickedMesh);
+    <!-- MAIN GAME ENGINE & SUPABASE REALTIME LOGIC -->
+    <script>
+        // --- CUSTOM TOAST & CONFIRM LOGIC ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const colors = type === 'error' ? 'bg-rose-600 border-rose-500' : 'bg-slate-800 border-slate-700';
+            toast.className = `px-4 py-2 rounded-lg shadow-lg border text-white text-sm font-semibold transition-all duration-300 opacity-0 transform -translate-y-4 ${colors}`;
+            toast.textContent = message;
+            container.appendChild(toast);
             
-            // Check if clicking enemy for attack
-            if (unit && unit.team === 'enemy' && selectedDieIndex !== -1) {
-                 const hl = highlightMeshes.find(h => h.x === unit.x && h.z === unit.z && h.type === 'attack');
-                 if(hl) { executeAction(hl); return; }
-            }
+            requestAnimationFrame(() => {
+                toast.classList.remove('opacity-0', '-translate-y-4');
+            });
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
-            if (unit && unit.team === 'player') {
-                selectedUnit = unit;
-                unitInfo.classList.remove('hidden');
-                document.getElementById('unit-name').innerText = unit.name;
-                selectedDieIndex = -1; // Reset die
-                Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
-                clearHighlights();
-                
-                // Pop animation
-                tween(unit.mesh.scale, {y: 1.2}, 0.1, Easing.OutQuad, null, () => {
-                    tween(unit.mesh.scale, {y: 1.0}, 0.1, Easing.InQuad);
+        function showConfirm(message, onYes) {
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-message').textContent = message;
+            modal.classList.remove('hidden');
+            
+            const yesBtn = document.getElementById('confirm-yes-btn');
+            const noBtn = document.getElementById('confirm-no-btn');
+            
+            const handleYes = () => { cleanup(); onYes(); };
+            const handleNo = () => { cleanup(); };
+            
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                yesBtn.removeEventListener('click', handleYes);
+                noBtn.removeEventListener('click', handleNo);
+            };
+            
+            yesBtn.addEventListener('click', handleYes);
+            noBtn.addEventListener('click', handleNo);
+        }
+
+        // --- CONSTANTS & GAME DEFINITIONS ---
+        const GRID_COLS = 12;
+        const GRID_ROWS = 8;
+
+        const UNIT_TYPES = {
+            COMMANDER: { name: 'Commander', maxHp: 100, atk: 18, mov: 2, rng: 1, icon: 'fa-crown', color: '#f59e0b' },
+            KNIGHT:    { name: 'Knight',    maxHp: 40,  atk: 12, mov: 3, rng: 1, icon: 'fa-shield-halved', color: '#3b82f6' },
+            ARCHER:    { name: 'Archer',    maxHp: 22,  atk: 10, mov: 3, rng: 3, icon: 'fa-bow-arrow', color: '#10b981' },
+            MAGE:      { name: 'Mage',      maxHp: 18,  atk: 14, mov: 2, rng: 2, icon: 'fa-wand-magic-sparkles', color: '#a855f7' },
+            SCOUT:     { name: 'Scout',     maxHp: 25,  atk: 8,  mov: 4, rng: 1, icon: 'fa-person-running', color: '#06b6d4' }
+        };
+
+        // --- GLOBAL STATE ---
+        let supabaseClient = null;
+        let realtimeChannel = null;
+        let isLocalSimulator = true;
+
+        let roomCode = null;
+        let playerNumber = 1; // 1 = Blue, 2 = Red
+        let currentTurn = 1;  // 1 = P1 Turn, 2 = P2 Turn
+        let gameOver = false;
+
+        let units = [];
+        let selectedUnit = null;
+        let validMoves = [];
+        let validAttacks = [];
+
+        let rematchRequestedByMe = false;
+        let rematchRequestedByOpponent = false;
+
+        // Canvas Elements
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let tileSize = 60;
+
+        // --- SUPABASE SETUP ---
+        function initSupabase() {
+            // Hardcoded credentials inserted here:
+            const url = localStorage.getItem('sb_url') || 'https://oqboqzcjsnhuvxecwonb.supabase.co';
+            const key = localStorage.getItem('sb_key') || 'sb_publishable_buFfG1jbB8kPnYlFl5UvNg_hHnV3xmH';
+            const statusEl = document.getElementById('supabase-status');
+
+            if (url && key && window.supabase) {
+                try {
+                    supabaseClient = window.supabase.createClient(url, key);
+                    isLocalSimulator = false;
+                    statusEl.textContent = 'Connected (Live)';
+                    statusEl.className = 'text-emerald-400 font-medium';
+                } catch (e) {
+                    console.warn('Supabase init failed, falling back to simulator:', e);
+                    isLocalSimulator = true;
+                    statusEl.textContent = 'Local Simulator';
+                    statusEl.className = 'text-amber-400 font-medium';
+                }
+            } else {
+                isLocalSimulator = true;
+                statusEl.textContent = 'Local Simulator';
+                statusEl.className = 'text-amber-400 font-medium';
+            }
+        }
+
+        // --- INITIALIZE GAME BOARD & UNITS ---
+        function initBoard() {
+            units = [];
+            
+            // Helper to add unit
+            const addUnit = (typeKey, x, y, owner) => {
+                const spec = UNIT_TYPES[typeKey];
+                units.push({
+                    id: 'u_' + Math.random().toString(36).substr(2, 9),
+                    type: typeKey,
+                    name: spec.name,
+                    maxHp: spec.maxHp,
+                    hp: spec.maxHp,
+                    atk: spec.atk,
+                    mov: spec.mov,
+                    rng: spec.rng,
+                    icon: spec.icon,
+                    x: x,
+                    y: y,
+                    owner: owner, // 1 or 2
+                    hasMoved: false,
+                    hasAttacked: false
                 });
+            };
+
+            // Player 1 Roster (Left Side - Columns 0 & 1)
+            addUnit('COMMANDER', 0, 3, 1);
+            addUnit('KNIGHT',    1, 2, 1);
+            addUnit('KNIGHT',    1, 4, 1);
+            addUnit('ARCHER',    0, 1, 1);
+            addUnit('ARCHER',    0, 5, 1);
+            addUnit('MAGE',      0, 2, 1);
+            addUnit('MAGE',      0, 4, 1);
+            addUnit('SCOUT',     1, 1, 1);
+            addUnit('SCOUT',     1, 5, 1);
+
+            // Player 2 Roster (Right Side - Columns 10 & 11) - Mirror layout
+            addUnit('COMMANDER', 11, 4, 2);
+            addUnit('KNIGHT',    10, 3, 2);
+            addUnit('KNIGHT',    10, 5, 2);
+            addUnit('ARCHER',    11, 2, 2);
+            addUnit('ARCHER',    11, 6, 2);
+            addUnit('MAGE',      11, 3, 2);
+            addUnit('MAGE',      11, 5, 2);
+            addUnit('SCOUT',     10, 2, 2);
+            addUnit('SCOUT',     10, 6, 2);
+
+            currentTurn = 1;
+            gameOver = false;
+            selectedUnit = null;
+            validMoves = [];
+            validAttacks = [];
+            rematchRequestedByMe = false;
+            rematchRequestedByOpponent = false;
+
+            updateHUD();
+            drawBoard();
+        }
+
+        // --- CANVAS RESIZING & RENDERING ---
+        function resizeCanvas() {
+            const container = document.getElementById('game-container');
+            const maxWidth = container.clientWidth - 20;
+            const maxHeight = container.clientHeight - 80;
+
+            tileSize = Math.floor(Math.min(maxWidth / GRID_COLS, maxHeight / GRID_ROWS));
+            tileSize = Math.max(tileSize, 36); // Minimum tile size for mobile
+
+            canvas.width = GRID_COLS * tileSize;
+            canvas.height = GRID_ROWS * tileSize;
+            drawBoard();
+        }
+
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Grid Tiles
+            for (let r = 0; r < GRID_ROWS; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    const isEven = (r + c) % 2 === 0;
+                    ctx.fillStyle = isEven ? '#1e293b' : '#0f172a';
+                    ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+
+                    // Subtle Grid lines
+                    ctx.strokeStyle = '#334155';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                }
+            }
+
+            // Draw Valid Move Highlights
+            validMoves.forEach(m => {
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.35)';
+                ctx.fillRect(m.x * tileSize, m.y * tileSize, tileSize, tileSize);
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(m.x * tileSize + 2, m.y * tileSize + 2, tileSize - 4, tileSize - 4);
+            });
+
+            // Draw Valid Attack Targets
+            validAttacks.forEach(a => {
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+                ctx.fillRect(a.x * tileSize, a.y * tileSize, tileSize, tileSize);
+                ctx.strokeStyle = '#f87171';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(a.x * tileSize + 2, a.y * tileSize + 2, tileSize - 4, tileSize - 4);
+            });
+
+            // Draw Units
+            units.forEach(u => {
+                const cx = u.x * tileSize + tileSize / 2;
+                const cy = u.y * tileSize + tileSize / 2;
+                const radius = tileSize * 0.38;
+
+                // Base aura & selection ring
+                if (selectedUnit && selectedUnit.id === u.id) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(250, 204, 21, 0.4)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#facc15';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Unit Body Circle
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                ctx.fillStyle = u.owner === 1 ? '#1d4ed8' : '#be123c'; // P1 Blue, P2 Red
+                ctx.fill();
+                ctx.strokeStyle = u.owner === 1 ? '#60a5fa' : '#fda4af';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Symbol Text / FontAwesome Representative
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `bold ${Math.floor(tileSize * 0.35)}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Short code for unit
+                const symbolMap = { COMMANDER: '👑', KNIGHT: '🛡️', ARCHER: '🏹', MAGE: '🔮', SCOUT: '⚡' };
+                ctx.fillText(symbolMap[u.type] || '⚔️', cx, cy - 2);
+
+                // Health Bar
+                const barWidth = tileSize * 0.7;
+                const barHeight = 4;
+                const barX = cx - barWidth / 2;
+                const barY = cy + radius - 2;
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+
+                const hpRatio = Math.max(0, u.hp / u.maxHp);
+                ctx.fillStyle = hpRatio > 0.5 ? '#10b981' : hpRatio > 0.25 ? '#f59e0b' : '#ef4444';
+                ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+            });
+        }
+
+        // --- GAME ACTIONS & INTERACTION ---
+        function getTileCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const x = Math.floor((clientX - rect.left) / tileSize);
+            const y = Math.floor((clientY - rect.top) / tileSize);
+
+            if (x >= 0 && x < GRID_COLS && y >= 0 && y < GRID_ROWS) {
+                return { x, y };
+            }
+            return null;
+        }
+
+        function handleCanvasClick(e) {
+            if (gameOver) return;
+            const tile = getTileCoordinates(e);
+            if (!tile) return;
+
+            // Restrict interaction: Player can ONLY control units on THEIR turn
+            if (currentTurn !== playerNumber) {
+                return; 
+            }
+
+            const clickedUnit = units.find(u => u.x === tile.x && u.y === tile.y);
+
+            // 1. Attack Target Clicked?
+            if (selectedUnit && validAttacks.some(a => a.x === tile.x && a.y === tile.y)) {
+                if (clickedUnit && clickedUnit.owner !== playerNumber) {
+                    executeAttack(selectedUnit, clickedUnit);
+                    return;
+                }
+            }
+
+            // 2. Move Target Clicked?
+            if (selectedUnit && validMoves.some(m => m.x === tile.x && m.y === tile.y)) {
+                executeMove(selectedUnit, tile.x, tile.y);
                 return;
             }
-        }
 
-        // Check tiles
-        const tileIntersects = raycaster.intersectObjects(tileMeshes);
-        if (tileIntersects.length > 0) {
-            const tileMesh = tileIntersects[0].object;
-            const {x, z} = tileMesh.userData;
-            
-            const highlight = highlightMeshes.find(h => h.x === x && h.z === z);
-            if (highlight && selectedDieIndex !== -1) {
-                executeAction(highlight);
+            // 3. Select Player's Unit
+            if (clickedUnit && clickedUnit.owner === playerNumber) {
+                sfx.select();
+                selectedUnit = clickedUnit;
+                calculateValidMovesAndAttacks(selectedUnit);
+                showUnitCard(selectedUnit);
+                drawBoard();
             } else {
-                // Deselect
+                // Deselect if clicking empty space or enemy
                 selectedUnit = null;
-                unitInfo.classList.add('hidden');
-                clearHighlights();
-                Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
-                selectedDieIndex = -1;
+                validMoves = [];
+                validAttacks = [];
+                hideUnitCard();
+                drawBoard();
             }
         }
-    });
 
-    /** --- COMBAT ACTIONS & ANIMATIONS --- **/
-    function executeAction(targetInfo) {
-        state = 'ACTION_ANIMATING';
-        clearHighlights();
-        
-        const {x, z, type} = targetInfo;
-        const die = diceRolled[selectedDieIndex];
-        
-        // Consume Resources
-        die.used = true;
-        diceContainer.children[selectedDieIndex].classList.add('used');
-        diceContainer.children[selectedDieIndex].classList.remove('selected');
-        ap--;
-        updateAPUI();
+        function calculateValidMovesAndAttacks(unit) {
+            validMoves = [];
+            validAttacks = [];
 
-        selectedUnit.lookAtTile(x, z);
+            if (!unit) return;
 
-        if (type === 'move') {
-            // Anticipation
-            tween(selectedUnit.mesh.position, { y: 0.5 }, 0.1, Easing.OutQuad, null, () => {
-                // Impact (Move)
-                tiles[selectedUnit.x][selectedUnit.z].unit = null;
-                selectedUnit.x = x;
-                selectedUnit.z = z;
-                tiles[x][z].unit = selectedUnit;
-                
-                let targetVec = new THREE.Vector3(x, 0.2, z);
-                tween(selectedUnit.mesh.position, { x: x, z: z }, 0.2, Easing.OutQuad, () => selectedUnit.updateUIPosition(), () => {
-                    // Recovery
-                    tween(selectedUnit.mesh.position, { y: 0.2 }, 0.1, Easing.InQuad, null, finishAction);
-                });
-            });
-        } 
-        else if (type === 'attack') {
-            const targetUnit = tiles[x][z].unit;
-            const startPos = { x: selectedUnit.mesh.position.x, z: selectedUnit.mesh.position.z };
-            
-            // Anticipation (pull back slightly)
-            let dir = new THREE.Vector3(selectedUnit.x - x, 0, selectedUnit.z - z).normalize();
-            tween(selectedUnit.mesh.position, { x: startPos.x + dir.x*0.5, z: startPos.z + dir.z*0.5 }, 0.2, Easing.OutQuad, null, () => {
-                
-                // Strike
-                let isRanged = selectedUnit.atkRange > 1;
-                if(isRanged) {
-                    // Projectile simulation (VFX)
-                    vfx.spawnBurst(targetUnit.mesh.position, 0xffff00, 10, 5);
-                    targetUnit.takeDamage(selectedUnit.atk);
-                    setTimeout(finishAction, 300);
-                } else {
-                    // Melee dash in
-                    tween(selectedUnit.mesh.position, { x: x + dir.x*0.5, z: z + dir.z*0.5 }, 0.1, Easing.InQuad, null, () => {
-                        
-                        // IMPACT!
-                        targetUnit.takeDamage(selectedUnit.atk);
-                        
-                        // Vanguard specific: Knockback logic
-                        if (selectedUnit.name === 'Vanguard' && targetUnit.hp > 0) {
-                            let kx = x - dir.x;
-                            let kz = z - dir.z;
-                            kx = Math.round(kx); kz = Math.round(kz);
-                            if (kx >= 0 && kx < BOARD_SIZE && kz >= 0 && kz < BOARD_SIZE && !tiles[kx][kz].unit && !(kx===3 && kz===3)) {
-                                tiles[x][z].unit = null;
-                                targetUnit.x = kx;
-                                targetUnit.z = kz;
-                                tiles[kx][kz].unit = targetUnit;
-                                tween(targetUnit.mesh.position, {x: kx, z: kz}, 0.2, Easing.OutQuad, () => targetUnit.updateUIPosition());
-                            }
+            // Simple Manhattan distance / BFS pathing for move range
+            for (let r = 0; r < GRID_ROWS; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    const dist = Math.abs(c - unit.x) + Math.abs(r - unit.y);
+
+                    // Move validation
+                    if (dist > 0 && dist <= unit.mov) {
+                        const occupied = units.find(u => u.x === c && u.y === r);
+                        if (!occupied) {
+                            validMoves.push({ x: c, y: r });
                         }
+                    }
 
-                        // Recovery
-                        tween(selectedUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.3, Easing.OutElastic, null, finishAction);
-                    });
+                    // Attack validation
+                    if (dist > 0 && dist <= unit.rng) {
+                        const enemy = units.find(u => u.x === c && u.y === r && u.owner !== unit.owner);
+                        if (enemy) {
+                            validAttacks.push({ x: c, y: r });
+                        }
+                    }
                 }
+            }
+        }
+
+        // --- ACTION EXECUTION & MULTIPLAYER SYNC ---
+        function executeMove(unit, targetX, targetY) {
+            unit.x = targetX;
+            unit.y = targetY;
+            sfx.move();
+
+            // Re-calculate attacks from new position
+            calculateValidMovesAndAttacks(unit);
+            showUnitCard(unit);
+            drawBoard();
+
+            // Broadcast Move Event
+            broadcastEvent('MOVE_UNIT', {
+                unitId: unit.id,
+                x: targetX,
+                y: targetY
             });
         }
-    }
 
-    function finishAction() {
-        if(checkWinCondition()) return;
-        
-        if (ap <= 0 || diceRolled.every(d => d.used)) {
-            startEnemyTurn();
-        } else {
-            state = 'PLAYER_TURN';
-            selectedDieIndex = -1;
-            Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+        function executeAttack(attacker, defender) {
+            defender.hp -= attacker.atk;
+            sfx.attack();
+
+            // Broadcast Attack Event
+            broadcastEvent('ATTACK_UNIT', {
+                attackerId: attacker.id,
+                defenderId: defender.id,
+                damage: attacker.atk
+            });
+
+            // Check if Defender is Dead
+            if (defender.hp <= 0) {
+                // Check if Commander died
+                if (defender.type === 'COMMANDER') {
+                    handleGameOver(attacker.owner);
+                }
+                // Remove dead unit
+                units = units.filter(u => u.id !== defender.id);
+            }
+
+            // Reset selection after attack
+            selectedUnit = null;
+            validMoves = [];
+            validAttacks = [];
+            hideUnitCard();
+            updateHUD();
+            drawBoard();
         }
-    }
 
-    /** --- ENEMY AI --- **/
-    btnEndTurn.addEventListener('click', () => {
-        if(state === 'PLAYER_TURN') startEnemyTurn();
-    });
+        function endTurn() {
+            if (currentTurn !== playerNumber || gameOver) return;
 
-    function startEnemyTurn() {
-        state = 'ENEMY_TURN';
-        document.getElementById('turn-indicator').innerText = 'ENEMY TURN';
-        document.getElementById('turn-indicator').classList.replace('text-yellow-500', 'text-red-500');
-        showToast('Enemy Turn', '#ef4444');
-        
-        clearHighlights();
-        selectedUnit = null;
-        unitInfo.classList.add('hidden');
-        diceContainer.innerHTML = '';
-        apContainer.innerHTML = '';
-        
-        let enemies = units.filter(u => u.team === 'enemy');
-        let index = 0;
+            currentTurn = currentTurn === 1 ? 2 : 1;
+            selectedUnit = null;
+            validMoves = [];
+            validAttacks = [];
+            hideUnitCard();
+            updateHUD();
+            drawBoard();
 
-        function nextEnemy() {
-            if(index >= enemies.length || state === 'GAME_OVER') {
-                startPlayerTurn();
+            broadcastEvent('END_TURN', { nextTurn: currentTurn });
+        }
+
+        function handleGameOver(winnerPlayerNumber) {
+            gameOver = true;
+            sfx.win();
+
+            const modal = document.getElementById('gameover-modal');
+            const title = document.getElementById('gameover-title');
+            const sub = document.getElementById('gameover-sub');
+            const icon = document.getElementById('gameover-icon');
+            const iconBg = document.getElementById('gameover-icon-bg');
+
+            modal.classList.remove('hidden');
+
+            if (winnerPlayerNumber === playerNumber) {
+                title.textContent = 'VICTORY!';
+                title.className = 'text-2xl font-black text-emerald-400';
+                sub.textContent = 'You eliminated the enemy Commander!';
+                icon.className = 'fa-solid fa-trophy';
+                iconBg.className = 'w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center text-4xl';
+            } else {
+                title.textContent = 'DEFEAT';
+                title.className = 'text-2xl font-black text-rose-500';
+                sub.textContent = 'Your Commander was fallen in battle.';
+                icon.className = 'fa-solid fa-skull';
+                iconBg.className = 'w-20 h-20 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 mx-auto flex items-center justify-center text-4xl';
+            }
+        }
+
+        // --- UI UPDATES ---
+        function updateHUD() {
+            const p1Cmd = units.find(u => u.owner === 1 && u.type === 'COMMANDER');
+            const p2Cmd = units.find(u => u.owner === 2 && u.type === 'COMMANDER');
+
+            document.getElementById('p1-commander-hp').textContent = (p1Cmd ? p1Cmd.hp : 0) + ' HP';
+            document.getElementById('p2-commander-hp').textContent = (p2Cmd ? p2Cmd.hp : 0) + ' HP';
+
+            const turnText = document.getElementById('turn-text');
+            const turnIndicator = document.getElementById('turn-indicator');
+
+            if (currentTurn === playerNumber) {
+                turnText.textContent = "YOUR TURN";
+                turnIndicator.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 glow-effect";
+            } else {
+                turnText.textContent = "OPPONENT'S TURN";
+                turnIndicator.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5";
+            }
+        }
+
+        function showUnitCard(unit) {
+            const card = document.getElementById('unit-card');
+            card.classList.remove('hidden');
+
+            document.getElementById('unit-name').textContent = unit.name;
+            document.getElementById('unit-owner').textContent = unit.owner === playerNumber ? 'Your Unit' : 'Enemy Unit';
+            document.getElementById('unit-hp').textContent = `${unit.hp}/${unit.maxHp}`;
+            document.getElementById('unit-atk').textContent = unit.atk;
+            document.getElementById('unit-mov').textContent = unit.mov;
+            document.getElementById('unit-rng').textContent = unit.rng;
+
+            const iconEl = document.getElementById('unit-icon');
+            iconEl.className = `fa-solid ${unit.icon}`;
+
+            const endTurnBtn = document.getElementById('end-turn-btn');
+            endTurnBtn.style.display = (currentTurn === playerNumber) ? 'flex' : 'none';
+        }
+
+        function hideUnitCard() {
+            document.getElementById('unit-card').classList.add('hidden');
+        }
+
+        // --- SUPABASE REALTIME MULTIPLAYER CHANNEL LOGIC ---
+        function setupRealtimeChannel(code) {
+            roomCode = code;
+            document.getElementById('current-room-code').textContent = code;
+            document.getElementById('room-badge').classList.remove('hidden');
+
+            if (isLocalSimulator) {
+                // Simulation broadcast fallback using Window Messaging
+                window.addEventListener('storage', handleSimulatorStorage);
                 return;
             }
-            processEnemyAI(enemies[index], () => {
-                index++;
-                setTimeout(nextEnemy, 300);
+
+            // Real Supabase Broadcast Channel
+            const channelName = `tactics_room_${code}`;
+            realtimeChannel = supabaseClient.channel(channelName, {
+                config: { broadcast: { self: false } }
             });
-        }
-        
-        setTimeout(nextEnemy, 1000);
-    }
 
-    function processEnemyAI(enemy, callback) {
-        if(enemy.hp <= 0) { callback(); return; } // Dead during turn
-        
-        // Find closest player
-        let players = units.filter(u => u.team === 'player');
-        if(players.length === 0) { callback(); return; }
-        
-        let target = players[0];
-        let minDist = 999;
-        players.forEach(p => {
-            let d = Math.abs(p.x - enemy.x) + Math.abs(p.z - enemy.z);
-            if(d < minDist) { minDist = d; target = p; }
-        });
-
-        enemy.lookAtTile(target.x, target.z);
-
-        // If in attack range, attack
-        if(minDist <= enemy.atkRange) {
-            enemyAttack(enemy, target, callback);
-        } else {
-            // Move towards
-            let dx = Math.sign(target.x - enemy.x);
-            let dz = Math.sign(target.z - enemy.z);
-            
-            // Try moving X first, then Z
-            let nx = enemy.x + dx;
-            let nz = enemy.z;
-            
-            if ((dx===0 || tiles[nx][nz].unit || (nx===3&&nz===3)) && dz !== 0) {
-                nx = enemy.x;
-                nz = enemy.z + dz;
-            }
-            
-            if (nx >= 0 && nx < BOARD_SIZE && nz >= 0 && nz < BOARD_SIZE && !tiles[nx][nz].unit && !(nx===3&&nz===3)) {
-                // Animate move
-                tiles[enemy.x][enemy.z].unit = null;
-                enemy.x = nx;
-                enemy.z = nz;
-                tiles[nx][nz].unit = enemy;
-                
-                tween(enemy.mesh.position, {y: 0.5}, 0.1, Easing.OutQuad, null, () => {
-                    tween(enemy.mesh.position, {x: nx, z: nz}, 0.2, Easing.OutQuad, () => enemy.updateUIPosition(), () => {
-                        tween(enemy.mesh.position, {y: 0.2}, 0.1, Easing.InQuad, null, () => {
-                            // Check attack after move
-                            minDist = Math.abs(target.x - enemy.x) + Math.abs(target.z - enemy.z);
-                            if(minDist <= enemy.atkRange) {
-                                setTimeout(() => enemyAttack(enemy, target, callback), 200);
-                            } else {
-                                callback();
-                            }
-                        });
-                    });
+            realtimeChannel
+                .on('broadcast', { event: 'game_event' }, payload => {
+                    handleRemoteEvent(payload.payload);
+                })
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        if (playerNumber === 2) {
+                            // Player 2 joined -> Notify Host
+                            broadcastEvent('PLAYER_JOINED', { pNumber: 2 });
+                        }
+                    }
                 });
-            } else {
-                callback(); // Blocked
+        }
+
+        function broadcastEvent(eventType, payloadData) {
+            const packet = { event: eventType, sender: playerNumber, data: payloadData };
+
+            if (isLocalSimulator) {
+                localStorage.setItem('sim_event_' + roomCode, JSON.stringify({ packet, time: Date.now() }));
+                return;
+            }
+
+            if (realtimeChannel) {
+                realtimeChannel.send({
+                    type: 'broadcast',
+                    event: 'game_event',
+                    payload: packet
+                });
             }
         }
-    }
 
-    function enemyAttack(enemy, target, callback) {
-        let dir = new THREE.Vector3(enemy.x - target.x, 0, enemy.z - target.z).normalize();
-        let startPos = {x: enemy.mesh.position.x, z: enemy.mesh.position.z};
-        
-        tween(enemy.mesh.position, { x: startPos.x + dir.x*0.5, z: startPos.z + dir.z*0.5 }, 0.2, Easing.OutQuad, null, () => {
-            tween(enemy.mesh.position, { x: target.x + dir.x*0.5, z: target.z + dir.z*0.5 }, 0.1, Easing.InQuad, null, () => {
-                target.takeDamage(enemy.atk);
-                tween(enemy.mesh.position, { x: startPos.x, z: startPos.z }, 0.3, Easing.OutElastic, null, callback);
+        function handleRemoteEvent(packet) {
+            if (!packet || packet.sender === playerNumber) return;
+
+            const { event, data } = packet;
+
+            switch (event) {
+                case 'PLAYER_JOINED':
+                    if (playerNumber === 1) {
+                        // Host receives P2 join -> Start Match!
+                        document.getElementById('lobby-modal').classList.add('hidden');
+                        document.getElementById('main-menu').classList.add('hidden');
+                        document.getElementById('game-hud').classList.remove('hidden');
+                        document.getElementById('leave-game-btn').classList.remove('hidden');
+
+                        // Sync initial board state to P2
+                        broadcastEvent('START_GAME_SYNC', { units: units, turn: currentTurn });
+                    }
+                    break;
+
+                case 'START_GAME_SYNC':
+                    if (playerNumber === 2) {
+                        units = data.units;
+                        currentTurn = data.turn;
+                        document.getElementById('lobby-modal').classList.add('hidden');
+                        document.getElementById('main-menu').classList.add('hidden');
+                        document.getElementById('game-hud').classList.remove('hidden');
+                        document.getElementById('leave-game-btn').classList.remove('hidden');
+                        updateHUD();
+                        drawBoard();
+                    }
+                    break;
+
+                case 'MOVE_UNIT':
+                    const movedUnit = units.find(u => u.id === data.unitId);
+                    if (movedUnit) {
+                        movedUnit.x = data.x;
+                        movedUnit.y = data.y;
+                        sfx.move();
+                        drawBoard();
+                    }
+                    break;
+
+                case 'ATTACK_UNIT':
+                    const defender = units.find(u => u.id === data.defenderId);
+                    if (defender) {
+                        defender.hp -= data.damage;
+                        sfx.attack();
+                        if (defender.hp <= 0) {
+                            if (defender.type === 'COMMANDER') {
+                                handleGameOver(packet.sender);
+                            }
+                            units = units.filter(u => u.id !== defender.id);
+                        }
+                        updateHUD();
+                        drawBoard();
+                    }
+                    break;
+
+                case 'END_TURN':
+                    currentTurn = data.nextTurn;
+                    selectedUnit = null;
+                    validMoves = [];
+                    validAttacks = [];
+                    hideUnitCard();
+                    updateHUD();
+                    drawBoard();
+                    break;
+
+                case 'REMATCH_REQUEST':
+                    rematchRequestedByOpponent = true;
+                    document.getElementById('rematch-status-box').classList.remove('hidden');
+                    if (rematchRequestedByMe) {
+                        // Both agreed! Restart match
+                        resetGameForRematch();
+                    }
+                    break;
+
+                case 'REMATCH_ACCEPT':
+                    resetGameForRematch();
+                    break;
+
+                case 'PLAYER_LEFT':
+                    showToast('Opponent disconnected or left the match.', 'error');
+                    leaveGame();
+                    break;
+            }
+        }
+
+        function handleSimulatorStorage(e) {
+            if (e.key === 'sim_event_' + roomCode && e.newValue) {
+                try {
+                    const parsed = JSON.parse(e.newValue);
+                    handleRemoteEvent(parsed.packet);
+                } catch(err) {}
+            }
+        }
+
+        function resetGameForRematch() {
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('rematch-status-box').classList.add('hidden');
+            initBoard();
+        }
+
+        function leaveGame() {
+            broadcastEvent('PLAYER_LEFT', {});
+            if (realtimeChannel && supabaseClient) {
+                supabaseClient.removeChannel(realtimeChannel);
+            }
+            window.removeEventListener('storage', handleSimulatorStorage);
+
+            document.getElementById('game-hud').classList.add('hidden');
+            document.getElementById('leave-game-btn').classList.add('hidden');
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('lobby-modal').classList.add('hidden');
+            document.getElementById('room-badge').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+
+            initBoard();
+        }
+
+        // --- EVENT LISTENERS & MENU CONTROLS ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initSupabase();
+            initBoard();
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Canvas Click / Touch
+            canvas.addEventListener('click', handleCanvasClick);
+
+            // End Turn Button
+            document.getElementById('end-turn-btn').addEventListener('click', endTurn);
+
+            // Menu Buttons
+            const playBtn = document.getElementById('play-btn');
+            const menuActions = document.getElementById('menu-actions');
+            const playSubmenu = document.getElementById('play-submenu');
+
+            playBtn.addEventListener('click', () => {
+                menuActions.classList.add('hidden');
+                playSubmenu.classList.remove('hidden');
+            });
+
+            document.getElementById('back-to-menu-btn').addEventListener('click', () => {
+                playSubmenu.classList.add('hidden');
+                menuActions.classList.remove('hidden');
+            });
+
+            // Create Room
+            document.getElementById('create-room-btn').addEventListener('click', () => {
+                playerNumber = 1; // Host
+                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                setupRealtimeChannel(code);
+
+                document.getElementById('lobby-code-display').textContent = code;
+                document.getElementById('lobby-modal').classList.remove('hidden');
+            });
+
+            // Join Room Show
+            document.getElementById('show-join-input-btn').addEventListener('click', () => {
+                const box = document.getElementById('join-box');
+                box.classList.toggle('hidden');
+            });
+
+            // Confirm Join
+            document.getElementById('confirm-join-btn').addEventListener('click', () => {
+                const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
+                if (codeInput.length !== 6) {
+                    showToast('Please enter a valid 6-character room code.', 'error');
+                    return;
+                }
+                playerNumber = 2; // Joiner
+                setupRealtimeChannel(codeInput);
+
+                // Start game screen directly for P2
+                document.getElementById('main-menu').classList.add('hidden');
+                document.getElementById('game-hud').classList.remove('hidden');
+                document.getElementById('leave-game-btn').classList.remove('hidden');
+            });
+
+            // Copy Room Code
+            document.getElementById('copy-code-btn').addEventListener('click', () => {
+                const code = document.getElementById('lobby-code-display').textContent;
+                
+                // Uses a robust fallback if clipboard api fails in iframes
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(code);
+                } else {
+                    const temp = document.createElement("input");
+                    temp.value = code;
+                    document.body.appendChild(temp);
+                    temp.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(temp);
+                }
+                
+                showToast('Room code copied: ' + code);
+            });
+
+            // Cancel Lobby
+            document.getElementById('cancel-lobby-btn').addEventListener('click', () => {
+                document.getElementById('lobby-modal').classList.add('hidden');
+                if (realtimeChannel && supabaseClient) {
+                    supabaseClient.removeChannel(realtimeChannel);
+                }
+            });
+
+            // Tutorial Modal
+            const tutorialModal = document.getElementById('tutorial-modal');
+            const openTutorial = () => tutorialModal.classList.remove('hidden');
+            const closeTutorial = () => tutorialModal.classList.add('hidden');
+
+            document.getElementById('tutorial-btn').addEventListener('click', openTutorial);
+            document.getElementById('menu-tutorial-btn').addEventListener('click', openTutorial);
+            document.getElementById('close-tutorial-btn').addEventListener('click', closeTutorial);
+            document.getElementById('tutorial-got-it-btn').addEventListener('click', closeTutorial);
+
+            // Leave Game Button (with custom confirm)
+            document.getElementById('leave-game-btn').addEventListener('click', () => {
+                showConfirm('Are you sure you want to leave the match?', () => {
+                    leaveGame();
+                });
+            });
+
+            // Rematch & Quit
+            document.getElementById('rematch-btn').addEventListener('click', () => {
+                rematchRequestedByMe = true;
+                broadcastEvent('REMATCH_REQUEST', {});
+                document.getElementById('rematch-status-box').classList.remove('hidden');
+                document.getElementById('rematch-status-box').textContent = 'Waiting for opponent to accept...';
+
+                if (rematchRequestedByOpponent) {
+                    broadcastEvent('REMATCH_ACCEPT', {});
+                    resetGameForRematch();
+                }
+            });
+
+            document.getElementById('quit-btn').addEventListener('click', () => {
+                leaveGame();
+            });
+
+            // Supabase Config Modal
+            const sbModal = document.getElementById('supabase-modal');
+            const openSbModal = () => {
+                document.getElementById('sb-url-input').value = localStorage.getItem('sb_url') || '';
+                document.getElementById('sb-key-input').value = localStorage.getItem('sb_key') || '';
+                sbModal.classList.remove('hidden');
+            };
+            document.getElementById('config-btn').addEventListener('click', openSbModal);
+            document.getElementById('supabase-config-link').addEventListener('click', openSbModal);
+            document.getElementById('close-supabase-btn').addEventListener('click', () => sbModal.classList.add('hidden'));
+
+            document.getElementById('save-sb-btn').addEventListener('click', () => {
+                const url = document.getElementById('sb-url-input').value.trim();
+                const key = document.getElementById('sb-key-input').value.trim();
+                localStorage.setItem('sb_url', url);
+                localStorage.setItem('sb_key', key);
+                initSupabase();
+                sbModal.classList.add('hidden');
+                showToast('Supabase credentials saved successfully.');
             });
         });
-    }
-
-    function startPlayerTurn() {
-        if(checkWinCondition()) return;
-        state = 'PLAYER_TURN';
-        ap = 3;
-        document.getElementById('turn-indicator').innerText = 'PLAYER TURN';
-        document.getElementById('turn-indicator').classList.replace('text-red-500', 'text-yellow-500');
-        showToast('Your Turn', '#facc15');
-        updateAPUI();
-        rollDice();
-    }
-
-    function checkWinCondition() {
-        if(state === 'GAME_OVER') return true;
-        
-        let p = units.filter(u => u.team === 'player');
-        let e = units.filter(u => u.team === 'enemy');
-        let comm = units.find(u => u.name === 'Commander');
-        
-        if (p.length === 0 || !comm) {
-            state = 'GAME_OVER';
-            showToast('DEFEAT. Commander fell.', '#ef4444');
-            document.getElementById('ui-layer').style.pointerEvents = 'none';
-            return true;
-        }
-        if (e.length === 0) {
-            state = 'GAME_OVER';
-            showToast('VICTORY!', '#10b981');
-            document.getElementById('ui-layer').style.pointerEvents = 'none';
-            return true;
-        }
-        return false;
-    }
-
-
-    /** --- MAIN LOOP --- **/
-    const clock = new THREE.Clock();
-
-    function animate() {
-        requestAnimationFrame(animate);
-        let dt = clock.getDelta();
-
-        updateTweens(dt);
-        vfx.update(dt);
-        
-        // Relic hover animation
-        relic.position.y = 0.5 + Math.sin(clock.elapsedTime * 2) * 0.1;
-
-        // Sync HP UI
-        units.forEach(u => u.updateUIPosition());
-
-        // Camera Shake application
-        if (cameraShake.intensity > 0) {
-            camera.position.x = baseCamPos.x + (Math.random() - 0.5) * cameraShake.intensity;
-            camera.position.y = baseCamPos.y + (Math.random() - 0.5) * cameraShake.intensity;
-            camera.position.z = baseCamPos.z + (Math.random() - 0.5) * cameraShake.intensity;
-            cameraShake.intensity -= dt * 2;
-            if(cameraShake.intensity < 0) cameraShake.intensity = 0;
-        } else {
-            camera.position.copy(baseCamPos);
-        }
-
-        renderer.render(scene, camera);
-    }
-
-    // Resize handler
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // Start Game
-    startPlayerTurn();
-    animate();
-
-</script>
+    </script>
 </body>
 </html>
+
