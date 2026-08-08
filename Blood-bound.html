@@ -4,840 +4,790 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BLOODBOUND - Vertical Slice</title>
+    <!-- Tailwind for rapid UI layout -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root {
-            --bg-color: #0f1115;
-            --grid-color: #1a1c23;
-            --grid-border: #2a2d36;
-            --accent-gold: #c5a059;
-            --accent-red: #8b0000;
-            --player-color: #3b82f6;
-            --enemy-color: #ef4444;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: #e2e8f0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            touch-action: manipulation;
-            user-select: none;
-            overflow: hidden;
-        }
-
-        /* Portrait Container constraints */
-        #game-container {
-            max-width: 500px;
-            margin: 0 auto;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: radial-gradient(circle at center, #1f222b 0%, #0f1115 100%);
-            position: relative;
-        }
-
-        /* 8x8 Grid */
-        #battlefield {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            grid-template-rows: repeat(8, 1fr);
-            aspect-ratio: 1 / 1;
-            width: 96%;
-            margin: 0 auto;
-            border: 2px solid var(--grid-border);
-            background-color: var(--grid-color);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            perspective: 1000px;
-        }
-
-        .tile {
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.2s;
-        }
-
-        .tile.move-range { background-color: rgba(59, 130, 246, 0.2); cursor: pointer; }
-        .tile.attack-range { background-color: rgba(239, 68, 68, 0.2); cursor: crosshair; }
-        .tile.selected { background-color: rgba(197, 160, 89, 0.3); border: 2px solid var(--accent-gold); }
-
-        /* Blood Decals */
-        .blood-pool {
-            position: absolute;
-            width: 80%;
-            height: 80%;
-            background-color: var(--accent-red);
-            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-            opacity: 0.6;
-            transform: scale(0);
-            animation: bloodSpread 0.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
-            pointer-events: none;
-        }
-
-        /* Units */
-        .unit {
-            width: 80%;
-            height: 80%;
-            border-radius: 50%;
-            position: absolute;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
-            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            z-index: 10;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #050505; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; }
+        #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
-        .unit.player { background: linear-gradient(135deg, #1d4ed8, #1e3a8a); border: 2px solid #60a5fa; }
-        .unit.enemy { background: linear-gradient(135deg, #b91c1c, #7f1d1d); border: 2px solid #f87171; }
-        .unit.commander { border-width: 3px; border-color: var(--accent-gold); }
-        .unit.dead { filter: grayscale(100%) opacity(0.5); transform: scale(0.8) rotate(90deg); z-index: 5;}
-
-        /* HP Bars */
-        .hp-bar-container {
-            position: absolute;
-            bottom: -8px;
-            width: 100%;
-            height: 4px;
-            background-color: #000;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .hp-bar-fill {
-            height: 100%;
-            background-color: #22c55e;
-            transition: width 0.3s, background-color 0.3s;
-        }
+        /* UI Layer */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
+        .pointer-events-auto { pointer-events: auto; }
         
-        /* Icons */
-        .unit-icon { width: 60%; height: 60%; fill: white; }
-
-        /* Dice */
-        .dice-slot {
-            width: 40px;
-            height: 40px;
-            background: #2a2d36;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            border: 2px solid #3f4451;
-            transition: all 0.2s;
-        }
-        .dice-slot.used { opacity: 0.2; transform: scale(0.9); }
-        .dice-slot.active { border-color: var(--accent-gold); box-shadow: 0 0 10px rgba(197, 160, 89, 0.5); }
-
-        /* Animations for Cinematic Combat */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0) translateY(0); }
-            20% { transform: translateX(-5px) translateY(3px); }
-            40% { transform: translateX(4px) translateY(-4px); }
-            60% { transform: translateX(-3px) translateY(2px); }
-            80% { transform: translateX(2px) translateY(-1px); }
-        }
-        .shake-active { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
-
-        @keyframes hitStop {
-            0% { filter: brightness(1) contrast(1); }
-            50% { filter: brightness(1.5) contrast(1.2); }
-            100% { filter: brightness(1) contrast(1); }
-        }
-        .hit-stop-active { animation: hitStop 0.2s ease-in-out; }
-
-        @keyframes bump {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(var(--bump-x), var(--bump-y)) scale(1.1); z-index: 20; }
-            100% { transform: translate(0, 0) scale(1); }
-        }
+        /* Floating HP Bars */
+        #hp-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+        .hp-bar { position: absolute; transform: translate(-50%, -100%); background: rgba(0,0,0,0.8); border: 1px solid #333; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; color: white; transition: top 0.1s, left 0.1s; }
+        .hp-fill { height: 4px; background: #e11d48; border-radius: 2px; margin-top: 2px; transition: width 0.3s; }
         
-        @keyframes bloodSpread {
-            0% { transform: scale(0) rotate(0deg); opacity: 0.8; }
-            100% { transform: scale(1) rotate(45deg); opacity: 0.6; }
-        }
+        /* Dice animations */
+        @keyframes roll { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+        .rolling { animation: roll 0.5s ease-out; }
+        .die-btn { transition: all 0.2s; }
+        .die-btn.selected { box-shadow: 0 0 15px #facc15; border-color: #facc15; transform: translateY(-5px); }
+        .die-btn.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; }
 
-        .damage-text {
-            position: absolute;
-            color: #ff4444;
-            font-weight: bold;
-            font-size: 1.5rem;
-            text-shadow: 2px 2px 0 #000;
-            pointer-events: none;
-            animation: floatUp 1s ease-out forwards;
-            z-index: 30;
-        }
-
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-40px) scale(1.5); }
-        }
-
-        /* Fate Meter */
-        .fate-pip {
-            width: 12px;
-            height: 12px;
-            background: #2a2d36;
-            border-radius: 50%;
-            margin-right: 4px;
-            transition: all 0.3s;
-        }
-        .fate-pip.filled {
-            background: var(--accent-gold);
-            box-shadow: 0 0 8px var(--accent-gold);
-        }
-
-        #rewind-overlay {
-            background: rgba(15, 17, 21, 0.9);
-            backdrop-filter: blur(4px);
-        }
+        /* Notification Toast */
+        #toast { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); border: 1px solid #c2410c; padding: 15px 30px; border-radius: 8px; font-size: 20px; font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.3s; text-transform: uppercase; letter-spacing: 2px; z-index: 50;}
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    
-    <!-- Top HUD: Enemy / Fate -->
-    <div class="flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent z-10">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full border-2 border-red-500 bg-red-900 flex items-center justify-center">
-                <svg class="w-6 h-6 fill-white" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    <!-- 3D Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Floating UI for Units -->
+    <div id="hp-container"></div>
+
+    <!-- Main UI -->
+    <div id="ui-layer">
+        <!-- Top Bar: Turn & AP -->
+        <div class="w-full p-4 flex justify-between items-start bg-gradient-to-b from-black/80 to-transparent">
+            <div class="pointer-events-auto">
+                <h1 class="text-2xl font-bold tracking-widest text-gray-200 uppercase" style="font-family: serif;">Bloodbound</h1>
+                <div id="turn-indicator" class="text-sm text-yellow-500 font-bold tracking-wide mt-1">PLAYER TURN</div>
             </div>
-            <div>
-                <h2 class="text-red-400 font-bold text-sm tracking-wider uppercase">Enemy Commander</h2>
-                <div class="w-24 h-2 bg-gray-800 rounded mt-1">
-                    <div id="enemy-boss-hp" class="h-full bg-red-500 w-full transition-all duration-300"></div>
+            <div class="flex flex-col items-end">
+                <div class="text-sm text-gray-400">ACTION POINTS</div>
+                <div class="flex space-x-1 mt-1" id="ap-container">
+                    <div class="w-4 h-4 bg-yellow-400 rounded-full shadow-[0_0_10px_#facc15]"></div>
+                    <div class="w-4 h-4 bg-yellow-400 rounded-full shadow-[0_0_10px_#facc15]"></div>
+                    <div class="w-4 h-4 bg-yellow-400 rounded-full shadow-[0_0_10px_#facc15]"></div>
                 </div>
             </div>
         </div>
-        
-        <div class="flex flex-col items-end">
-            <h3 class="text-xs text-gray-400 font-bold tracking-widest mb-1 uppercase">Fate Chain</h3>
-            <div class="flex" id="fate-meter">
-                <div class="fate-pip"></div><div class="fate-pip"></div><div class="fate-pip"></div><div class="fate-pip"></div><div class="fate-pip"></div>
-            </div>
-        </div>
-    </div>
 
-    <div class="text-center py-1">
-        <span id="turn-indicator" class="text-blue-400 font-bold tracking-widest uppercase text-sm">Player Turn</span>
-    </div>
+        <!-- Center Message -->
+        <div id="toast">Your Turn</div>
 
-    <!-- The Battlefield -->
-    <div id="battlefield" class="flex-grow-0">
-        <!-- Grid and units generated by JS -->
-    </div>
-
-    <!-- Bottom HUD: Controls & Dice -->
-    <div class="mt-auto bg-gradient-to-t from-black to-gray-900/90 p-4 border-t border-gray-800 flex flex-col gap-4 z-10 rounded-t-2xl">
-        
-        <!-- Unit Info & AP -->
-        <div class="flex justify-between items-center h-12">
-            <div id="selected-info" class="flex items-center gap-3 hidden">
-                <div id="selected-icon" class="w-10 h-10 rounded-full border-2 border-blue-500 bg-blue-900 flex items-center justify-center">
-                    <!-- Icon injected here -->
-                </div>
-                <div>
-                    <h3 id="selected-name" class="font-bold text-blue-300 text-sm uppercase">Vanguard</h3>
-                    <div class="text-xs text-gray-400">HP: <span id="selected-hp">5/5</span> | AP: <span id="selected-ap" class="text-white font-bold">2</span></div>
-                </div>
-            </div>
-            <div id="no-selection" class="text-gray-500 text-sm italic">
-                Select a unit to command...
-            </div>
+        <!-- Bottom Bar: Tactical Dice & Controls -->
+        <div class="w-full p-4 bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-auto">
             
-            <div class="text-right">
-                <div class="text-xs text-gray-400 font-bold uppercase mb-1">Global AP</div>
-                <div id="global-ap" class="text-2xl font-black text-white">3</div>
+            <div id="unit-info" class="mb-4 hidden text-center">
+                <h2 id="unit-name" class="text-lg font-bold text-gray-200">Vanguard</h2>
+                <p id="unit-desc" class="text-xs text-gray-400">Select a die to perform an action.</p>
+            </div>
+
+            <div class="flex justify-center space-x-4 mb-4" id="dice-container">
+                <!-- Dice generated via JS -->
+            </div>
+
+            <div class="flex justify-between w-full">
+                <button id="btn-end-turn" class="bg-red-900/80 hover:bg-red-800 text-white font-bold py-3 px-6 rounded border border-red-700 shadow-lg uppercase tracking-wider text-sm w-full">
+                    End Turn
+                </button>
             </div>
         </div>
-
-        <!-- Tactical Dice -->
-        <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-gray-800">
-            <div class="flex gap-2" id="dice-container">
-                <!-- Dice generated by JS -->
-                <div class="dice-slot">?</div>
-                <div class="dice-slot">?</div>
-                <div class="dice-slot">?</div>
-            </div>
-            <button id="btn-end-turn" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded border border-gray-600 transition-colors uppercase text-sm tracking-wide">
-                End Turn
-            </button>
-        </div>
     </div>
-
-    <!-- Rewind Overlay -->
-    <div id="rewind-overlay" class="absolute inset-0 hidden flex-col items-center justify-center z-50">
-        <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-2 uppercase tracking-widest">Fate Reached</h1>
-        <p class="text-gray-300 mb-8 text-center max-w-[80%]">The chain of fate is full. You may rewind time to undo a critical mistake.</p>
-        <div class="flex gap-4">
-            <button id="btn-rewind" class="bg-gradient-to-r from-yellow-600 to-yellow-800 text-white font-bold py-3 px-8 rounded-lg shadow-lg border border-yellow-500 hover:scale-105 transition-transform">
-                Rewind Last Action
-            </button>
-            <button id="btn-skip-rewind" class="bg-gray-800 text-gray-300 font-bold py-3 px-6 rounded-lg border border-gray-600 hover:bg-gray-700 transition-colors">
-                Continue
-            </button>
-        </div>
-    </div>
-    
-    <!-- Game Over Overlay -->
-    <div id="game-over-overlay" class="absolute inset-0 hidden flex-col items-center justify-center z-50 bg-black/90">
-        <h1 id="game-over-title" class="text-5xl font-black text-red-500 mb-4 uppercase tracking-widest">Defeat</h1>
-        <p id="game-over-desc" class="text-gray-300 mb-8">The Commander has fallen.</p>
-        <button onclick="location.reload()" class="bg-gray-800 text-white font-bold py-3 px-8 rounded-lg border border-gray-600 hover:bg-gray-700 transition-colors uppercase">
-            Restart Battle
-        </button>
-    </div>
-</div>
 
 <script>
-    /* --- SVGs for Classes --- */
-    const ICONS = {
-        Commander: '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>', // Crown-like
-        Vanguard: '<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>', // Shield
-        Assassin: '<svg viewBox="0 0 24 24"><path d="M2 22h2l9-13-2-2-9 13v2zm20-14l-6-6-2 2 6 6 2-2z"/></svg>', // Dagger
-        Archer: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 6v12M8 12h8"/></svg>', // Bow-ish
-        Mage: '<svg viewBox="0 0 24 24"><path d="M12 2L9 8h6l-3-6zm0 20l3-6H9l3 6zM2 12l6-3v6l-6-3zm20 0l-6 3V9l6 3z"/></svg>' // Staff/Crystal
-    };
-
+    /** --- SYSTEM & UTILS --- **/
     const DICE_FACES = [
-        { type: 'Move', icon: '🏃', color: '#4ade80' },
-        { type: 'Attack', icon: '⚔️', color: '#f87171' },
-        { type: 'Magic', icon: '✨', color: '#a78bfa' },
-        { type: 'Dash', icon: '⚡', color: '#facc15' },
-        { type: 'Defend', icon: '🛡️', color: '#94a3b8' },
-        { type: 'Wild', icon: '🌟', color: '#c5a059' }
+        { id: 'move', icon: '👟', name: 'MOVE' },
+        { id: 'attack', icon: '⚔️', name: 'ATTACK' },
+        { id: 'magic', icon: '✨', name: 'MAGIC' },
+        { id: 'dash', icon: '💨', name: 'DASH' },
+        { id: 'defend', icon: '🛡️', name: 'DEFEND' },
+        { id: 'wild', icon: '🃏', name: 'WILD' }
     ];
 
-    /* --- GAME STATE --- */
-    const State = {
-        gridSize: 8,
-        turn: 'player', // 'player' or 'enemy'
-        ap: 3,
-        dice: [],
-        fate: 0,
-        units: [],
-        bloodDecals: [], // {x, y}
-        selectedUnitId: null,
-        history: [], // For Fate rewind
-        isAnimating: false,
-        gameOver: false
+    // Simple Custom Tweening Engine
+    const Tweens = [];
+    function tween(obj, props, duration, easing = (t)=>t, onUpdate = null, onComplete = null) {
+        const startProps = {};
+        for (let k in props) startProps[k] = obj[k];
+        Tweens.push({ obj, startProps, targetProps: props, duration, elapsed: 0, easing, onUpdate, onComplete });
+    }
+    function updateTweens(dt) {
+        for (let i = Tweens.length - 1; i >= 0; i--) {
+            let t = Tweens[i];
+            t.elapsed += dt;
+            let progress = Math.min(t.elapsed / t.duration, 1);
+            let e = t.easing(progress);
+            for (let k in t.targetProps) {
+                t.obj[k] = t.startProps[k] + (t.targetProps[k] - t.startProps[k]) * e;
+            }
+            if (t.onUpdate) t.onUpdate();
+            if (progress >= 1) {
+                if (t.onComplete) t.onComplete();
+                Tweens.splice(i, 1);
+            }
+        }
+    }
+    const Easing = {
+        OutQuad: t => t * (2 - t),
+        InQuad: t => t * t,
+        OutElastic: t => t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1
     };
 
-    /* --- UNIT DEFINITIONS --- */
-    class Unit {
-        constructor(id, type, team, x, y, hp, maxHp, moveRange, atkRange, dmg) {
-            this.id = id;
-            this.type = type;
-            this.team = team;
-            this.x = x;
-            this.y = y;
-            this.hp = hp;
-            this.maxHp = maxHp;
-            this.moveRange = moveRange;
-            this.atkRange = atkRange;
-            this.dmg = dmg;
-            this.hasActed = false; // Soft limit to encourage using multiple units
+    /** --- 3D ENGINE SETUP --- **/
+    const canvas = document.getElementById('game-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050508);
+    scene.fog = new THREE.Fog(0x050508, 10, 25);
+
+    // Portrait Tactical Camera
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    let cameraShake = { x: 0, y: 0, z: 0, intensity: 0 };
+    const baseCamPos = new THREE.Vector3(3.5, 12, 11);
+    const baseCamLook = new THREE.Vector3(3.5, 0, 3.5);
+    camera.position.copy(baseCamPos);
+    camera.lookAt(baseCamLook);
+
+    // Lighting (Premium feel)
+    const ambientLight = new THREE.AmbientLight(0x202030, 1.5);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfffaed, 2.5);
+    dirLight.position.set(5, 10, 5);
+    dirLight.castShadow = true;
+    dirLight.shadow.camera.left = -5;
+    dirLight.shadow.camera.right = 12;
+    dirLight.shadow.camera.top = 12;
+    dirLight.shadow.camera.bottom = -5;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    scene.add(dirLight);
+
+    // Particle System Manager (Blood, Sparks)
+    class ParticleSystem {
+        constructor() {
+            this.particles = [];
+            const geo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            this.meshTemplate = new THREE.Mesh(geo, mat);
         }
-    }
-
-    // Initialize units
-    function initUnits() {
-        let id = 0;
-        State.units = [
-            // Player Team (Bottom)
-            new Unit(id++, 'Commander', 'player', 3, 7, 10, 10, 2, 1, 3),
-            new Unit(id++, 'Vanguard', 'player', 2, 6, 8, 8, 2, 1, 2),
-            new Unit(id++, 'Vanguard', 'player', 4, 6, 8, 8, 2, 1, 2),
-            new Unit(id++, 'Archer', 'player', 1, 7, 5, 5, 2, 3, 2),
-            new Unit(id++, 'Mage', 'player', 5, 7, 5, 5, 2, 3, 3),
-            new Unit(id++, 'Assassin', 'player', 6, 6, 4, 4, 3, 1, 4),
-            
-            // Enemy Team (Top)
-            new Unit(id++, 'Commander', 'enemy', 4, 0, 10, 10, 2, 1, 3),
-            new Unit(id++, 'Vanguard', 'enemy', 3, 1, 8, 8, 2, 1, 2),
-            new Unit(id++, 'Vanguard', 'enemy', 5, 1, 8, 8, 2, 1, 2),
-            new Unit(id++, 'Archer', 'enemy', 2, 0, 5, 5, 2, 3, 2),
-            new Unit(id++, 'Mage', 'enemy', 6, 0, 5, 5, 2, 3, 3),
-            new Unit(id++, 'Assassin', 'enemy', 1, 1, 4, 4, 3, 1, 4),
-        ];
-    }
-
-    /* --- SYSTEM: RENDER --- */
-    const boardEl = document.getElementById('battlefield');
-    
-    function renderBoard() {
-        boardEl.innerHTML = '';
-        
-        // Draw grid + Blood
-        for (let y = 0; y < State.gridSize; y++) {
-            for (let x = 0; x < State.gridSize; x++) {
-                const tile = document.createElement('div');
-                tile.className = 'tile';
-                tile.dataset.x = x;
-                tile.dataset.y = y;
-                
-                // Add blood if exists
-                const bloodCount = State.bloodDecals.filter(b => b.x === x && b.y === y).length;
-                if (bloodCount > 0) {
-                    const pool = document.createElement('div');
-                    pool.className = 'blood-pool';
-                    // Slightly increase size based on count, max 1.2
-                    pool.style.transform = `scale(${Math.min(1.2, 0.5 + bloodCount * 0.2)}) rotate(${bloodCount*45}deg)`;
-                    pool.style.opacity = Math.min(0.9, 0.4 + bloodCount * 0.2);
-                    tile.appendChild(pool);
+        spawnBurst(pos, colorHex, count, speed = 1) {
+            for(let i=0; i<count; i++) {
+                const p = this.meshTemplate.clone();
+                p.material = p.material.clone();
+                p.material.color.setHex(colorHex);
+                p.position.copy(pos);
+                // Random velocity hemisphere upwards
+                const vx = (Math.random() - 0.5) * speed;
+                const vy = (Math.random() * 0.5 + 0.5) * speed;
+                const vz = (Math.random() - 0.5) * speed;
+                scene.add(p);
+                this.particles.push({ mesh: p, vel: new THREE.Vector3(vx, vy, vz), life: 1.0 });
+            }
+        }
+        update(dt) {
+            for(let i = this.particles.length-1; i>=0; i--) {
+                let p = this.particles[i];
+                p.life -= dt * 2;
+                p.vel.y -= dt * 3; // gravity
+                p.mesh.position.addScaledVector(p.vel, dt);
+                p.mesh.scale.setScalar(p.life);
+                if(p.life <= 0) {
+                    scene.remove(p.mesh);
+                    this.particles.splice(i, 1);
                 }
-
-                tile.addEventListener('click', () => handleTileClick(x, y));
-                boardEl.appendChild(tile);
             }
-        }
-
-        // Draw Units
-        State.units.forEach(unit => {
-            if (unit.hp <= 0 && unit.type === 'Commander') return; // Hide dead commander to end game faster
-
-            const unitEl = document.createElement('div');
-            unitEl.className = `unit ${unit.team} ${unit.type === 'Commander' ? 'commander' : ''} ${unit.hp <= 0 ? 'dead' : ''}`;
-            
-            // Position using percentages for fluidity
-            unitEl.style.left = `${(unit.x / State.gridSize) * 100}%`;
-            unitEl.style.top = `${(unit.y / State.gridSize) * 100}%`;
-            unitEl.style.width = `${100 / State.gridSize}%`;
-            unitEl.style.height = `${100 / State.gridSize}%`;
-            
-            // Icon
-            unitEl.innerHTML = `<div class="unit-icon flex justify-center items-center">${ICONS[unit.type] || '♟️'}</div>`;
-            
-            // HP Bar (if alive)
-            if (unit.hp > 0) {
-                const hpContainer = document.createElement('div');
-                hpContainer.className = 'hp-bar-container';
-                const hpFill = document.createElement('div');
-                hpFill.className = 'hp-bar-fill';
-                hpFill.style.width = `${(unit.hp / unit.maxHp) * 100}%`;
-                
-                // Color change based on health
-                if (unit.hp <= unit.maxHp * 0.3) hpFill.style.backgroundColor = '#ef4444'; // red
-                else if (unit.hp <= unit.maxHp * 0.6) hpFill.style.backgroundColor = '#eab308'; // yellow
-                
-                hpContainer.appendChild(hpFill);
-                unitEl.appendChild(hpContainer);
-            }
-
-            // Selection highlight
-            if (State.selectedUnitId === unit.id) {
-                unitEl.style.boxShadow = '0 0 15px var(--accent-gold)';
-            }
-
-            // Click handling directly on unit
-            unitEl.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (unit.hp > 0) handleTileClick(unit.x, unit.y);
-            });
-
-            boardEl.appendChild(unitEl);
-        });
-
-        updateUI();
-        highlightValidMoves();
-    }
-
-    function updateUI() {
-        // Top HUD
-        const enemyBoss = State.units.find(u => u.type === 'Commander' && u.team === 'enemy');
-        if (enemyBoss) {
-            document.getElementById('enemy-boss-hp').style.width = `${Math.max(0, (enemyBoss.hp / enemyBoss.maxHp) * 100)}%`;
-        }
-
-        // Fate
-        const pips = document.querySelectorAll('.fate-pip');
-        pips.forEach((pip, i) => {
-            if (i < State.fate) pip.classList.add('filled');
-            else pip.classList.remove('filled');
-        });
-
-        // Turn
-        const turnInd = document.getElementById('turn-indicator');
-        turnInd.innerText = State.turn === 'player' ? 'Player Turn' : 'Enemy Turn';
-        turnInd.className = State.turn === 'player' ? 'text-blue-400 font-bold tracking-widest uppercase text-sm' : 'text-red-400 font-bold tracking-widest uppercase text-sm';
-
-        // Bottom HUD - AP
-        document.getElementById('global-ap').innerText = State.ap;
-
-        // Bottom HUD - Dice
-        const diceCont = document.getElementById('dice-container');
-        diceCont.innerHTML = '';
-        State.dice.forEach(d => {
-            const dEl = document.createElement('div');
-            dEl.className = `dice-slot ${d.used ? 'used' : 'active'}`;
-            dEl.style.color = d.color;
-            dEl.innerHTML = d.icon;
-            diceCont.appendChild(dEl);
-        });
-
-        // Selected Unit Info
-        const selUnit = getUnitById(State.selectedUnitId);
-        if (selUnit) {
-            document.getElementById('selected-info').classList.remove('hidden');
-            document.getElementById('no-selection').classList.add('hidden');
-            document.getElementById('selected-icon').innerHTML = `<svg class="w-6 h-6 fill-white" viewBox="0 0 24 24">${ICONS[selUnit.type]}</svg>`;
-            document.getElementById('selected-icon').className = `w-10 h-10 rounded-full border-2 flex items-center justify-center ${selUnit.team === 'player' ? 'border-blue-500 bg-blue-900' : 'border-red-500 bg-red-900'}`;
-            document.getElementById('selected-name').innerText = selUnit.type;
-            document.getElementById('selected-name').className = `font-bold text-sm uppercase ${selUnit.team === 'player' ? 'text-blue-300' : 'text-red-400'}`;
-            document.getElementById('selected-hp').innerText = `${selUnit.hp}/${selUnit.maxHp}`;
-        } else {
-            document.getElementById('selected-info').classList.add('hidden');
-            document.getElementById('no-selection').classList.remove('hidden');
         }
     }
+    const vfx = new ParticleSystem();
 
-    /* --- HELPERS --- */
-    const getUnitAt = (x, y) => State.units.find(u => u.x === x && u.y === y && u.hp > 0);
-    const getUnitById = (id) => State.units.find(u => u.id === id);
-    const distance = (x1, y1, x2, y2) => Math.abs(x1 - x2) + Math.abs(y1 - y2); // Manhattan distance
+    function triggerShake(intensity) {
+        cameraShake.intensity = intensity;
+    }
 
-    function highlightValidMoves() {
-        if (!State.selectedUnitId || State.turn !== 'player' || State.isAnimating) return;
+    /** --- GAMEPLAY LOGIC & BOARD --- **/
+    const BOARD_SIZE = 8;
+    const tiles = [];
+    const tileMeshes = [];
+    let units = [];
+
+    // Materials
+    const matTileDark = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.9, metalness: 0.1 });
+    const matTileLight = new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.9, metalness: 0.1 });
+    const matTileHighlight = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5, transparent: true, opacity: 0.5 });
+    const matTileAttack = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5, transparent: true, opacity: 0.5 });
+
+    // Build Board
+    const boardGroup = new THREE.Group();
+    const tileGeo = new THREE.BoxGeometry(0.96, 0.2, 0.96);
+    for (let x = 0; x < BOARD_SIZE; x++) {
+        tiles[x] = [];
+        for (let z = 0; z < BOARD_SIZE; z++) {
+            const isLight = (x + z) % 2 === 0;
+            const mesh = new THREE.Mesh(tileGeo, isLight ? matTileLight : matTileDark);
+            mesh.position.set(x, 0, z);
+            mesh.receiveShadow = true;
+            mesh.userData = { x, z, originalMat: mesh.material };
+            boardGroup.add(mesh);
+            tiles[x][z] = { mesh, unit: null, type: 'normal' };
+            tileMeshes.push(mesh);
+        }
+    }
+    scene.add(boardGroup);
+
+    // Add Central Relic for aesthetic
+    const relicGeo = new THREE.CylinderGeometry(0.3, 0.5, 1, 8);
+    const relicMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8, roughness: 0.2 });
+    const relic = new THREE.Mesh(relicGeo, relicMat);
+    relic.position.set(3.5, 0.5, 3.5);
+    relic.castShadow = true;
+    boardGroup.add(relic);
+    const relicLight = new THREE.PointLight(0x00ffff, 1, 3);
+    relicLight.position.set(3.5, 1.5, 3.5);
+    scene.add(relicLight);
+
+
+    // Unit Definitions
+    class Unit {
+        constructor(config, x, z) {
+            this.id = Math.random().toString(36).substr(2, 9);
+            this.name = config.name;
+            this.team = config.team; // 'player' or 'enemy'
+            this.maxHp = config.hp;
+            this.hp = config.hp;
+            this.atk = config.atk;
+            this.moveRange = config.moveRange;
+            this.atkRange = config.atkRange;
+            this.x = x;
+            this.z = z;
+            this.hasActed = false;
+
+            // Visuals
+            this.mesh = this.buildMesh(config.visual);
+            this.mesh.position.set(x, 0.2, z);
+            scene.add(this.mesh);
+            
+            // HP UI
+            this.uiEl = document.createElement('div');
+            this.uiEl.className = 'hp-bar';
+            this.uiEl.innerHTML = `<div>${this.name}</div><div class="hp-fill" style="width:100%"></div>`;
+            document.getElementById('hp-container').appendChild(this.uiEl);
+
+            tiles[x][z].unit = this;
+            this.updateUIPosition();
+        }
+
+        buildMesh(vis) {
+            const group = new THREE.Group();
+            let geo;
+            if (vis.shape === 'box') geo = new THREE.BoxGeometry(0.6, 1.2, 0.6);
+            else if (vis.shape === 'cylinder') geo = new THREE.CylinderGeometry(0.3, 0.3, 1.2, 16);
+            else geo = new THREE.ConeGeometry(0.4, 1.2, 8);
+            
+            // Main body
+            const mat = new THREE.MeshStandardMaterial({ color: vis.color, roughness: 0.4, metalness: 0.6 });
+            const body = new THREE.Mesh(geo, mat);
+            body.position.y = 0.6;
+            body.castShadow = true;
+            body.receiveShadow = true;
+            group.add(body);
+
+            // Facing indicator
+            const faceGeo = new THREE.BoxGeometry(0.2, 0.2, 0.4);
+            const faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const face = new THREE.Mesh(faceGeo, faceMat);
+            face.position.set(0, 0.9, 0.3);
+            group.add(face);
+
+            return group;
+        }
+
+        updateUIPosition() {
+            // Project 3D pos to 2D screen
+            const pos = this.mesh.position.clone();
+            pos.y += 1.5;
+            pos.project(camera);
+            const x = (pos.x * .5 + .5) * window.innerWidth;
+            const y = (pos.y * -.5 + .5) * window.innerHeight;
+            this.uiEl.style.left = `${x}px`;
+            this.uiEl.style.top = `${y}px`;
+        }
+
+        takeDamage(amount) {
+            this.hp = Math.max(0, this.hp - amount);
+            this.uiEl.querySelector('.hp-fill').style.width = `${(this.hp / this.maxHp) * 100}%`;
+            
+            // Blood VFX
+            vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.6, 0)), 0xe11d48, 20, 3);
+            triggerShake(0.2);
+
+            // Flash red
+            const bodyMat = this.mesh.children[0].material;
+            const ogColor = bodyMat.color.getHex();
+            bodyMat.color.setHex(0xff0000);
+            setTimeout(() => { if(this.hp>0) bodyMat.color.setHex(ogColor); }, 150);
+
+            if (this.hp <= 0) this.die();
+        }
+
+        die() {
+            vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.6, 0)), 0xff0000, 50, 5);
+            scene.remove(this.mesh);
+            this.uiEl.remove();
+            tiles[this.x][this.z].unit = null;
+            units = units.filter(u => u !== this);
+            triggerShake(0.4);
+            checkWinCondition();
+        }
+
+        lookAtTile(tx, tz) {
+            this.mesh.lookAt(tx, this.mesh.position.y, tz);
+        }
+    }
+
+    // Configs
+    const UNIT_TYPES = {
+        commander: { name: 'Commander', team: 'player', hp: 12, atk: 4, moveRange: 3, atkRange: 1, visual: { shape: 'box', color: 0xfacc15 } },
+        vanguard: { name: 'Vanguard', team: 'player', hp: 15, atk: 3, moveRange: 2, atkRange: 1, visual: { shape: 'box', color: 0x3b82f6 } },
+        assassin: { name: 'Assassin', team: 'player', hp: 8, atk: 5, moveRange: 4, atkRange: 1, visual: { shape: 'cylinder', color: 0x8b5cf6 } },
+        archer: { name: 'Archer', team: 'player', hp: 8, atk: 3, moveRange: 3, atkRange: 4, visual: { shape: 'cone', color: 0x10b981 } },
+        mage: { name: 'Mage', team: 'player', hp: 6, atk: 4, moveRange: 2, atkRange: 3, visual: { shape: 'cone', color: 0x0ea5e9 } },
+        grunt: { name: 'Corrupt', team: 'enemy', hp: 6, atk: 2, moveRange: 3, atkRange: 1, visual: { shape: 'box', color: 0x991b1b } },
+        brute: { name: 'Demon', team: 'enemy', hp: 12, atk: 4, moveRange: 2, atkRange: 1, visual: { shape: 'box', color: 0x7f1d1d } }
+    };
+
+    // Spawn Units
+    units.push(new Unit(UNIT_TYPES.commander, 3, 7));
+    units.push(new Unit(UNIT_TYPES.vanguard, 2, 6));
+    units.push(new Unit(UNIT_TYPES.vanguard, 4, 6));
+    units.push(new Unit(UNIT_TYPES.assassin, 1, 7));
+    units.push(new Unit(UNIT_TYPES.archer, 5, 7));
+    units.push(new Unit(UNIT_TYPES.mage, 4, 7));
+
+    units.push(new Unit(UNIT_TYPES.brute, 3, 0));
+    units.push(new Unit(UNIT_TYPES.brute, 4, 0));
+    units.push(new Unit(UNIT_TYPES.grunt, 1, 1));
+    units.push(new Unit(UNIT_TYPES.grunt, 6, 1));
+    units.push(new Unit(UNIT_TYPES.grunt, 2, 2));
+
+
+    /** --- GAME STATE & INPUT --- **/
+    let state = 'PLAYER_TURN'; // PLAYER_TURN, ACTION_ANIMATING, ENEMY_TURN, GAME_OVER
+    let ap = 3;
+    let diceRolled = [];
+    let selectedUnit = null;
+    let selectedDieIndex = -1;
+    let highlightMeshes = [];
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    // UI Elements
+    const toastEl = document.getElementById('toast');
+    const apContainer = document.getElementById('ap-container');
+    const diceContainer = document.getElementById('dice-container');
+    const unitInfo = document.getElementById('unit-info');
+    const btnEndTurn = document.getElementById('btn-end-turn');
+
+    function showToast(msg, color = 'white') {
+        toastEl.innerText = msg;
+        toastEl.style.color = color;
+        toastEl.style.opacity = 1;
+        toastEl.style.transform = 'translate(-50%, -50%) scale(1.1)';
+        setTimeout(() => {
+            toastEl.style.opacity = 0;
+            toastEl.style.transform = 'translate(-50%, -50%) scale(1)';
+        }, 1500);
+    }
+
+    function updateAPUI() {
+        apContainer.innerHTML = '';
+        for(let i=0; i<3; i++) {
+            if(i < ap) apContainer.innerHTML += `<div class="w-4 h-4 bg-yellow-400 rounded-full shadow-[0_0_10px_#facc15]"></div>`;
+            else apContainer.innerHTML += `<div class="w-4 h-4 bg-gray-700 rounded-full"></div>`;
+        }
+    }
+
+    function rollDice() {
+        diceRolled = [];
+        diceContainer.innerHTML = '';
+        for(let i=0; i<3; i++) {
+            const d = DICE_FACES[Math.floor(Math.random() * DICE_FACES.length)];
+            diceRolled.push({ ...d, used: false });
+            
+            const btn = document.createElement('button');
+            btn.className = `die-btn w-16 h-16 bg-gray-800 border-2 border-gray-600 rounded-xl flex flex-col items-center justify-center text-white rolling`;
+            btn.innerHTML = `<span class="text-2xl">${d.icon}</span><span class="text-[10px] font-bold mt-1">${d.name}</span>`;
+            btn.onclick = () => selectDie(i, btn);
+            diceContainer.appendChild(btn);
+            
+            // Remove animation class after roll
+            setTimeout(() => btn.classList.remove('rolling'), 500);
+        }
+    }
+
+    function selectDie(index, btnEl) {
+        if (state !== 'PLAYER_TURN' || diceRolled[index].used) return;
+        if (!selectedUnit) { showToast('Select a hero first!', '#facc15'); return; }
         
-        const unit = getUnitById(State.selectedUnitId);
-        if (unit.team !== 'player') return;
+        selectedDieIndex = index;
+        Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+        btnEl.classList.add('selected');
+        
+        const die = diceRolled[index];
+        showValidTargets(die.id);
+    }
 
-        // Check if we have resources
-        const hasAP = State.ap > 0;
-        const hasMoveDie = State.dice.some(d => !d.used && (d.type === 'Move' || d.type === 'Dash' || d.type === 'Wild'));
-        const hasAtkDie = State.dice.some(d => !d.used && (d.type === 'Attack' || d.type === 'Magic' || d.type === 'Wild'));
+    function clearHighlights() {
+        tileMeshes.forEach(m => m.material = m.userData.originalMat);
+        highlightMeshes = [];
+    }
 
-        const tiles = document.querySelectorAll('.tile');
-        tiles.forEach(t => {
-            const tx = parseInt(t.dataset.x);
-            const ty = parseInt(t.dataset.y);
-            t.classList.remove('move-range', 'attack-range', 'selected');
+    function showValidTargets(actionType) {
+        clearHighlights();
+        if(!selectedUnit) return;
+        
+        const isMove = actionType === 'move' || actionType === 'dash' || actionType === 'wild';
+        const isAttack = actionType === 'attack' || actionType === 'magic' || actionType === 'wild';
+        
+        for (let x = 0; x < BOARD_SIZE; x++) {
+            for (let z = 0; z < BOARD_SIZE; z++) {
+                const dist = Math.abs(x - selectedUnit.x) + Math.abs(z - selectedUnit.z);
+                const tile = tiles[x][z];
+                
+                if (isMove && dist <= selectedUnit.moveRange && dist > 0 && !tile.unit) {
+                    if (x===3 && z===3) continue; // Skip relic
+                    tile.mesh.material = matTileHighlight;
+                    highlightMeshes.push({x, z, type: 'move'});
+                }
+                if (isAttack && dist <= selectedUnit.atkRange && dist > 0 && tile.unit && tile.unit.team !== selectedUnit.team) {
+                    tile.mesh.material = matTileAttack;
+                    highlightMeshes.push({x, z, type: 'attack'});
+                }
+            }
+        }
+    }
+
+    // Input Handling
+    window.addEventListener('pointerdown', (e) => {
+        if(state !== 'PLAYER_TURN') return;
+        if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return; // Ignore UI clicks
+
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        // Check units first
+        const unitMeshes = units.map(u => u.mesh.children[0]);
+        const unitIntersects = raycaster.intersectObjects(unitMeshes);
+        
+        if (unitIntersects.length > 0) {
+            const clickedMesh = unitIntersects[0].object.parent;
+            const unit = units.find(u => u.mesh === clickedMesh);
             
-            if (tx === unit.x && ty === unit.y) {
-                t.classList.add('selected');
+            // Check if clicking enemy for attack
+            if (unit && unit.team === 'enemy' && selectedDieIndex !== -1) {
+                 const hl = highlightMeshes.find(h => h.x === unit.x && h.z === unit.z && h.type === 'attack');
+                 if(hl) { executeAction(hl); return; }
+            }
+
+            if (unit && unit.team === 'player') {
+                selectedUnit = unit;
+                unitInfo.classList.remove('hidden');
+                document.getElementById('unit-name').innerText = unit.name;
+                selectedDieIndex = -1; // Reset die
+                Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+                clearHighlights();
+                
+                // Pop animation
+                tween(unit.mesh.scale, {y: 1.2}, 0.1, Easing.OutQuad, null, () => {
+                    tween(unit.mesh.scale, {y: 1.0}, 0.1, Easing.InQuad);
+                });
                 return;
             }
-
-            const dist = distance(unit.x, unit.y, tx, ty);
-            const targetUnit = getUnitAt(tx, ty);
-
-            // Movement
-            if (dist <= unit.moveRange && !targetUnit && hasAP && hasMoveDie) {
-                t.classList.add('move-range');
-            }
-            // Attack
-            else if (dist <= unit.atkRange && targetUnit && targetUnit.team !== unit.team && hasAP && hasAtkDie) {
-                t.classList.add('attack-range');
-            }
-        });
-    }
-
-    /* --- INPUT HANDLING --- */
-    function handleTileClick(x, y) {
-        if (State.isAnimating || State.turn !== 'player' || State.gameOver) return;
-
-        const clickedUnit = getUnitAt(x, y);
-        const selectedUnit = getUnitById(State.selectedUnitId);
-
-        // Select a unit
-        if (clickedUnit && (!selectedUnit || clickedUnit.team === 'player' || distance(selectedUnit.x, selectedUnit.y, x, y) > selectedUnit.atkRange)) {
-            State.selectedUnitId = clickedUnit.id;
-            renderBoard();
-            return;
         }
 
-        // Action with selected unit
-        if (selectedUnit && selectedUnit.team === 'player') {
-            const dist = distance(selectedUnit.x, selectedUnit.y, x, y);
+        // Check tiles
+        const tileIntersects = raycaster.intersectObjects(tileMeshes);
+        if (tileIntersects.length > 0) {
+            const tileMesh = tileIntersects[0].object;
+            const {x, z} = tileMesh.userData;
             
-            // Move
-            if (!clickedUnit && dist <= selectedUnit.moveRange) {
-                attemptMove(selectedUnit, x, y);
-            }
-            // Attack
-            else if (clickedUnit && clickedUnit.team === 'enemy' && dist <= selectedUnit.atkRange) {
-                attemptAttack(selectedUnit, clickedUnit);
+            const highlight = highlightMeshes.find(h => h.x === x && h.z === z);
+            if (highlight && selectedDieIndex !== -1) {
+                executeAction(highlight);
             } else {
-                // Deselect if clicking out of bounds
-                State.selectedUnitId = null;
-                renderBoard();
+                // Deselect
+                selectedUnit = null;
+                unitInfo.classList.add('hidden');
+                clearHighlights();
+                Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+                selectedDieIndex = -1;
             }
         }
-    }
+    });
 
-    /* --- GAME LOGIC --- */
-    function saveState() {
-        State.history.push(JSON.stringify({
-            units: State.units,
-            ap: State.ap,
-            dice: State.dice,
-            bloodDecals: State.bloodDecals,
-            fate: State.fate
-        }));
-        if (State.history.length > 5) State.history.shift(); // Keep history manageable
-    }
-
-    function attemptMove(unit, x, y) {
-        if (State.ap < 1) return;
-        const dieIndex = State.dice.findIndex(d => !d.used && (d.type === 'Move' || d.type === 'Dash' || d.type === 'Wild'));
-        if (dieIndex === -1) return;
-
-        saveState(); // Save before action
+    /** --- COMBAT ACTIONS & ANIMATIONS --- **/
+    function executeAction(targetInfo) {
+        state = 'ACTION_ANIMATING';
+        clearHighlights();
         
-        State.ap--;
-        State.dice[dieIndex].used = true;
+        const {x, z, type} = targetInfo;
+        const die = diceRolled[selectedDieIndex];
         
-        unit.x = x;
-        unit.y = y;
-        unit.hasActed = true;
-        
-        // Play small move sound/effect here in real game
-        renderBoard();
-    }
+        // Consume Resources
+        die.used = true;
+        diceContainer.children[selectedDieIndex].classList.add('used');
+        diceContainer.children[selectedDieIndex].classList.remove('selected');
+        ap--;
+        updateAPUI();
 
-    async function attemptAttack(attacker, target) {
-        if (State.ap < 1) return;
-        
-        let validDiceTypes = ['Attack', 'Wild'];
-        if (attacker.type === 'Mage') validDiceTypes.push('Magic');
-        
-        const dieIndex = State.dice.findIndex(d => !d.used && validDiceTypes.includes(d.type));
-        if (dieIndex === -1 && attacker.team === 'player') return;
+        selectedUnit.lookAtTile(x, z);
 
-        saveState(); // Save before action
+        if (type === 'move') {
+            // Anticipation
+            tween(selectedUnit.mesh.position, { y: 0.5 }, 0.1, Easing.OutQuad, null, () => {
+                // Impact (Move)
+                tiles[selectedUnit.x][selectedUnit.z].unit = null;
+                selectedUnit.x = x;
+                selectedUnit.z = z;
+                tiles[x][z].unit = selectedUnit;
+                
+                let targetVec = new THREE.Vector3(x, 0.2, z);
+                tween(selectedUnit.mesh.position, { x: x, z: z }, 0.2, Easing.OutQuad, () => selectedUnit.updateUIPosition(), () => {
+                    // Recovery
+                    tween(selectedUnit.mesh.position, { y: 0.2 }, 0.1, Easing.InQuad, null, finishAction);
+                });
+            });
+        } 
+        else if (type === 'attack') {
+            const targetUnit = tiles[x][z].unit;
+            const startPos = { x: selectedUnit.mesh.position.x, z: selectedUnit.mesh.position.z };
+            
+            // Anticipation (pull back slightly)
+            let dir = new THREE.Vector3(selectedUnit.x - x, 0, selectedUnit.z - z).normalize();
+            tween(selectedUnit.mesh.position, { x: startPos.x + dir.x*0.5, z: startPos.z + dir.z*0.5 }, 0.2, Easing.OutQuad, null, () => {
+                
+                // Strike
+                let isRanged = selectedUnit.atkRange > 1;
+                if(isRanged) {
+                    // Projectile simulation (VFX)
+                    vfx.spawnBurst(targetUnit.mesh.position, 0xffff00, 10, 5);
+                    targetUnit.takeDamage(selectedUnit.atk);
+                    setTimeout(finishAction, 300);
+                } else {
+                    // Melee dash in
+                    tween(selectedUnit.mesh.position, { x: x + dir.x*0.5, z: z + dir.z*0.5 }, 0.1, Easing.InQuad, null, () => {
+                        
+                        // IMPACT!
+                        targetUnit.takeDamage(selectedUnit.atk);
+                        
+                        // Vanguard specific: Knockback logic
+                        if (selectedUnit.name === 'Vanguard' && targetUnit.hp > 0) {
+                            let kx = x - dir.x;
+                            let kz = z - dir.z;
+                            kx = Math.round(kx); kz = Math.round(kz);
+                            if (kx >= 0 && kx < BOARD_SIZE && kz >= 0 && kz < BOARD_SIZE && !tiles[kx][kz].unit && !(kx===3 && kz===3)) {
+                                tiles[x][z].unit = null;
+                                targetUnit.x = kx;
+                                targetUnit.z = kz;
+                                tiles[kx][kz].unit = targetUnit;
+                                tween(targetUnit.mesh.position, {x: kx, z: kz}, 0.2, Easing.OutQuad, () => targetUnit.updateUIPosition());
+                            }
+                        }
 
-        if (attacker.team === 'player') {
-            State.ap--;
-            State.dice[dieIndex].used = true;
+                        // Recovery
+                        tween(selectedUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.3, Easing.OutElastic, null, finishAction);
+                    });
+                }
+            });
         }
+    }
 
-        attacker.hasActed = true;
-        State.isAnimating = true;
-
-        // 1. Calculate direction for bump animation
-        const dx = target.x - attacker.x;
-        const dy = target.y - attacker.y;
+    function finishAction() {
+        if(checkWinCondition()) return;
         
-        // Target visual elements
-        renderBoard(); // refresh to ensure positions
-        const attackerEls = document.querySelectorAll('.unit');
-        let attackerEl, targetEl;
-        attackerEls.forEach(el => {
-            const bgStr = el.style.left;
-            if(bgStr === `${(attacker.x/8)*100}%` && el.style.top === `${(attacker.y/8)*100}%`) attackerEl = el;
-            if(bgStr === `${(target.x/8)*100}%` && el.style.top === `${(target.y/8)*100}%`) targetEl = el;
+        if (ap <= 0 || diceRolled.every(d => d.used)) {
+            startEnemyTurn();
+        } else {
+            state = 'PLAYER_TURN';
+            selectedDieIndex = -1;
+            Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+        }
+    }
+
+    /** --- ENEMY AI --- **/
+    btnEndTurn.addEventListener('click', () => {
+        if(state === 'PLAYER_TURN') startEnemyTurn();
+    });
+
+    function startEnemyTurn() {
+        state = 'ENEMY_TURN';
+        document.getElementById('turn-indicator').innerText = 'ENEMY TURN';
+        document.getElementById('turn-indicator').classList.replace('text-yellow-500', 'text-red-500');
+        showToast('Enemy Turn', '#ef4444');
+        
+        clearHighlights();
+        selectedUnit = null;
+        unitInfo.classList.add('hidden');
+        diceContainer.innerHTML = '';
+        apContainer.innerHTML = '';
+        
+        let enemies = units.filter(u => u.team === 'enemy');
+        let index = 0;
+
+        function nextEnemy() {
+            if(index >= enemies.length || state === 'GAME_OVER') {
+                startPlayerTurn();
+                return;
+            }
+            processEnemyAI(enemies[index], () => {
+                index++;
+                setTimeout(nextEnemy, 300);
+            });
+        }
+        
+        setTimeout(nextEnemy, 1000);
+    }
+
+    function processEnemyAI(enemy, callback) {
+        if(enemy.hp <= 0) { callback(); return; } // Dead during turn
+        
+        // Find closest player
+        let players = units.filter(u => u.team === 'player');
+        if(players.length === 0) { callback(); return; }
+        
+        let target = players[0];
+        let minDist = 999;
+        players.forEach(p => {
+            let d = Math.abs(p.x - enemy.x) + Math.abs(p.z - enemy.z);
+            if(d < minDist) { minDist = d; target = p; }
         });
 
-        // 2. Play attack bump
-        if (attackerEl) {
-            attackerEl.style.setProperty('--bump-x', `${Math.sign(dx) * 20}%`);
-            attackerEl.style.setProperty('--bump-y', `${Math.sign(dy) * 20}%`);
-            attackerEl.style.animation = 'bump 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-        }
+        enemy.lookAtTile(target.x, target.z);
 
-        await new Promise(r => setTimeout(r, 150)); // Wait for bump peak
-
-        // 3. Impact & Damage
-        const damage = attacker.dmg + (Math.random() > 0.8 ? 1 : 0); // slight crit chance
-        target.hp -= damage;
-
-        // Cinematic FX: Screen shake & Hit stop
-        const container = document.getElementById('game-container');
-        container.classList.add('shake-active', 'hit-stop-active');
-        
-        // Blood Decal
-        State.bloodDecals.push({x: target.x, y: target.y});
-        
-        // Floating Damage
-        const dmgText = document.createElement('div');
-        dmgText.className = 'damage-text';
-        dmgText.innerText = `-${damage}`;
-        if(targetEl) {
-            targetEl.appendChild(dmgText);
-        }
-
-        await new Promise(r => setTimeout(r, 200)); // Hit stop duration
-        container.classList.remove('shake-active', 'hit-stop-active');
-        
-        if (attackerEl) attackerEl.style.animation = ''; // remove bump
-
-        // Fate System
-        if (attacker.team === 'player') {
-            State.fate++;
-            if (State.fate >= 5) {
-                renderBoard(); // Update visuals before pausing
-                triggerFateChain();
-                return; // Early exit, fate intercepts
+        // If in attack range, attack
+        if(minDist <= enemy.atkRange) {
+            enemyAttack(enemy, target, callback);
+        } else {
+            // Move towards
+            let dx = Math.sign(target.x - enemy.x);
+            let dz = Math.sign(target.z - enemy.z);
+            
+            // Try moving X first, then Z
+            let nx = enemy.x + dx;
+            let nz = enemy.z;
+            
+            if ((dx===0 || tiles[nx][nz].unit || (nx===3&&nz===3)) && dz !== 0) {
+                nx = enemy.x;
+                nz = enemy.z + dz;
+            }
+            
+            if (nx >= 0 && nx < BOARD_SIZE && nz >= 0 && nz < BOARD_SIZE && !tiles[nx][nz].unit && !(nx===3&&nz===3)) {
+                // Animate move
+                tiles[enemy.x][enemy.z].unit = null;
+                enemy.x = nx;
+                enemy.z = nz;
+                tiles[nx][nz].unit = enemy;
+                
+                tween(enemy.mesh.position, {y: 0.5}, 0.1, Easing.OutQuad, null, () => {
+                    tween(enemy.mesh.position, {x: nx, z: nz}, 0.2, Easing.OutQuad, () => enemy.updateUIPosition(), () => {
+                        tween(enemy.mesh.position, {y: 0.2}, 0.1, Easing.InQuad, null, () => {
+                            // Check attack after move
+                            minDist = Math.abs(target.x - enemy.x) + Math.abs(target.z - enemy.z);
+                            if(minDist <= enemy.atkRange) {
+                                setTimeout(() => enemyAttack(enemy, target, callback), 200);
+                            } else {
+                                callback();
+                            }
+                        });
+                    });
+                });
+            } else {
+                callback(); // Blocked
             }
         }
+    }
 
-        checkWinCondition();
+    function enemyAttack(enemy, target, callback) {
+        let dir = new THREE.Vector3(enemy.x - target.x, 0, enemy.z - target.z).normalize();
+        let startPos = {x: enemy.mesh.position.x, z: enemy.mesh.position.z};
         
-        if(!State.gameOver) {
-            State.isAnimating = false;
-            renderBoard();
-        }
+        tween(enemy.mesh.position, { x: startPos.x + dir.x*0.5, z: startPos.z + dir.z*0.5 }, 0.2, Easing.OutQuad, null, () => {
+            tween(enemy.mesh.position, { x: target.x + dir.x*0.5, z: target.z + dir.z*0.5 }, 0.1, Easing.InQuad, null, () => {
+                target.takeDamage(enemy.atk);
+                tween(enemy.mesh.position, { x: startPos.x, z: startPos.z }, 0.3, Easing.OutElastic, null, callback);
+            });
+        });
+    }
+
+    function startPlayerTurn() {
+        if(checkWinCondition()) return;
+        state = 'PLAYER_TURN';
+        ap = 3;
+        document.getElementById('turn-indicator').innerText = 'PLAYER TURN';
+        document.getElementById('turn-indicator').classList.replace('text-red-500', 'text-yellow-500');
+        showToast('Your Turn', '#facc15');
+        updateAPUI();
+        rollDice();
     }
 
     function checkWinCondition() {
-        const playerBoss = State.units.find(u => u.type === 'Commander' && u.team === 'player');
-        const enemyBoss = State.units.find(u => u.type === 'Commander' && u.team === 'enemy');
-
-        if (playerBoss.hp <= 0) {
-            State.gameOver = true;
-            document.getElementById('game-over-overlay').classList.remove('hidden');
-            document.getElementById('game-over-overlay').classList.add('flex');
-            document.getElementById('game-over-title').innerText = "Defeat";
-            document.getElementById('game-over-title').className = "text-5xl font-black text-red-500 mb-4 uppercase tracking-widest";
-            document.getElementById('game-over-desc').innerText = "Your Commander has fallen.";
-        } else if (enemyBoss.hp <= 0) {
-            State.gameOver = true;
-            document.getElementById('game-over-overlay').classList.remove('hidden');
-            document.getElementById('game-over-overlay').classList.add('flex');
-            document.getElementById('game-over-title').innerText = "Victory";
-            document.getElementById('game-over-title').className = "text-5xl font-black text-yellow-500 mb-4 uppercase tracking-widest";
-            document.getElementById('game-over-desc').innerText = "The enemy Commander is dead.";
+        if(state === 'GAME_OVER') return true;
+        
+        let p = units.filter(u => u.team === 'player');
+        let e = units.filter(u => u.team === 'enemy');
+        let comm = units.find(u => u.name === 'Commander');
+        
+        if (p.length === 0 || !comm) {
+            state = 'GAME_OVER';
+            showToast('DEFEAT. Commander fell.', '#ef4444');
+            document.getElementById('ui-layer').style.pointerEvents = 'none';
+            return true;
         }
+        if (e.length === 0) {
+            state = 'GAME_OVER';
+            showToast('VICTORY!', '#10b981');
+            document.getElementById('ui-layer').style.pointerEvents = 'none';
+            return true;
+        }
+        return false;
     }
 
-    /* --- FATE CHAIN (REWIND) --- */
-    function triggerFateChain() {
-        document.getElementById('rewind-overlay').classList.remove('hidden');
-        document.getElementById('rewind-overlay').classList.add('flex');
+
+    /** --- MAIN LOOP --- **/
+    const clock = new THREE.Clock();
+
+    function animate() {
+        requestAnimationFrame(animate);
+        let dt = clock.getDelta();
+
+        updateTweens(dt);
+        vfx.update(dt);
         
-        // Deepen cinematic pause
-        document.getElementById('battlefield').style.filter = 'grayscale(50%) brightness(0.5)';
+        // Relic hover animation
+        relic.position.y = 0.5 + Math.sin(clock.elapsedTime * 2) * 0.1;
+
+        // Sync HP UI
+        units.forEach(u => u.updateUIPosition());
+
+        // Camera Shake application
+        if (cameraShake.intensity > 0) {
+            camera.position.x = baseCamPos.x + (Math.random() - 0.5) * cameraShake.intensity;
+            camera.position.y = baseCamPos.y + (Math.random() - 0.5) * cameraShake.intensity;
+            camera.position.z = baseCamPos.z + (Math.random() - 0.5) * cameraShake.intensity;
+            cameraShake.intensity -= dt * 2;
+            if(cameraShake.intensity < 0) cameraShake.intensity = 0;
+        } else {
+            camera.position.copy(baseCamPos);
+        }
+
+        renderer.render(scene, camera);
     }
 
-    document.getElementById('btn-rewind').addEventListener('click', () => {
-        if (State.history.length > 0) {
-            const prevState = JSON.parse(State.history[State.history.length - 1]);
-            State.units = prevState.units;
-            State.ap = prevState.ap;
-            State.dice = prevState.dice;
-            State.bloodDecals = prevState.bloodDecals;
-            State.fate = 0; // Reset fate
-            State.history.pop();
-        }
-        
-        closeFateOverlay();
+    // Resize handler
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    document.getElementById('btn-skip-rewind').addEventListener('click', () => {
-        State.fate = 0; // Consume fate, don't rewind
-        closeFateOverlay();
-    });
-
-    function closeFateOverlay() {
-        document.getElementById('rewind-overlay').classList.add('hidden');
-        document.getElementById('rewind-overlay').classList.remove('flex');
-        document.getElementById('battlefield').style.filter = '';
-        State.isAnimating = false;
-        renderBoard();
-        checkWinCondition();
-    }
-
-    /* --- TURN MANAGEMENT & AI --- */
-    function startTurn(team) {
-        State.turn = team;
-        State.ap = 3;
-        State.selectedUnitId = null;
-        State.units.forEach(u => u.hasActed = false);
-
-        if (team === 'player') {
-            // Roll 3 Tactical Dice
-            State.dice = [];
-            for(let i=0; i<3; i++) {
-                const face = DICE_FACES[Math.floor(Math.random() * DICE_FACES.length)];
-                State.dice.push({ ...face, used: false });
-            }
-        }
-
-        renderBoard();
-
-        if (team === 'enemy') {
-            setTimeout(executeAITurn, 800);
-        }
-    }
-
-    document.getElementById('btn-end-turn').addEventListener('click', () => {
-        if (State.turn === 'player' && !State.isAnimating && !State.gameOver) {
-            startTurn('enemy');
-        }
-    });
-
-    async function executeAITurn() {
-        // Vertical Slice AI: Simple Evaluation
-        // Find units that can attack, otherwise move towards player commander.
-        
-        let aiAp = 3;
-        const enemyUnits = State.units.filter(u => u.team === 'enemy' && u.hp > 0);
-        const playerUnits = State.units.filter(u => u.team === 'player' && u.hp > 0);
-        const playerCommander = playerUnits.find(u => u.type === 'Commander');
-
-        for (let i = 0; i < aiAp; i++) {
-            if (State.gameOver) break;
-
-            // 1. Evaluate Kill/Attack Opportunity
-            let actionTaken = false;
-            
-            for (let e of enemyUnits) {
-                if (actionTaken) break;
-                
-                // Look for targets in range
-                for (let p of playerUnits) {
-                    if (distance(e.x, e.y, p.x, p.y) <= e.atkRange) {
-                        await attemptAttack(e, p);
-                        actionTaken = true;
-                        break;
-                    }
-                }
-            }
-
-            // 2. Evaluate Movement if no attack was possible
-            if (!actionTaken && playerCommander) {
-                // Pick a random enemy unit that hasn't acted much
-                const mobileEnemies = enemyUnits.filter(e => !e.hasActed);
-                const mover = mobileEnemies.length > 0 ? mobileEnemies[0] : enemyUnits[0];
-                
-                if (mover) {
-                    // Move 1 step towards player commander
-                    const dx = Math.sign(playerCommander.x - mover.x);
-                    const dy = Math.sign(playerCommander.y - mover.y);
-                    
-                    let newX = mover.x;
-                    let newY = mover.y;
-
-                    // Prefer moving in the direction with larger gap, avoiding overlaps
-                    if (Math.abs(playerCommander.x - mover.x) > Math.abs(playerCommander.y - mover.y)) {
-                        if (!getUnitAt(mover.x + dx, mover.y)) newX += dx;
-                        else if (!getUnitAt(mover.x, mover.y + dy)) newY += dy;
-                    } else {
-                        if (!getUnitAt(mover.x, mover.y + dy)) newY += dy;
-                        else if (!getUnitAt(mover.x + dx, mover.y)) newX += dx;
-                    }
-
-                    if (newX !== mover.x || newY !== mover.y) {
-                        mover.x = newX;
-                        mover.y = newY;
-                        mover.hasActed = true;
-                        renderBoard();
-                        await new Promise(r => setTimeout(r, 400));
-                    }
-                }
-            }
-            
-            await new Promise(r => setTimeout(r, 400)); // Pause between AI actions
-        }
-
-        if(!State.gameOver) startTurn('player');
-    }
-
-    /* --- INITIALIZATION --- */
-    initUnits();
-    startTurn('player');
+    // Start Game
+    startPlayerTurn();
+    animate();
 
 </script>
 </body>
