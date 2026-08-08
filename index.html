@@ -498,6 +498,13 @@ section{
     border-radius: 28px;
     padding: 50px;
 }
+/* Expanded styling for the Admin panel to stop side-scrolling */
+.admin-db-container {
+    max-width: 1400px !important;
+    width: 95%;
+    margin: 0 auto;
+}
+
 .advantages-table {
     width: 100%;
     border-collapse: collapse;
@@ -857,7 +864,7 @@ footer p{
                         <h3>Blood-Bound</h3>
                         <p>An intense, blood-bound experience. Step into the darkness and fight for your survival in this thrilling new web-based title.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="Blood-bound.html" class="download-btn">Play Web Version</a>
+                            <a href="blood-bound.html" class="download-btn">Play Web Version</a>
                         </div>
                     </div>
                 </div>
@@ -1097,13 +1104,14 @@ footer p{
      VIEW 9: ADMIN PANEL (User List)
 ======================================================== -->
 <div id="view-admin" style="display: none;">
-    <section id="admin-panel">
-        <h2 class="section-title">Admin <span>Database</span></h2>
-        <p class="section-sub">Confidential overview of all registered K210209 Ecosystem users.</p>
+    <section id="admin-panel" style="padding-left: 2%; padding-right: 2%;">
+        <h2 class="section-title" style="text-align: center;">Admin <span>Database</span></h2>
+        <p class="section-sub" style="text-align: center;">Confidential overview of all registered K210209 Ecosystem users.</p>
 
-        <div class="account-container">
+        <!-- Upgraded Wider Container specifically for the DB panel -->
+        <div class="account-container admin-db-container">
             <h3 style="color: #f59e0b; font-size: 1.5rem; margin-bottom: 20px;">Registered Player Accounts</h3>
-            <div id="adminUserList" style="max-height: 500px; overflow-y: auto; padding-right: 15px;">
+            <div id="adminUserList" style="max-height: 75vh; overflow-y: auto; padding-right: 15px;">
                 <!-- User data populated by JS -->
             </div>
         </div>
@@ -1139,6 +1147,8 @@ footer p{
             <button class="btn btn-secondary" onclick="applyMute()">Apply Mute</button>
             <hr style="border-color:rgba(255,255,255,0.1); margin:5px 0;">
             <button class="btn btn-primary" onclick="applyBan()" style="background:#8b0000;">PERMANENT BAN</button>
+            <!-- NEW: Unban option added here -->
+            <button class="btn btn-secondary" onclick="removeRestrictions()" style="border-color:#25D366; color:#25D366; background: rgba(37, 211, 102, 0.05); margin-top: 10px;">LIFT RESTRICTIONS (UNBAN)</button>
         </div>
     </div>
 </div>
@@ -1180,8 +1190,10 @@ function switchView(viewName) {
         scrollToBottom();
     }
     
-    if(viewName === 'admin' && GLOBAL_USER && isAdmin(GLOBAL_USER.email)) {
+    if(viewName === 'admin' && GLOBAL_USER && isMasterAdmin(GLOBAL_USER.email)) {
         loadAdminUserList();
+    } else if (viewName === 'admin') {
+        switchView('home'); // Kick out unauthorized attempts
     }
 }
 
@@ -1313,6 +1325,11 @@ function isAdmin(email) {
     return email && ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
+// Master Admin check for the database panel
+function isMasterAdmin(email) {
+    return email && email.toLowerCase() === "kingk210209@gmail.com";
+}
+
 // ---------------------------
 // 1. AUTHENTICATION LOGIC
 // ---------------------------
@@ -1403,7 +1420,6 @@ async function updateAuthUI(user) {
     const profileLoggedIn = document.getElementById("profileLoggedIn");
     const profileNameInput = document.getElementById("profileNameInput");
 
-    // NEW: Games Section toggles
     const gamesLoggedOut = document.getElementById("gamesLoggedOut");
     const gamesLoggedIn = document.getElementById("gamesLoggedIn");
 
@@ -1424,16 +1440,25 @@ async function updateAuthUI(user) {
         forumLoggedOut.style.display = "none";
         forumLoggedIn.style.display = "flex";
 
-        // Show games if user is logged in
         if(gamesLoggedOut) gamesLoggedOut.style.display = "none";
         if(gamesLoggedIn) gamesLoggedIn.style.display = "block";
         
         // ADMIN SPECIFIC LOGIC
         if (isAdmin(user.email)) {
-            menuAdminLink.style.display = "block"; 
+            // General Admins get customer care UI
             document.getElementById("adminTicketUI").style.display = "flex";
             currentTicketId = null; 
             refreshAdminTickets();
+            
+            // ONLY Master Admin gets the Admin Panel menu link
+            if (isMasterAdmin(user.email)) {
+                menuAdminLink.style.display = "block"; 
+            } else {
+                menuAdminLink.style.display = "none";
+                if (document.getElementById("view-admin").style.display === "block") {
+                    switchView('home');
+                }
+            }
         } else {
             menuAdminLink.style.display = "none";
             document.getElementById("adminTicketUI").style.display = "none";
@@ -1460,7 +1485,6 @@ async function updateAuthUI(user) {
         forumLoggedOut.style.display = "block";
         forumLoggedIn.style.display = "none";
 
-        // Hide games if user is not logged in
         if(gamesLoggedOut) gamesLoggedOut.style.display = "block";
         if(gamesLoggedIn) gamesLoggedIn.style.display = "none";
         
@@ -1473,39 +1497,62 @@ async function updateAuthUI(user) {
 }
 
 // ---------------------------
-// 1.5 ADMIN USER LIST LOGIC
+// 1.5 ADMIN USER LIST LOGIC (REWORKED UI)
 // ---------------------------
 async function loadAdminUserList() {
     const adminListContainer = document.getElementById("adminUserList");
-    adminListContainer.innerHTML = "<div style='text-align:center; padding: 30px;'><span style='color:#f59e0b;'>⟳</span> Loading player database...</div>";
+    adminListContainer.innerHTML = "<div style='text-align:center; padding: 40px;'><span style='color:#f59e0b; font-size: 1.5rem;'>⟳</span><br><br><span style='color:#a3a3a3;'>Decrypting player database...</span></div>";
 
     const { data, error } = await supabaseClient.rpc('get_all_user_emails');
     
     if (error) {
-        adminListContainer.innerHTML = `<div style='color:#ff3b3b; padding: 20px; border: 1px solid #ff3b3b; border-radius: 12px;'>Error loading users: ${error.message}<br><br>Did you run the SQL script in Supabase?</div>`;
+        adminListContainer.innerHTML = `<div style='color:#ff3b3b; padding: 20px; border: 1px solid rgba(255,59,59,0.3); background: rgba(255,0,0,0.05); border-radius: 16px;'><b>System Error:</b> ${error.message}</div>`;
         return;
     }
 
     if (!data || data.length === 0) {
-        adminListContainer.innerHTML = "<div style='padding: 20px; color: #a3a3a3;'>No registered users found.</div>";
+        adminListContainer.innerHTML = "<div style='padding: 20px; color: #a3a3a3; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;'>No registered users found in the ecosystem.</div>";
         return;
     }
 
-    let html = `<table class="advantages-table" style="width:100%; margin-top: 10px;">
-        <tr style="border-bottom: 2px solid rgba(255,255,255,0.1);">
-            <th style="width:30%; padding-bottom:15px; color:#f59e0b;">Player Name</th>
-            <th style="width:40%; padding-bottom:15px; color:#f59e0b;">Email Address</th>
-            <th style="width:30%; padding-bottom:15px; color:#f59e0b;">System ID</th>
-        </tr>`;
+    // New Card-Based Grid Layout
+    let html = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 15px; padding-bottom: 20px;">`;
     
     data.forEach(u => {
-        html += `<tr>
-            <td style="padding:15px 0; color:white; font-weight: 500;">${escapeHTML(u.name || 'Anonymous')}</td>
-            <td style="padding:15px 0; color:#a3a3a3;">${escapeHTML(u.email)}</td>
-            <td style="padding:15px 0; font-size:0.8rem; color:#666;">${u.id}</td>
-        </tr>`;
+        const isUserAdmin = isAdmin(u.email);
+        const badgeColor = isUserAdmin ? "#ff3b3b" : "#f59e0b";
+        const badgeText = isUserAdmin ? "Staff" : "Player";
+        const badgeBg = isUserAdmin ? "rgba(255, 59, 59, 0.1)" : "rgba(245, 158, 11, 0.1)";
+
+        // Safely escape the name for the HTML inline function call
+        const safeNameForJS = escapeHTML(u.name || 'Anonymous').replace(/'/g, "\\'");
+
+        html += `
+        <div style="background: linear-gradient(145deg, #161616, #0d0d0d); border: 1px solid rgba(255,255,255,0.04); border-left: 3px solid ${badgeColor}; border-radius: 18px; padding: 22px; transition: 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <h4 style="color: white; font-size: 1.25rem; margin: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%;">
+                    ${escapeHTML(u.name || 'Anonymous')}
+                </h4>
+                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; background: ${badgeBg}; color: ${badgeColor}; padding: 4px 10px; border-radius: 8px;">
+                    ${badgeText}
+                </span>
+            </div>
+            
+            <p style="color: #a3a3a3; font-size: 0.95rem; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; word-break: break-all;">
+                <span style="opacity: 0.5;">✉️</span> ${escapeHTML(u.email)}
+            </p>
+            
+            <div style="background: #050505; padding: 10px 12px; border-radius: 10px; font-family: monospace; font-size: 0.75rem; color: #666; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center;">
+                <span>ID:</span>
+                <span style="color: #888;">${u.id}</span>
+            </div>
+
+            <!-- NEW: Moderate button added to card so you can Unban from the database list directly -->
+            <button onclick="openAdminModal('${u.id}', '${safeNameForJS}')" style="margin-top: 15px; width: 100%; padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #d4d4d4; border-radius: 12px; cursor: pointer; transition: 0.3s; font-weight: 600;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">Moderate Player</button>
+        </div>`;
     });
-    html += `</table>`;
+    
+    html += `</div>`;
     
     adminListContainer.innerHTML = html;
 }
@@ -1597,6 +1644,21 @@ async function applyBan() {
     if(error) alert("Error applying ban: " + error.message);
     else { 
         alert("Player permanently banned."); 
+        closeAdminModal(); 
+    }
+}
+
+// NEW: Allows you to UNBAN a player or remove a mute
+async function removeRestrictions() {
+    if(!targetModerateUserId) return;
+    if(!confirm("Are you sure you want to lift all bans and mutes for this player?")) return;
+
+    // Delete all restriction records matching the user_id
+    const {error} = await supabaseClient.from('user_restrictions').delete().eq('user_id', targetModerateUserId);
+    
+    if(error) alert("Error removing restrictions: " + error.message);
+    else { 
+        alert("Success! Player restrictions lifted. The player is unbanned and unmuted."); 
         closeAdminModal(); 
     }
 }
@@ -1861,4 +1923,5 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 </script>
 </body>
 </html>
+
 
