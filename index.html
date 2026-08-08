@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
 
-<title>K210209♤ Studios</title>
+<title>K210209 Studios</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -838,7 +838,7 @@ footer p{
                         <h3>Mirror-verse</h3>
                         <p>One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="https://mirror-verse.k210209-studios.workers.dev" class="download-btn" target="_blank" rel="noopener noreferrer">Play Web Version</a>
+                            <a href="javascript:void(0)" onclick="openGameOverlay('https://mirror-verse.k210209-studios.workers.dev')" class="download-btn">Play Web Version</a>
                         </div>
                     </div>
                 </div>
@@ -851,7 +851,7 @@ footer p{
                         <h3>Horizon Rush</h3>
                         <p>An adrenaline-fueled endless runner. Dodge obstacles, collect power-ups, and race towards the ever-expanding horizon in this fast-paced arcade experience.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="horizon_rush.html" class="download-btn">Play Web Version</a>
+                            <a href="javascript:void(0)" onclick="openGameOverlay('horizon_rush.html')" class="download-btn">Play Web Version</a>
                         </div>
                     </div>
                 </div>
@@ -864,7 +864,7 @@ footer p{
                         <h3>Blood-Bound</h3>
                         <p>An intense, blood-bound experience. Step into the darkness and fight for your survival in this thrilling new web-based title.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="blood-bound.html" class="download-btn">Play Web Version</a>
+                            <a href="javascript:void(0)" onclick="openGameOverlay('blood-bound.html')" class="download-btn">Play Web Version</a>
                         </div>
                     </div>
                 </div>
@@ -1126,7 +1126,7 @@ footer p{
     <div class="guide-content">
         <span class="close-guide" onclick="closeGuide()">&times;</span>
         <h2 id="modalTitle">Official Tutorial Guide</h2>
-        <h3 id="modalSubtitle">K210209♤ STUDIOS</h3>
+        <h3 id="modalSubtitle">K210209 STUDIOS</h3>
         <div id="guideBody" class="guide-body">
             Tutorial content will appear here.
         </div>
@@ -1153,6 +1153,16 @@ footer p{
     </div>
 </div>
 
+<!-- =======================================================
+     GAME OVERLAY (For Web Games)
+======================================================== -->
+<div id="gameOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:99999; background:#000;">
+    <button onclick="closeGameOverlay()" class="btn btn-primary" style="position:absolute; top:20px; left:20px; z-index:100000; padding:12px 20px; display:flex; align-items:center; gap:8px; margin:0;">
+        <span style="font-size:1.2rem; line-height:1;">&larr;</span> Back to Menu
+    </button>
+    <iframe id="gameIframe" src="" style="width:100%; height:100%; border:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+</div>
+
 <footer>
     <p>© 2026 K210209 Studios — All Rights Reserved</p>
 </footer>
@@ -1161,6 +1171,16 @@ footer p{
 // =========================================
 // NAVIGATION & VIEW SWITCHING LOGIC
 // =========================================
+
+function openGameOverlay(url) {
+    document.getElementById("gameIframe").src = url;
+    document.getElementById("gameOverlay").style.display = "block";
+}
+
+function closeGameOverlay() {
+    document.getElementById("gameOverlay").style.display = "none";
+    document.getElementById("gameIframe").src = ""; // Clears iframe and stops game processing/audio
+}
 
 function openMenu() {
     document.getElementById("sideMenu").style.width = "300px";
@@ -1923,5 +1943,4 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 </script>
 </body>
 </html>
-
 
