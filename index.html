@@ -787,55 +787,65 @@ footer p{
         <h2 class="section-title">Featured <span>Games</span></h2>
         <p class="section-sub">Explore current projects from K210209 Studios. Download available titles directly below.</p>
 
-        <div class="games-grid">
-            <div class="game-card">
-                <div class="game-banner">SCOUNDREL</div>
-                <div class="game-info">
-                    <h3>Scoundrel</h3>
-                    <p>A dark fantasy dungeon-crawling card game focused on survival, tactical decisions, monsters, potions, and strategic risk management.</p>
-                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <a href="Scoundrel.apk" class="download-btn" download>Download APK</a>
-                        <button class="download-btn" onclick="openGuide()">About Game</button>
+        <!-- NEW: Logged out message for Games -->
+        <div id="gamesLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
+            <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
+            <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access and download our games.</p>
+            <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
+        </div>
+
+        <!-- Logged in state for Games -->
+        <div id="gamesLoggedIn" style="display: none;">
+            <div class="games-grid">
+                <div class="game-card">
+                    <div class="game-banner">SCOUNDREL</div>
+                    <div class="game-info">
+                        <h3>Scoundrel</h3>
+                        <p>A dark fantasy dungeon-crawling card game focused on survival, tactical decisions, monsters, potions, and strategic risk management.</p>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <a href="Scoundrel.apk" class="download-btn" download>Download APK</a>
+                            <button class="download-btn" onclick="openGuide()">About Game</button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="game-card">
-                <div class="game-banner" style="background:linear-gradient(135deg,#001a2b,#004466,#0a0a0a);">
-                    DIMENSIONAL WARFARE
-                </div>
-                <div class="game-info">
-                    <h3>Dimensional Warfare</h3>
-                    <p>An intense 3D space shooter experience. Navigate through hostile dimensions, epic bosses. Do your best to survive waves of high-tech enemies.</p>
-                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <a href="dimensionalwarfare.apk" class="download-btn" download>Download APK</a>
-                        <button class="download-btn" onclick="openDWGuide()">About Game</button>
+                <div class="game-card">
+                    <div class="game-banner" style="background:linear-gradient(135deg,#001a2b,#004466,#0a0a0a);">
+                        DIMENSIONAL WARFARE
+                    </div>
+                    <div class="game-info">
+                        <h3>Dimensional Warfare</h3>
+                        <p>An intense 3D space shooter experience. Navigate through hostile dimensions, epic bosses. Do your best to survive waves of high-tech enemies.</p>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <a href="dimensionalwarfare.apk" class="download-btn" download>Download APK</a>
+                            <button class="download-btn" onclick="openDWGuide()">About Game</button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="game-card">
-                <div class="game-banner" style="background:linear-gradient(135deg, #ff4d94, #2a1132, #0a0a0a);">
-                    MIRROR-VERSE
-                </div>
-                <div class="game-info">
-                    <h3>Mirror-verse</h3>
-                    <p>One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer.</p>
-                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <a href="https://mirror-verse.k210209-studios.workers.dev" class="download-btn" target="_blank" rel="noopener noreferrer">Play Web Version</a>
+                <div class="game-card">
+                    <div class="game-banner" style="background:linear-gradient(135deg, #ff4d94, #2a1132, #0a0a0a);">
+                        MIRROR-VERSE
+                    </div>
+                    <div class="game-info">
+                        <h3>Mirror-verse</h3>
+                        <p>One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer.</p>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <a href="https://mirror-verse.k210209-studios.workers.dev" class="download-btn" target="_blank" rel="noopener noreferrer">Play Web Version</a>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="game-card">
-                <div class="game-banner" style="background:linear-gradient(135deg, #e65c00, #F9D423, #0a0a0a);">
-                    HORIZON RUSH
-                </div>
-                <div class="game-info">
-                    <h3>Horizon Rush</h3>
-                    <p>An adrenaline-fueled endless runner. Dodge obstacles, collect power-ups, and race towards the ever-expanding horizon in this fast-paced arcade experience.</p>
-                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <a href="horizon_rush.html" class="download-btn">Play Web Version</a>
+                <div class="game-card">
+                    <div class="game-banner" style="background:linear-gradient(135deg, #e65c00, #F9D423, #0a0a0a);">
+                        HORIZON RUSH
+                    </div>
+                    <div class="game-info">
+                        <h3>Horizon Rush</h3>
+                        <p>An adrenaline-fueled endless runner. Dodge obstacles, collect power-ups, and race towards the ever-expanding horizon in this fast-paced arcade experience.</p>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <a href="horizon_rush.html" class="download-btn">Play Web Version</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1380,6 +1390,10 @@ async function updateAuthUI(user) {
     const profileLoggedIn = document.getElementById("profileLoggedIn");
     const profileNameInput = document.getElementById("profileNameInput");
 
+    // NEW: Games Section toggles
+    const gamesLoggedOut = document.getElementById("gamesLoggedOut");
+    const gamesLoggedIn = document.getElementById("gamesLoggedIn");
+
     if (user) {
         const meta = user.user_metadata || {};
         
@@ -1396,6 +1410,10 @@ async function updateAuthUI(user) {
         
         forumLoggedOut.style.display = "none";
         forumLoggedIn.style.display = "flex";
+
+        // Show games if user is logged in
+        if(gamesLoggedOut) gamesLoggedOut.style.display = "none";
+        if(gamesLoggedIn) gamesLoggedIn.style.display = "block";
         
         // ADMIN SPECIFIC LOGIC
         if (isAdmin(user.email)) {
@@ -1428,6 +1446,10 @@ async function updateAuthUI(user) {
         
         forumLoggedOut.style.display = "block";
         forumLoggedIn.style.display = "none";
+
+        // Hide games if user is not logged in
+        if(gamesLoggedOut) gamesLoggedOut.style.display = "block";
+        if(gamesLoggedIn) gamesLoggedIn.style.display = "none";
         
         if (document.getElementById("view-admin").style.display === "block") {
             switchView('home');
