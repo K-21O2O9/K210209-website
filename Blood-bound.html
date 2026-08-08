@@ -3,151 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tactical Command - 2 Player Multiplayer</title>
-    <!-- Tailwind CSS -->
+    <title>Bloodbound - Multiplayer Tactical Command</title>
+    <!-- Tailwind for rapid UI layout -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-            background-color: #0f172a;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #050505; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+        #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; touch-action: none; }
+        
+        /* UI Layer */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
+        .pointer-events-auto { pointer-events: auto; }
+        
+        /* Floating HP Bars */
+        #hp-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+        .hp-bar { position: absolute; transform: translate(-50%, -100%); background: linear-gradient(180deg, rgba(30,30,30,0.95) 0%, rgba(10,10,10,0.95) 100%); border: 1px solid #555; border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px black; box-shadow: 0 4px 6px rgba(0,0,0,0.5); transition: opacity 0.3s, top 0.1s, left 0.1s; z-index: 10; }
+        .hp-fill { height: 5px; background: linear-gradient(90deg, #e11d48 0%, #f43f5e 100%); border-radius: 2px; margin-top: 3px; transition: width 0.3s; box-shadow: 0 0 5px rgba(225,29,72,0.6); }
+        
+        /* Dice animations & Beautiful Dark Fantasy Buttons */
+        @keyframes roll { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+        .rolling { animation: roll 0.5s ease-out; }
+        
+        .die-btn { 
+            width: 76px;
+            height: 76px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #2a2a30 0%, #151518 100%);
+            border: 2px solid #3f3f46;
+            border-bottom-width: 4px;
+            border-radius: 16px;
+            color: white;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.8), 0 6px 12px rgba(0,0,0,0.6);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            position: relative;
             overflow: hidden;
         }
-        canvas {
-            image-rendering: pixelated;
+        .die-btn::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.15); border-radius: 16px 16px 0 0;
+        }
+        .die-btn:hover {
+            border-color: #71717a;
+            transform: translateY(-3px);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 6px rgba(0,0,0,0.8), 0 8px 16px rgba(0,0,0,0.7);
+        }
+        .die-btn.selected { 
+            border-color: #fbbf24;
+            background: linear-gradient(135deg, #4d3a08 0%, #241c04 100%);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4), inset 0 0 15px rgba(251, 191, 36, 0.2), 0 10px 20px rgba(0,0,0,0.8);
+            transform: translateY(-8px) scale(1.05); 
+        }
+        .die-btn.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; transform: scale(0.9); border-bottom-width: 2px; margin-top: 2px;}
+        
+        .die-icon {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #e4e4e7;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+            position: relative;
+            z-index: 10;
+        }
+        .die-btn.selected .die-icon {
+            color: #fef3c7;
+            text-shadow: 0 0 15px rgba(251, 191, 36, 0.8);
+        }
+
+        /* Fancy End Turn Button */
+        .fancy-action-btn {
+            background: linear-gradient(to bottom, #7f1d1d, #450a0a);
+            border: 2px solid #b91c1c;
+            border-bottom-width: 4px;
+            border-radius: 12px;
+            box-shadow: inset 0 1px 0 rgba(255,100,100,0.3), 0 6px 12px rgba(0,0,0,0.6), 0 0 15px rgba(153, 27, 27, 0.3);
+            color: #fca5a5;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            transition: all 0.15s ease;
+            font-weight: 900;
+            padding: 16px 24px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            width: 100%;
+        }
+        .fancy-action-btn:hover {
+            background: linear-gradient(to bottom, #991b1b, #450a0a);
+            border-color: #ef4444;
+            color: #fef2f2;
+            box-shadow: inset 0 1px 0 rgba(255,100,100,0.4), 0 8px 16px rgba(0,0,0,0.7), 0 0 20px rgba(185, 28, 28, 0.5);
+        }
+        .fancy-action-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.6);
+            margin-top: 2px;
+            margin-bottom: -2px;
+        }
+        .fancy-action-btn.facing-mode {
+            background: linear-gradient(to bottom, #047857, #064e3b);
+            border-color: #10b981;
+            color: #a7f3d0;
+            box-shadow: inset 0 1px 0 rgba(100,255,150,0.3), 0 6px 12px rgba(0,0,0,0.6), 0 0 15px rgba(4, 120, 87, 0.3);
+        }
+        .fancy-action-btn.facing-mode:hover {
+            background: linear-gradient(to bottom, #059669, #064e3b);
+            border-color: #34d399;
+            color: #ffffff;
+        }
+
+        /* Toggle UI Button */
+        .toggle-btn {
+            background: linear-gradient(135deg, #2a2a30 0%, #151518 100%);
+            border: 2px solid #3f3f46;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.6);
+            transition: all 0.2s;
             cursor: pointer;
         }
-        .modal-blur {
-            backdrop-filter: blur(8px);
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.6);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #3b82f6;
-            border-radius: 3px;
-        }
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.03); }
-        }
-        .glow-effect {
-            animation: pulse-glow 2s infinite ease-in-out;
-        }
+        .toggle-btn:active { transform: scale(0.9); }
+        .toggle-btn svg { width: 24px; height: 24px; fill: #d4d4d8; transition: fill 0.2s; }
+        .toggle-btn.off svg { fill: #ef4444; }
+
+        /* Notification Toast */
+        #toast { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(180deg, rgba(20,20,20,0.95) 0%, rgba(0,0,0,0.95) 100%); border: 2px solid #c2410c; padding: 15px 40px; border-radius: 12px; font-size: 24px; font-weight: 900; text-align: center; opacity: 0; transition: opacity 0.3s; text-transform: uppercase; letter-spacing: 3px; z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(194, 65, 12, 0.3); text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none;}
+        .modal-blur { backdrop-filter: blur(8px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-between relative bg-slate-950">
+<body>
 
-    <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+    <canvas id="game-canvas"></canvas>
+    <div id="hp-container"></div>
 
-    <!-- Top Status Bar -->
-    <header class="w-full bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex justify-between items-center z-10 shadow-lg">
-        <div class="flex items-center gap-3">
-            <div class="font-black text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">
-                <i class="fa-solid fa-shield-halved text-blue-500 mr-1.5"></i>TACTICAL COMMAND
-            </div>
-            <span id="room-badge" class="hidden text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700 font-mono flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                ROOM: <strong id="current-room-code" class="text-blue-400">------</strong>
-            </span>
-        </div>
-
-        <div class="flex items-center gap-2">
-            <button id="config-btn" class="text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 p-2 rounded-lg text-xs transition border border-slate-700" title="Supabase Credentials">
-                <i class="fa-solid fa-gear text-sm"></i>
-            </button>
-            <button id="menu-tutorial-btn" class="text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-700 flex items-center gap-1.5">
-                <i class="fa-solid fa-book-open text-blue-400"></i> Tutorial
-            </button>
-            <button id="leave-game-btn" class="hidden text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-rose-800/50 flex items-center gap-1.5">
-                <i class="fa-solid fa-right-from-bracket"></i> Leave
-            </button>
-        </div>
-    </header>
-
-    <!-- Main Game Container -->
-    <main id="game-container" class="relative flex-1 w-full flex flex-col items-center justify-center p-2 overflow-hidden">
-        
-        <!-- Turn & Match Info Header (In-Game) -->
-        <div id="game-hud" class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-full px-6 py-2 shadow-2xl">
-            <!-- Player 1 Status -->
-            <div id="p1-hud" class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                <span class="text-xs font-bold text-blue-400 uppercase tracking-wide">P1 (Blue)</span>
-                <span id="p1-commander-hp" class="text-xs font-mono bg-blue-950 text-blue-200 px-2 py-0.5 rounded border border-blue-800">100 HP</span>
+    <!-- Top Status Bar & Multiplayer Room Header -->
+    <div id="ui-layer">
+        <div class="w-full p-4 flex justify-between items-start bg-gradient-to-b from-black/95 via-black/70 to-transparent pointer-events-auto">
+            <div class="flex items-center space-x-3 drop-shadow-lg">
+                <!-- Toggle UI Button -->
+                <button id="toggle-names-btn" class="toggle-btn" aria-label="Toggle HP/Names">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                </button>
+                <div>
+                    <h1 class="text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-gray-100 to-gray-400 uppercase" style="font-family: serif; -webkit-text-stroke: 1px rgba(0,0,0,0.5);">Bloodbound</h1>
+                    <div id="turn-indicator" class="text-xs text-yellow-400 font-extrabold tracking-widest mt-0.5 text-shadow">HOST TURN</div>
+                </div>
+                <span id="room-badge" class="hidden text-xs bg-slate-900/80 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700 font-mono flex items-center gap-1.5 ml-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    ROOM: <strong id="current-room-code" class="text-blue-400">------</strong>
+                </span>
             </div>
 
-            <div class="text-slate-600 font-bold px-1">VS</div>
-
-            <!-- Player 2 Status -->
-            <div id="p2-hud" class="flex items-center gap-2">
-                <span id="p2-commander-hp" class="text-xs font-mono bg-rose-950 text-rose-200 px-2 py-0.5 rounded border border-rose-800">100 HP</span>
-                <span class="text-xs font-bold text-rose-400 uppercase tracking-wide">P2 (Red)</span>
-                <div class="w-3 h-3 rounded-full bg-rose-500"></div>
-            </div>
-
-            <div class="h-4 w-px bg-slate-700 mx-1"></div>
-
-            <!-- Turn Banner -->
-            <div id="turn-indicator" class="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1.5">
-                <i class="fa-solid fa-clock"></i> <span id="turn-text">P1's Turn</span>
+            <div class="flex items-center space-x-2">
+                <div class="flex flex-col items-end drop-shadow-md mr-3">
+                    <div class="text-[10px] text-gray-300 font-bold tracking-widest">ACTION POINTS</div>
+                    <div class="flex space-x-1.5 mt-1" id="ap-container"></div>
+                </div>
+                <button id="config-btn" class="toggle-btn" title="Supabase Credentials" style="width: 38px; height: 38px;">
+                    <i class="fa-solid fa-gear text-sm text-slate-300"></i>
+                </button>
+                <button id="menu-tutorial-btn" class="toggle-btn" title="Tutorial" style="width: 38px; height: 38px;">
+                    <i class="fa-solid fa-book-open text-sm text-blue-400"></i>
+                </button>
+                <button id="leave-game-btn" class="hidden text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 px-3 py-2 rounded-xl text-xs font-semibold transition border border-rose-800/50 flex items-center gap-1.5">
+                    <i class="fa-solid fa-right-from-bracket"></i> Leave
+                </button>
             </div>
         </div>
 
-        <!-- Canvas Strategy Map -->
-        <canvas id="gameCanvas" class="rounded-xl shadow-2xl border border-slate-800 bg-slate-900"></canvas>
+        <div id="toast">Your Turn</div>
 
-        <!-- Selected Unit Stats Bar -->
-        <div id="unit-card" class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-slate-900/95 border border-slate-800 rounded-xl p-3 px-5 shadow-2xl flex items-center gap-6 backdrop-blur">
-            <div class="flex items-center gap-3">
-                <div id="unit-icon-bg" class="w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
-                    <i id="unit-icon" class="fa-solid fa-chess-knight"></i>
-                </div>
-                <div>
-                    <h4 id="unit-name" class="font-bold text-sm text-slate-100">Knight</h4>
-                    <p id="unit-owner" class="text-xs text-slate-400">Player 1 Unit</p>
-                </div>
+        <!-- Action Controls & Dice Tray -->
+        <div id="game-controls-panel" class="w-full p-6 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-auto pb-8">
+            <div id="unit-info" class="mb-5 text-center drop-shadow-md">
+                <h2 id="unit-name" class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 tracking-wide uppercase">Unit Name</h2>
+                <p id="unit-desc" class="text-sm text-gray-300 font-medium">Drag to rotate and zoom.</p>
             </div>
 
-            <div class="h-8 w-px bg-slate-800"></div>
+            <div class="flex justify-center space-x-5 mb-6" id="dice-container"></div>
 
-            <div class="grid grid-cols-4 gap-4 text-center text-xs">
-                <div>
-                    <span class="text-slate-500 block text-[10px]">HEALTH</span>
-                    <strong id="unit-hp" class="text-emerald-400 font-mono">25/25</strong>
-                </div>
-                <div>
-                    <span class="text-slate-500 block text-[10px]">ATTACK</span>
-                    <strong id="unit-atk" class="text-amber-400 font-mono">10</strong>
-                </div>
-                <div>
-                    <span class="text-slate-500 block text-[10px]">MOVE</span>
-                    <strong id="unit-mov" class="text-blue-400 font-mono">3</strong>
-                </div>
-                <div>
-                    <span class="text-slate-500 block text-[10px]">RANGE</span>
-                    <strong id="unit-rng" class="text-purple-400 font-mono">1</strong>
-                </div>
+            <div class="flex justify-between w-full max-w-md mx-auto">
+                <button id="btn-end-turn" class="fancy-action-btn">End Turn</button>
             </div>
-
-            <div class="h-8 w-px bg-slate-800"></div>
-
-            <button id="end-turn-btn" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow-md flex items-center gap-1.5">
-                <i class="fa-solid fa-forward"></i> End Turn
-            </button>
         </div>
-    </main>
+    </div>
 
     <!-- OVERLAY 1: MAIN MENU -->
     <div id="main-menu" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
@@ -159,8 +212,8 @@
                 <div class="inline-flex p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-3 text-3xl">
                     <i class="fa-solid fa-chess-board"></i>
                 </div>
-                <h1 class="text-3xl font-extrabold tracking-tight text-white">TACTICAL COMMAND</h1>
-                <p class="text-xs text-slate-400 mt-1">2-Player Online Tactical Strategy Engine</p>
+                <h1 class="text-3xl font-extrabold tracking-tight text-white uppercase font-serif">Bloodbound</h1>
+                <p class="text-xs text-slate-400 mt-1">3D Multiplayer Tactical Command Engine</p>
             </div>
 
             <!-- Primary Buttons -->
@@ -168,7 +221,6 @@
                 <button id="play-btn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2">
                     <i class="fa-solid fa-play"></i> PLAY MULTIPLAYER
                 </button>
-
                 <button id="tutorial-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-6 rounded-xl border border-slate-700 transition text-sm flex items-center justify-center gap-2">
                     <i class="fa-solid fa-graduation-cap text-blue-400"></i> HOW TO PLAY (TUTORIAL)
                 </button>
@@ -181,31 +233,25 @@
                         <i class="fa-solid fa-plus-circle text-2xl text-indigo-400"></i>
                         <span class="text-xs">CREATE ROOM</span>
                     </button>
-
                     <button id="show-join-input-btn" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
                         <i class="fa-solid fa-right-to-bracket text-2xl text-emerald-400"></i>
                         <span class="text-xs">JOIN ROOM</span>
                     </button>
                 </div>
 
-                <!-- Join Code Box -->
                 <div id="join-box" class="hidden space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <label class="block text-xs font-semibold text-slate-400 text-left">ENTER 6-CHAR ROOM CODE:</label>
                     <div class="flex gap-2">
                         <input id="room-code-input" type="text" maxlength="6" placeholder="X8Y2A9" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-center text-sm font-mono font-bold tracking-widest text-blue-400 uppercase focus:outline-none focus:border-blue-500">
-                        <button id="confirm-join-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition">
-                            JOIN
-                        </button>
+                        <button id="confirm-join-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition">JOIN</button>
                     </div>
                 </div>
 
-                <button id="back-to-menu-btn" class="text-xs text-slate-500 hover:text-slate-300 transition underline">
-                    &larr; Back to Main Menu
-                </button>
+                <button id="back-to-menu-btn" class="text-xs text-slate-500 hover:text-slate-300 transition underline">&larr; Back to Main Menu</button>
             </div>
 
             <div class="text-[11px] text-slate-500 border-t border-slate-800/80 pt-4 flex items-center justify-between">
-                <span>Supabase Realtime: <span id="supabase-status" class="text-amber-400 font-medium">Local Simulator</span></span>
+                <span>Multiplayer Mode: <span id="supabase-status" class="text-amber-400 font-medium">Local Simulator</span></span>
                 <button id="supabase-config-link" class="text-blue-400 hover:underline">Change Keys</button>
             </div>
         </div>
@@ -217,30 +263,16 @@
             <div class="w-16 h-16 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 mx-auto flex items-center justify-center text-2xl animate-spin">
                 <i class="fa-solid fa-spinner"></i>
             </div>
-
             <div>
                 <h2 class="text-xl font-bold text-white">Waiting for Opponent...</h2>
                 <p class="text-xs text-slate-400 mt-1">Share this room code with Player 2</p>
             </div>
-
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
                 <span id="lobby-code-display" class="font-mono text-2xl font-black text-blue-400 tracking-widest">------</span>
                 <button id="copy-code-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
                     <i class="fa-regular fa-copy"></i> Copy
                 </button>
             </div>
-
-            <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-800 text-left text-xs space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="text-slate-400">Player 1 (Host - Blue):</span>
-                    <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Connected</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-slate-400">Player 2 (Red):</span>
-                    <span id="p2-status-text" class="text-amber-400 font-semibold animate-pulse">Waiting...</span>
-                </div>
-            </div>
-
             <button id="cancel-lobby-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold py-2.5 rounded-lg border border-slate-700 text-xs transition">
                 Cancel & Return
             </button>
@@ -252,114 +284,42 @@
         <div class="max-w-2xl w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-book-open text-blue-400"></i> Tactical Command - Game Concepts
+                    <i class="fa-solid fa-book-open text-blue-400"></i> Bloodbound Tactical Guide
                 </h3>
-                <button id="close-tutorial-btn" class="text-slate-400 hover:text-white p-1 rounded-lg">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
+                <button id="close-tutorial-btn" class="text-slate-400 hover:text-white p-1 rounded-lg"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-
             <div class="overflow-y-auto custom-scrollbar my-4 space-y-6 text-sm text-slate-300 pr-2">
-                
-                <!-- Section 1: Objective -->
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-                    <h4 class="font-bold text-blue-400 text-base flex items-center gap-2">
-                        <i class="fa-solid fa-crown text-amber-400"></i> Victory Condition
-                    </h4>
-                    <p class="text-xs leading-relaxed text-slate-300">
-                        Each player controls an army featuring 1 <strong class="text-amber-300">Commander</strong> and 8 tactical units. 
-                        <strong>Defeat the opponent's Commander</strong> to immediately win the match. Protect your Commander at all costs!
-                    </p>
+                    <h4 class="font-bold text-blue-400 text-base flex items-center gap-2"><i class="fa-solid fa-crown text-amber-400"></i> Victory Condition</h4>
+                    <p class="text-xs leading-relaxed text-slate-300">Defeat the enemy Commander or all opposing units to achieve absolute victory in 3D tactical combat.</p>
                 </div>
-
-                <!-- Section 2: Units Overview -->
-                <div class="space-y-3">
-                    <h4 class="font-bold text-slate-200 text-sm uppercase tracking-wider">Unit Classes & Roster</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3">
-                            <div class="text-amber-400 text-xl pt-1"><i class="fa-solid fa-crown"></i></div>
-                            <div>
-                                <h5 class="font-bold text-xs text-amber-300">COMMANDER (x1)</h5>
-                                <p class="text-[11px] text-slate-400">100 HP | High attack. Loss of Commander ends the game immediately.</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3">
-                            <div class="text-blue-400 text-xl pt-1"><i class="fa-solid fa-shield-halved"></i></div>
-                            <div>
-                                <h5 class="font-bold text-xs text-blue-300">KNIGHT (x2)</h5>
-                                <p class="text-[11px] text-slate-400">40 HP | Frontline tank with heavy melee damage.</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3">
-                            <div class="text-emerald-400 text-xl pt-1"><i class="fa-solid fa-bow-arrow"></i></div>
-                            <div>
-                                <h5 class="font-bold text-xs text-emerald-300">ARCHER (x2)</h5>
-                                <p class="text-[11px] text-slate-400">22 HP | Long attack range (3 tiles). Fragile in close combat.</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3">
-                            <div class="text-purple-400 text-xl pt-1"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                            <div>
-                                <h5 class="font-bold text-xs text-purple-300">MAGE (x2)</h5>
-                                <p class="text-[11px] text-slate-400">18 HP | Mid range (2 tiles). High burst tactical damage.</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700 flex items-start gap-3 col-span-1 sm:col-span-2">
-                            <div class="text-cyan-400 text-xl pt-1"><i class="fa-solid fa-person-running"></i></div>
-                            <div>
-                                <h5 class="font-bold text-xs text-cyan-300">SCOUT (x2)</h5>
-                                <p class="text-[11px] text-slate-400">25 HP | Exceptional movement range (4 tiles). Ideal for flank attacks.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 3: Controls & Rules -->
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-                    <h4 class="font-bold text-indigo-400 text-sm">Turn & Movement Controls</h4>
+                    <h4 class="font-bold text-indigo-400 text-sm">Dice & Actions</h4>
                     <ul class="text-xs space-y-1.5 list-disc list-inside text-slate-300">
-                        <li><strong>Your Turn:</strong> You can only select and order your own colored units (Blue = P1, Red = P2).</li>
-                        <li><strong>Movement:</strong> Click your unit to view blue highlighted valid movement tiles. Click a highlighted tile to move.</li>
-                        <li><strong>Combat:</strong> Enemy units in red highlighted tiles can be targeted. Click an enemy in range to attack!</li>
-                        <li><strong>End Turn:</strong> Click the "End Turn" button when finished to pass control to your opponent.</li>
+                        <li>Each unit turn rolls dynamic dice (Move, Attack, Magic, Dash, Defend, Wild).</li>
+                        <li>Click a die to activate its specific action, then click highlighted valid board tiles or enemy units.</li>
+                        <li>Positional combat applies: attacking from behind yields higher accuracy and damage bonuses.</li>
                     </ul>
                 </div>
-
             </div>
-
-            <button id="tutorial-got-it-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition text-xs">
-                GOT IT, LET'S PLAY!
-            </button>
+            <button id="tutorial-got-it-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition text-xs">GOT IT, LET'S PLAY!</button>
         </div>
     </div>
 
-    <!-- OVERLAY 4: GAME OVER MODAL (REMATCH / QUIT) -->
+    <!-- OVERLAY 4: GAME OVER MODAL -->
     <div id="gameover-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center space-y-6">
             <div id="gameover-icon-bg" class="w-20 h-20 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 mx-auto flex items-center justify-center text-4xl">
                 <i id="gameover-icon" class="fa-solid fa-trophy"></i>
             </div>
-
             <div>
                 <h2 id="gameover-title" class="text-2xl font-black text-white">VICTORY!</h2>
-                <p id="gameover-sub" class="text-xs text-slate-400 mt-1">Player 1 defeated the enemy Commander</p>
+                <p id="gameover-sub" class="text-xs text-slate-400 mt-1">Match ended successfully.</p>
             </div>
-
-            <div id="rematch-status-box" class="hidden text-xs bg-slate-950 p-3 rounded-lg border border-slate-800 text-amber-400 font-semibold animate-pulse">
-                Opponent requested a rematch!
-            </div>
-
+            <div id="rematch-status-box" class="hidden text-xs bg-slate-950 p-3 rounded-lg border border-slate-800 text-amber-400 font-semibold animate-pulse">Opponent requested a rematch!</div>
             <div class="grid grid-cols-2 gap-3 pt-2">
-                <button id="rematch-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-rotate-right"></i> REMATCH
-                </button>
-                <button id="quit-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 rounded-xl border border-slate-700 transition text-xs">
-                    QUIT TO MENU
-                </button>
+                <button id="rematch-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-rotate-right"></i> REMATCH</button>
+                <button id="quit-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 rounded-xl border border-slate-700 transition text-xs">QUIT TO MENU</button>
             </div>
         </div>
     </div>
@@ -368,18 +328,10 @@
     <div id="supabase-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-database text-emerald-400"></i> Supabase Setup
-                </h3>
-                <button id="close-supabase-btn" class="text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
+                <h3 class="text-base font-bold text-white flex items-center gap-2"><i class="fa-solid fa-database text-emerald-400"></i> Supabase Setup</h3>
+                <button id="close-supabase-btn" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-
-            <p class="text-xs text-slate-400">
-                To connect 2 players across separate browsers/devices, enter your Supabase credentials. If left empty, a local Broadcast Simulator will run for testing on the same machine.
-            </p>
-
+            <p class="text-xs text-slate-400">Enter your Supabase credentials for remote online 2-player multiplayer across devices. Leave empty to use local tab simulation.</p>
             <div class="space-y-3">
                 <div>
                     <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Supabase URL</label>
@@ -390,11 +342,8 @@
                     <input id="sb-key-input" type="password" placeholder="eyJhbGciOi..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500">
                 </div>
             </div>
-
             <div class="flex justify-end gap-2 pt-2">
-                <button id="save-sb-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition">
-                    Save Credentials
-                </button>
+                <button id="save-sb-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition">Save Credentials</button>
             </div>
         </div>
     </div>
@@ -411,842 +360,1496 @@
         </div>
     </div>
 
-    <!-- AUDIO SCRIPT EFFECTS (WEB AUDIO API) -->
-    <script>
-        class SoundEngine {
-            constructor() {
-                this.ctx = null;
-            }
-            init() {
-                if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-            }
-            playTone(freq, type = 'sine', duration = 0.1, vol = 0.1) {
-                if (!this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = type;
-                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + duration);
-                } catch(e) {}
-            }
-            move() { this.init(); this.playTone(300, 'triangle', 0.08, 0.05); }
-            attack() { 
-                this.init(); 
-                this.playTone(150, 'sawtooth', 0.15, 0.12); 
-                setTimeout(() => this.playTone(80, 'square', 0.2, 0.15), 50);
-            }
-            select() { this.init(); this.playTone(520, 'sine', 0.05, 0.04); }
-            win() {
-                this.init();
-                [400, 500, 600, 800].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.2, 0.1), i * 120));
-            }
-        }
-        const sfx = new SoundEngine();
-    </script>
+<script>
+    /** --- TOAST & CONFIRM UTILS --- **/
+    function showToast(msg, type = 'info') {
+        const toastEl = document.getElementById('toast');
+        toastEl.innerText = msg;
+        toastEl.style.color = type === 'error' ? '#ef4444' : '#facc15';
+        toastEl.style.opacity = 1;
+        toastEl.style.transform = 'translate(-50%, -50%) scale(1.1)';
+        setTimeout(() => {
+            toastEl.style.opacity = 0;
+            toastEl.style.transform = 'translate(-50%, -50%) scale(1)';
+        }, 1800);
+    }
 
-    <!-- MAIN GAME ENGINE & SUPABASE REALTIME LOGIC -->
-    <script>
-        // --- CUSTOM TOAST & CONFIRM LOGIC ---
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            const colors = type === 'error' ? 'bg-rose-600 border-rose-500' : 'bg-slate-800 border-slate-700';
-            toast.className = `px-4 py-2 rounded-lg shadow-lg border text-white text-sm font-semibold transition-all duration-300 opacity-0 transform -translate-y-4 ${colors}`;
-            toast.textContent = message;
-            container.appendChild(toast);
-            
-            requestAnimationFrame(() => {
-                toast.classList.remove('opacity-0', '-translate-y-4');
-            });
-            
-            setTimeout(() => {
-                toast.classList.add('opacity-0', '-translate-y-4');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        function showConfirm(message, onYes) {
-            const modal = document.getElementById('confirm-modal');
-            document.getElementById('confirm-message').textContent = message;
-            modal.classList.remove('hidden');
-            
-            const yesBtn = document.getElementById('confirm-yes-btn');
-            const noBtn = document.getElementById('confirm-no-btn');
-            
-            const handleYes = () => { cleanup(); onYes(); };
-            const handleNo = () => { cleanup(); };
-            
-            const cleanup = () => {
-                modal.classList.add('hidden');
-                yesBtn.removeEventListener('click', handleYes);
-                noBtn.removeEventListener('click', handleNo);
-            };
-            
-            yesBtn.addEventListener('click', handleYes);
-            noBtn.addEventListener('click', handleNo);
-        }
-
-        // --- CONSTANTS & GAME DEFINITIONS ---
-        const GRID_COLS = 12;
-        const GRID_ROWS = 8;
-
-        const UNIT_TYPES = {
-            COMMANDER: { name: 'Commander', maxHp: 100, atk: 18, mov: 2, rng: 1, icon: 'fa-crown', color: '#f59e0b' },
-            KNIGHT:    { name: 'Knight',    maxHp: 40,  atk: 12, mov: 3, rng: 1, icon: 'fa-shield-halved', color: '#3b82f6' },
-            ARCHER:    { name: 'Archer',    maxHp: 22,  atk: 10, mov: 3, rng: 3, icon: 'fa-bow-arrow', color: '#10b981' },
-            MAGE:      { name: 'Mage',      maxHp: 18,  atk: 14, mov: 2, rng: 2, icon: 'fa-wand-magic-sparkles', color: '#a855f7' },
-            SCOUT:     { name: 'Scout',     maxHp: 25,  atk: 8,  mov: 4, rng: 1, icon: 'fa-person-running', color: '#06b6d4' }
+    function showConfirm(message, onYes) {
+        const modal = document.getElementById('confirm-modal');
+        document.getElementById('confirm-message').textContent = message;
+        modal.classList.remove('hidden');
+        
+        const yesBtn = document.getElementById('confirm-yes-btn');
+        const noBtn = document.getElementById('confirm-no-btn');
+        
+        const handleYes = () => { cleanup(); onYes(); };
+        const handleNo = () => { cleanup(); };
+        
+        const cleanup = () => {
+            modal.classList.add('hidden');
+            yesBtn.removeEventListener('click', handleYes);
+            noBtn.removeEventListener('click', handleNo);
         };
+        
+        yesBtn.addEventListener('click', handleYes);
+        noBtn.addEventListener('click', handleNo);
+    }
 
-        // --- GLOBAL STATE ---
-        let supabaseClient = null;
-        let realtimeChannel = null;
-        let isLocalSimulator = true;
+    /** --- MULTIPLAYER & SUPABASE STATE --- **/
+    let supabaseClient = null;
+    let realtimeChannel = null;
+    let isLocalSimulator = true;
+    let roomCode = null;
+    let playerNumber = 1; // 1 = Host/Player 1, 2 = Joiner/Player 2
+    let isMultiplayerActive = false;
+    let rematchRequestedByMe = false;
+    let rematchRequestedByOpponent = false;
 
-        let roomCode = null;
-        let playerNumber = 1; // 1 = Blue, 2 = Red
-        let currentTurn = 1;  // 1 = P1 Turn, 2 = P2 Turn
-        let gameOver = false;
+    function initSupabase() {
+        const url = localStorage.getItem('sb_url') || 'https://oqboqzcjsnhuvxecwonb.supabase.co';
+        const key = localStorage.getItem('sb_key') || 'sb_publishable_buFfG1jbB8kPnYlFl5UvNg_hHnV3xmH';
+        const statusEl = document.getElementById('supabase-status');
 
-        let units = [];
-        let selectedUnit = null;
-        let validMoves = [];
-        let validAttacks = [];
-
-        let rematchRequestedByMe = false;
-        let rematchRequestedByOpponent = false;
-
-        // Canvas Elements
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        let tileSize = 60;
-
-        // --- SUPABASE SETUP ---
-        function initSupabase() {
-            // Hardcoded credentials inserted here:
-            const url = localStorage.getItem('sb_url') || 'https://oqboqzcjsnhuvxecwonb.supabase.co';
-            const key = localStorage.getItem('sb_key') || 'sb_publishable_buFfG1jbB8kPnYlFl5UvNg_hHnV3xmH';
-            const statusEl = document.getElementById('supabase-status');
-
-            if (url && key && window.supabase) {
-                try {
-                    supabaseClient = window.supabase.createClient(url, key);
-                    isLocalSimulator = false;
-                    statusEl.textContent = 'Connected (Live)';
-                    statusEl.className = 'text-emerald-400 font-medium';
-                } catch (e) {
-                    console.warn('Supabase init failed, falling back to simulator:', e);
-                    isLocalSimulator = true;
-                    statusEl.textContent = 'Local Simulator';
-                    statusEl.className = 'text-amber-400 font-medium';
-                }
-            } else {
+        if (url && key && window.supabase) {
+            try {
+                supabaseClient = window.supabase.createClient(url, key);
+                isLocalSimulator = false;
+                statusEl.textContent = 'Connected (Live)';
+                statusEl.className = 'text-emerald-400 font-medium';
+            } catch (e) {
                 isLocalSimulator = true;
                 statusEl.textContent = 'Local Simulator';
                 statusEl.className = 'text-amber-400 font-medium';
             }
+        } else {
+            isLocalSimulator = true;
+            statusEl.textContent = 'Local Simulator';
+            statusEl.className = 'text-amber-400 font-medium';
+        }
+    }
+
+    function setupRealtimeChannel(code) {
+        roomCode = code;
+        isMultiplayerActive = true;
+        document.getElementById('current-room-code').textContent = code;
+        document.getElementById('room-badge').classList.remove('hidden');
+        document.getElementById('leave-game-btn').classList.remove('hidden');
+
+        if (isLocalSimulator) {
+            window.addEventListener('storage', handleSimulatorStorage);
+            return;
         }
 
-        // --- INITIALIZE GAME BOARD & UNITS ---
-        function initBoard() {
-            units = [];
-            
-            // Helper to add unit
-            const addUnit = (typeKey, x, y, owner) => {
-                const spec = UNIT_TYPES[typeKey];
-                units.push({
-                    id: 'u_' + Math.random().toString(36).substr(2, 9),
-                    type: typeKey,
-                    name: spec.name,
-                    maxHp: spec.maxHp,
-                    hp: spec.maxHp,
-                    atk: spec.atk,
-                    mov: spec.mov,
-                    rng: spec.rng,
-                    icon: spec.icon,
-                    x: x,
-                    y: y,
-                    owner: owner, // 1 or 2
-                    hasMoved: false,
-                    hasAttacked: false
-                });
-            };
-
-            // Player 1 Roster (Left Side - Columns 0 & 1)
-            addUnit('COMMANDER', 0, 3, 1);
-            addUnit('KNIGHT',    1, 2, 1);
-            addUnit('KNIGHT',    1, 4, 1);
-            addUnit('ARCHER',    0, 1, 1);
-            addUnit('ARCHER',    0, 5, 1);
-            addUnit('MAGE',      0, 2, 1);
-            addUnit('MAGE',      0, 4, 1);
-            addUnit('SCOUT',     1, 1, 1);
-            addUnit('SCOUT',     1, 5, 1);
-
-            // Player 2 Roster (Right Side - Columns 10 & 11) - Mirror layout
-            addUnit('COMMANDER', 11, 4, 2);
-            addUnit('KNIGHT',    10, 3, 2);
-            addUnit('KNIGHT',    10, 5, 2);
-            addUnit('ARCHER',    11, 2, 2);
-            addUnit('ARCHER',    11, 6, 2);
-            addUnit('MAGE',      11, 3, 2);
-            addUnit('MAGE',      11, 5, 2);
-            addUnit('SCOUT',     10, 2, 2);
-            addUnit('SCOUT',     10, 6, 2);
-
-            currentTurn = 1;
-            gameOver = false;
-            selectedUnit = null;
-            validMoves = [];
-            validAttacks = [];
-            rematchRequestedByMe = false;
-            rematchRequestedByOpponent = false;
-
-            updateHUD();
-            drawBoard();
-        }
-
-        // --- CANVAS RESIZING & RENDERING ---
-        function resizeCanvas() {
-            const container = document.getElementById('game-container');
-            const maxWidth = container.clientWidth - 20;
-            const maxHeight = container.clientHeight - 80;
-
-            tileSize = Math.floor(Math.min(maxWidth / GRID_COLS, maxHeight / GRID_ROWS));
-            tileSize = Math.max(tileSize, 36); // Minimum tile size for mobile
-
-            canvas.width = GRID_COLS * tileSize;
-            canvas.height = GRID_ROWS * tileSize;
-            drawBoard();
-        }
-
-        function drawBoard() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Grid Tiles
-            for (let r = 0; r < GRID_ROWS; r++) {
-                for (let c = 0; c < GRID_COLS; c++) {
-                    const isEven = (r + c) % 2 === 0;
-                    ctx.fillStyle = isEven ? '#1e293b' : '#0f172a';
-                    ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
-
-                    // Subtle Grid lines
-                    ctx.strokeStyle = '#334155';
-                    ctx.lineWidth = 0.5;
-                    ctx.strokeRect(c * tileSize, r * tileSize, tileSize, tileSize);
-                }
-            }
-
-            // Draw Valid Move Highlights
-            validMoves.forEach(m => {
-                ctx.fillStyle = 'rgba(59, 130, 246, 0.35)';
-                ctx.fillRect(m.x * tileSize, m.y * tileSize, tileSize, tileSize);
-                ctx.strokeStyle = '#60a5fa';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(m.x * tileSize + 2, m.y * tileSize + 2, tileSize - 4, tileSize - 4);
-            });
-
-            // Draw Valid Attack Targets
-            validAttacks.forEach(a => {
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
-                ctx.fillRect(a.x * tileSize, a.y * tileSize, tileSize, tileSize);
-                ctx.strokeStyle = '#f87171';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(a.x * tileSize + 2, a.y * tileSize + 2, tileSize - 4, tileSize - 4);
-            });
-
-            // Draw Units
-            units.forEach(u => {
-                const cx = u.x * tileSize + tileSize / 2;
-                const cy = u.y * tileSize + tileSize / 2;
-                const radius = tileSize * 0.38;
-
-                // Base aura & selection ring
-                if (selectedUnit && selectedUnit.id === u.id) {
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, radius + 4, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(250, 204, 21, 0.4)';
-                    ctx.fill();
-                    ctx.strokeStyle = '#facc15';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-
-                // Unit Body Circle
-                ctx.beginPath();
-                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-                ctx.fillStyle = u.owner === 1 ? '#1d4ed8' : '#be123c'; // P1 Blue, P2 Red
-                ctx.fill();
-                ctx.strokeStyle = u.owner === 1 ? '#60a5fa' : '#fda4af';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                // Symbol Text / FontAwesome Representative
-                ctx.fillStyle = '#ffffff';
-                ctx.font = `bold ${Math.floor(tileSize * 0.35)}px sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                
-                // Short code for unit
-                const symbolMap = { COMMANDER: '👑', KNIGHT: '🛡️', ARCHER: '🏹', MAGE: '🔮', SCOUT: '⚡' };
-                ctx.fillText(symbolMap[u.type] || '⚔️', cx, cy - 2);
-
-                // Health Bar
-                const barWidth = tileSize * 0.7;
-                const barHeight = 4;
-                const barX = cx - barWidth / 2;
-                const barY = cy + radius - 2;
-
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(barX, barY, barWidth, barHeight);
-
-                const hpRatio = Math.max(0, u.hp / u.maxHp);
-                ctx.fillStyle = hpRatio > 0.5 ? '#10b981' : hpRatio > 0.25 ? '#f59e0b' : '#ef4444';
-                ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
-            });
-        }
-
-        // --- GAME ACTIONS & INTERACTION ---
-        function getTileCoordinates(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-            const x = Math.floor((clientX - rect.left) / tileSize);
-            const y = Math.floor((clientY - rect.top) / tileSize);
-
-            if (x >= 0 && x < GRID_COLS && y >= 0 && y < GRID_ROWS) {
-                return { x, y };
-            }
-            return null;
-        }
-
-        function handleCanvasClick(e) {
-            if (gameOver) return;
-            const tile = getTileCoordinates(e);
-            if (!tile) return;
-
-            // Restrict interaction: Player can ONLY control units on THEIR turn
-            if (currentTurn !== playerNumber) {
-                return; 
-            }
-
-            const clickedUnit = units.find(u => u.x === tile.x && u.y === tile.y);
-
-            // 1. Attack Target Clicked?
-            if (selectedUnit && validAttacks.some(a => a.x === tile.x && a.y === tile.y)) {
-                if (clickedUnit && clickedUnit.owner !== playerNumber) {
-                    executeAttack(selectedUnit, clickedUnit);
-                    return;
-                }
-            }
-
-            // 2. Move Target Clicked?
-            if (selectedUnit && validMoves.some(m => m.x === tile.x && m.y === tile.y)) {
-                executeMove(selectedUnit, tile.x, tile.y);
-                return;
-            }
-
-            // 3. Select Player's Unit
-            if (clickedUnit && clickedUnit.owner === playerNumber) {
-                sfx.select();
-                selectedUnit = clickedUnit;
-                calculateValidMovesAndAttacks(selectedUnit);
-                showUnitCard(selectedUnit);
-                drawBoard();
-            } else {
-                // Deselect if clicking empty space or enemy
-                selectedUnit = null;
-                validMoves = [];
-                validAttacks = [];
-                hideUnitCard();
-                drawBoard();
-            }
-        }
-
-        function calculateValidMovesAndAttacks(unit) {
-            validMoves = [];
-            validAttacks = [];
-
-            if (!unit) return;
-
-            // Simple Manhattan distance / BFS pathing for move range
-            for (let r = 0; r < GRID_ROWS; r++) {
-                for (let c = 0; c < GRID_COLS; c++) {
-                    const dist = Math.abs(c - unit.x) + Math.abs(r - unit.y);
-
-                    // Move validation
-                    if (dist > 0 && dist <= unit.mov) {
-                        const occupied = units.find(u => u.x === c && u.y === r);
-                        if (!occupied) {
-                            validMoves.push({ x: c, y: r });
-                        }
-                    }
-
-                    // Attack validation
-                    if (dist > 0 && dist <= unit.rng) {
-                        const enemy = units.find(u => u.x === c && u.y === r && u.owner !== unit.owner);
-                        if (enemy) {
-                            validAttacks.push({ x: c, y: r });
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- ACTION EXECUTION & MULTIPLAYER SYNC ---
-        function executeMove(unit, targetX, targetY) {
-            unit.x = targetX;
-            unit.y = targetY;
-            sfx.move();
-
-            // Re-calculate attacks from new position
-            calculateValidMovesAndAttacks(unit);
-            showUnitCard(unit);
-            drawBoard();
-
-            // Broadcast Move Event
-            broadcastEvent('MOVE_UNIT', {
-                unitId: unit.id,
-                x: targetX,
-                y: targetY
-            });
-        }
-
-        function executeAttack(attacker, defender) {
-            defender.hp -= attacker.atk;
-            sfx.attack();
-
-            // Broadcast Attack Event
-            broadcastEvent('ATTACK_UNIT', {
-                attackerId: attacker.id,
-                defenderId: defender.id,
-                damage: attacker.atk
-            });
-
-            // Check if Defender is Dead
-            if (defender.hp <= 0) {
-                // Check if Commander died
-                if (defender.type === 'COMMANDER') {
-                    handleGameOver(attacker.owner);
-                }
-                // Remove dead unit
-                units = units.filter(u => u.id !== defender.id);
-            }
-
-            // Reset selection after attack
-            selectedUnit = null;
-            validMoves = [];
-            validAttacks = [];
-            hideUnitCard();
-            updateHUD();
-            drawBoard();
-        }
-
-        function endTurn() {
-            if (currentTurn !== playerNumber || gameOver) return;
-
-            currentTurn = currentTurn === 1 ? 2 : 1;
-            selectedUnit = null;
-            validMoves = [];
-            validAttacks = [];
-            hideUnitCard();
-            updateHUD();
-            drawBoard();
-
-            broadcastEvent('END_TURN', { nextTurn: currentTurn });
-        }
-
-        function handleGameOver(winnerPlayerNumber) {
-            gameOver = true;
-            sfx.win();
-
-            const modal = document.getElementById('gameover-modal');
-            const title = document.getElementById('gameover-title');
-            const sub = document.getElementById('gameover-sub');
-            const icon = document.getElementById('gameover-icon');
-            const iconBg = document.getElementById('gameover-icon-bg');
-
-            modal.classList.remove('hidden');
-
-            if (winnerPlayerNumber === playerNumber) {
-                title.textContent = 'VICTORY!';
-                title.className = 'text-2xl font-black text-emerald-400';
-                sub.textContent = 'You eliminated the enemy Commander!';
-                icon.className = 'fa-solid fa-trophy';
-                iconBg.className = 'w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center text-4xl';
-            } else {
-                title.textContent = 'DEFEAT';
-                title.className = 'text-2xl font-black text-rose-500';
-                sub.textContent = 'Your Commander was fallen in battle.';
-                icon.className = 'fa-solid fa-skull';
-                iconBg.className = 'w-20 h-20 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 mx-auto flex items-center justify-center text-4xl';
-            }
-        }
-
-        // --- UI UPDATES ---
-        function updateHUD() {
-            const p1Cmd = units.find(u => u.owner === 1 && u.type === 'COMMANDER');
-            const p2Cmd = units.find(u => u.owner === 2 && u.type === 'COMMANDER');
-
-            document.getElementById('p1-commander-hp').textContent = (p1Cmd ? p1Cmd.hp : 0) + ' HP';
-            document.getElementById('p2-commander-hp').textContent = (p2Cmd ? p2Cmd.hp : 0) + ' HP';
-
-            const turnText = document.getElementById('turn-text');
-            const turnIndicator = document.getElementById('turn-indicator');
-
-            if (currentTurn === playerNumber) {
-                turnText.textContent = "YOUR TURN";
-                turnIndicator.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 glow-effect";
-            } else {
-                turnText.textContent = "OPPONENT'S TURN";
-                turnIndicator.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5";
-            }
-        }
-
-        function showUnitCard(unit) {
-            const card = document.getElementById('unit-card');
-            card.classList.remove('hidden');
-
-            document.getElementById('unit-name').textContent = unit.name;
-            document.getElementById('unit-owner').textContent = unit.owner === playerNumber ? 'Your Unit' : 'Enemy Unit';
-            document.getElementById('unit-hp').textContent = `${unit.hp}/${unit.maxHp}`;
-            document.getElementById('unit-atk').textContent = unit.atk;
-            document.getElementById('unit-mov').textContent = unit.mov;
-            document.getElementById('unit-rng').textContent = unit.rng;
-
-            const iconEl = document.getElementById('unit-icon');
-            iconEl.className = `fa-solid ${unit.icon}`;
-
-            const endTurnBtn = document.getElementById('end-turn-btn');
-            endTurnBtn.style.display = (currentTurn === playerNumber) ? 'flex' : 'none';
-        }
-
-        function hideUnitCard() {
-            document.getElementById('unit-card').classList.add('hidden');
-        }
-
-        // --- SUPABASE REALTIME MULTIPLAYER CHANNEL LOGIC ---
-        function setupRealtimeChannel(code) {
-            roomCode = code;
-            document.getElementById('current-room-code').textContent = code;
-            document.getElementById('room-badge').classList.remove('hidden');
-
-            if (isLocalSimulator) {
-                // Simulation broadcast fallback using Window Messaging
-                window.addEventListener('storage', handleSimulatorStorage);
-                return;
-            }
-
-            // Real Supabase Broadcast Channel
-            const channelName = `tactics_room_${code}`;
-            realtimeChannel = supabaseClient.channel(channelName, {
-                config: { broadcast: { self: false } }
-            });
-
-            realtimeChannel
-                .on('broadcast', { event: 'game_event' }, payload => {
-                    handleRemoteEvent(payload.payload);
-                })
-                .subscribe((status) => {
-                    if (status === 'SUBSCRIBED') {
-                        if (playerNumber === 2) {
-                            // Player 2 joined -> Notify Host
-                            broadcastEvent('PLAYER_JOINED', { pNumber: 2 });
-                        }
-                    }
-                });
-        }
-
-        function broadcastEvent(eventType, payloadData) {
-            const packet = { event: eventType, sender: playerNumber, data: payloadData };
-
-            if (isLocalSimulator) {
-                localStorage.setItem('sim_event_' + roomCode, JSON.stringify({ packet, time: Date.now() }));
-                return;
-            }
-
-            if (realtimeChannel) {
-                realtimeChannel.send({
-                    type: 'broadcast',
-                    event: 'game_event',
-                    payload: packet
-                });
-            }
-        }
-
-        function handleRemoteEvent(packet) {
-            if (!packet || packet.sender === playerNumber) return;
-
-            const { event, data } = packet;
-
-            switch (event) {
-                case 'PLAYER_JOINED':
-                    if (playerNumber === 1) {
-                        // Host receives P2 join -> Start Match!
-                        document.getElementById('lobby-modal').classList.add('hidden');
-                        document.getElementById('main-menu').classList.add('hidden');
-                        document.getElementById('game-hud').classList.remove('hidden');
-                        document.getElementById('leave-game-btn').classList.remove('hidden');
-
-                        // Sync initial board state to P2
-                        broadcastEvent('START_GAME_SYNC', { units: units, turn: currentTurn });
-                    }
-                    break;
-
-                case 'START_GAME_SYNC':
-                    if (playerNumber === 2) {
-                        units = data.units;
-                        currentTurn = data.turn;
-                        document.getElementById('lobby-modal').classList.add('hidden');
-                        document.getElementById('main-menu').classList.add('hidden');
-                        document.getElementById('game-hud').classList.remove('hidden');
-                        document.getElementById('leave-game-btn').classList.remove('hidden');
-                        updateHUD();
-                        drawBoard();
-                    }
-                    break;
-
-                case 'MOVE_UNIT':
-                    const movedUnit = units.find(u => u.id === data.unitId);
-                    if (movedUnit) {
-                        movedUnit.x = data.x;
-                        movedUnit.y = data.y;
-                        sfx.move();
-                        drawBoard();
-                    }
-                    break;
-
-                case 'ATTACK_UNIT':
-                    const defender = units.find(u => u.id === data.defenderId);
-                    if (defender) {
-                        defender.hp -= data.damage;
-                        sfx.attack();
-                        if (defender.hp <= 0) {
-                            if (defender.type === 'COMMANDER') {
-                                handleGameOver(packet.sender);
-                            }
-                            units = units.filter(u => u.id !== defender.id);
-                        }
-                        updateHUD();
-                        drawBoard();
-                    }
-                    break;
-
-                case 'END_TURN':
-                    currentTurn = data.nextTurn;
-                    selectedUnit = null;
-                    validMoves = [];
-                    validAttacks = [];
-                    hideUnitCard();
-                    updateHUD();
-                    drawBoard();
-                    break;
-
-                case 'REMATCH_REQUEST':
-                    rematchRequestedByOpponent = true;
-                    document.getElementById('rematch-status-box').classList.remove('hidden');
-                    if (rematchRequestedByMe) {
-                        // Both agreed! Restart match
-                        resetGameForRematch();
-                    }
-                    break;
-
-                case 'REMATCH_ACCEPT':
-                    resetGameForRematch();
-                    break;
-
-                case 'PLAYER_LEFT':
-                    showToast('Opponent disconnected or left the match.', 'error');
-                    leaveGame();
-                    break;
-            }
-        }
-
-        function handleSimulatorStorage(e) {
-            if (e.key === 'sim_event_' + roomCode && e.newValue) {
-                try {
-                    const parsed = JSON.parse(e.newValue);
-                    handleRemoteEvent(parsed.packet);
-                } catch(err) {}
-            }
-        }
-
-        function resetGameForRematch() {
-            document.getElementById('gameover-modal').classList.add('hidden');
-            document.getElementById('rematch-status-box').classList.add('hidden');
-            initBoard();
-        }
-
-        function leaveGame() {
-            broadcastEvent('PLAYER_LEFT', {});
-            if (realtimeChannel && supabaseClient) {
-                supabaseClient.removeChannel(realtimeChannel);
-            }
-            window.removeEventListener('storage', handleSimulatorStorage);
-
-            document.getElementById('game-hud').classList.add('hidden');
-            document.getElementById('leave-game-btn').classList.add('hidden');
-            document.getElementById('gameover-modal').classList.add('hidden');
-            document.getElementById('lobby-modal').classList.add('hidden');
-            document.getElementById('room-badge').classList.add('hidden');
-            document.getElementById('main-menu').classList.remove('hidden');
-
-            initBoard();
-        }
-
-        // --- EVENT LISTENERS & MENU CONTROLS ---
-        window.addEventListener('DOMContentLoaded', () => {
-            initSupabase();
-            initBoard();
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-
-            // Canvas Click / Touch
-            canvas.addEventListener('click', handleCanvasClick);
-
-            // End Turn Button
-            document.getElementById('end-turn-btn').addEventListener('click', endTurn);
-
-            // Menu Buttons
-            const playBtn = document.getElementById('play-btn');
-            const menuActions = document.getElementById('menu-actions');
-            const playSubmenu = document.getElementById('play-submenu');
-
-            playBtn.addEventListener('click', () => {
-                menuActions.classList.add('hidden');
-                playSubmenu.classList.remove('hidden');
-            });
-
-            document.getElementById('back-to-menu-btn').addEventListener('click', () => {
-                playSubmenu.classList.add('hidden');
-                menuActions.classList.remove('hidden');
-            });
-
-            // Create Room
-            document.getElementById('create-room-btn').addEventListener('click', () => {
-                playerNumber = 1; // Host
-                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-                setupRealtimeChannel(code);
-
-                document.getElementById('lobby-code-display').textContent = code;
-                document.getElementById('lobby-modal').classList.remove('hidden');
-            });
-
-            // Join Room Show
-            document.getElementById('show-join-input-btn').addEventListener('click', () => {
-                const box = document.getElementById('join-box');
-                box.classList.toggle('hidden');
-            });
-
-            // Confirm Join
-            document.getElementById('confirm-join-btn').addEventListener('click', () => {
-                const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
-                if (codeInput.length !== 6) {
-                    showToast('Please enter a valid 6-character room code.', 'error');
-                    return;
-                }
-                playerNumber = 2; // Joiner
-                setupRealtimeChannel(codeInput);
-
-                // Start game screen directly for P2
-                document.getElementById('main-menu').classList.add('hidden');
-                document.getElementById('game-hud').classList.remove('hidden');
-                document.getElementById('leave-game-btn').classList.remove('hidden');
-            });
-
-            // Copy Room Code
-            document.getElementById('copy-code-btn').addEventListener('click', () => {
-                const code = document.getElementById('lobby-code-display').textContent;
-                
-                // Uses a robust fallback if clipboard api fails in iframes
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(code);
-                } else {
-                    const temp = document.createElement("input");
-                    temp.value = code;
-                    document.body.appendChild(temp);
-                    temp.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(temp);
-                }
-                
-                showToast('Room code copied: ' + code);
-            });
-
-            // Cancel Lobby
-            document.getElementById('cancel-lobby-btn').addEventListener('click', () => {
-                document.getElementById('lobby-modal').classList.add('hidden');
-                if (realtimeChannel && supabaseClient) {
-                    supabaseClient.removeChannel(realtimeChannel);
-                }
-            });
-
-            // Tutorial Modal
-            const tutorialModal = document.getElementById('tutorial-modal');
-            const openTutorial = () => tutorialModal.classList.remove('hidden');
-            const closeTutorial = () => tutorialModal.classList.add('hidden');
-
-            document.getElementById('tutorial-btn').addEventListener('click', openTutorial);
-            document.getElementById('menu-tutorial-btn').addEventListener('click', openTutorial);
-            document.getElementById('close-tutorial-btn').addEventListener('click', closeTutorial);
-            document.getElementById('tutorial-got-it-btn').addEventListener('click', closeTutorial);
-
-            // Leave Game Button (with custom confirm)
-            document.getElementById('leave-game-btn').addEventListener('click', () => {
-                showConfirm('Are you sure you want to leave the match?', () => {
-                    leaveGame();
-                });
-            });
-
-            // Rematch & Quit
-            document.getElementById('rematch-btn').addEventListener('click', () => {
-                rematchRequestedByMe = true;
-                broadcastEvent('REMATCH_REQUEST', {});
-                document.getElementById('rematch-status-box').classList.remove('hidden');
-                document.getElementById('rematch-status-box').textContent = 'Waiting for opponent to accept...';
-
-                if (rematchRequestedByOpponent) {
-                    broadcastEvent('REMATCH_ACCEPT', {});
-                    resetGameForRematch();
-                }
-            });
-
-            document.getElementById('quit-btn').addEventListener('click', () => {
-                leaveGame();
-            });
-
-            // Supabase Config Modal
-            const sbModal = document.getElementById('supabase-modal');
-            const openSbModal = () => {
-                document.getElementById('sb-url-input').value = localStorage.getItem('sb_url') || '';
-                document.getElementById('sb-key-input').value = localStorage.getItem('sb_key') || '';
-                sbModal.classList.remove('hidden');
-            };
-            document.getElementById('config-btn').addEventListener('click', openSbModal);
-            document.getElementById('supabase-config-link').addEventListener('click', openSbModal);
-            document.getElementById('close-supabase-btn').addEventListener('click', () => sbModal.classList.add('hidden'));
-
-            document.getElementById('save-sb-btn').addEventListener('click', () => {
-                const url = document.getElementById('sb-url-input').value.trim();
-                const key = document.getElementById('sb-key-input').value.trim();
-                localStorage.setItem('sb_url', url);
-                localStorage.setItem('sb_key', key);
-                initSupabase();
-                sbModal.classList.add('hidden');
-                showToast('Supabase credentials saved successfully.');
-            });
+        const channelName = `bloodbound_room_${code}`;
+        realtimeChannel = supabaseClient.channel(channelName, {
+            config: { broadcast: { self: false } }
         });
-    </script>
+
+        realtimeChannel
+            .on('broadcast', { event: 'game_event' }, payload => {
+                handleRemoteEvent(payload.payload);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED' && playerNumber === 2) {
+                    broadcastEvent('PLAYER_JOINED', { pNumber: 2 });
+                }
+            });
+    }
+
+    function broadcastEvent(eventType, payloadData) {
+        const packet = { event: eventType, sender: playerNumber, data: payloadData };
+
+        if (isLocalSimulator) {
+            localStorage.setItem('bloodbound_sim_' + roomCode, JSON.stringify({ packet, time: Date.now() }));
+            return;
+        }
+
+        if (realtimeChannel) {
+            realtimeChannel.send({
+                type: 'broadcast',
+                event: 'game_event',
+                payload: packet
+            });
+        }
+    }
+
+    function handleSimulatorStorage(e) {
+        if (e.key === 'bloodbound_sim_' + roomCode && e.newValue) {
+            try {
+                const parsed = JSON.parse(e.newValue);
+                handleRemoteEvent(parsed.packet);
+            } catch(err) {}
+        }
+    }
+
+    function handleRemoteEvent(packet) {
+        if (!packet || packet.sender === playerNumber) return;
+        const { event, data } = packet;
+
+        switch (event) {
+            case 'PLAYER_JOINED':
+                if (playerNumber === 1) {
+                    document.getElementById('lobby-modal').classList.add('hidden');
+                    showToast('Opponent connected!', '#10b981');
+                    // Sync initial board state to P2
+                    broadcastEvent('START_GAME_SYNC', { 
+                        unitsState: units.map(u => ({ id: u.id, name: u.name, team: u.team, maxHp: u.maxHp, hp: u.hp, atk: u.atk, moveRange: u.moveRange, dashRange: u.dashRange, atkRange: u.atkRange, accuracy: u.accuracy, actions: u.actions, x: u.x, z: u.z })),
+                        turnOrderP1: playerTurnOrder.map(u => u.id),
+                        turnOrderP2: enemyTurnOrder.map(u => u.id),
+                        pIndex: playerTurnIndex,
+                        eIndex: enemyTurnIndex,
+                        activeTeam: activeUnit ? activeUnit.team : 'player'
+                    });
+                }
+                break;
+
+            case 'START_GAME_SYNC':
+                if (playerNumber === 2) {
+                    document.getElementById('lobby-modal').classList.add('hidden');
+                    // Rebuild units on client 2
+                    rebuildUnitsFromState(data.unitsState);
+                    playerTurnIndex = data.pIndex;
+                    enemyTurnIndex = data.eIndex;
+                    showToast('Match started!', '#10b981');
+                }
+                break;
+
+            case 'EXECUTE_ACTION':
+                receiveRemoteAction(data);
+                break;
+
+            case 'END_TURN':
+                switchTurnRemote(data.nextState);
+                break;
+
+            case 'SET_FACING':
+                const u = units.find(item => item.id === data.unitId);
+                if(u) u.lookAtTile(data.x, data.z);
+                break;
+
+            case 'REMATCH_REQUEST':
+                rematchRequestedByOpponent = true;
+                document.getElementById('rematch-status-box').classList.remove('hidden');
+                if (rematchRequestedByMe) resetGameForRematch();
+                break;
+
+            case 'REMATCH_ACCEPT':
+                resetGameForRematch();
+                break;
+
+            case 'PLAYER_LEFT':
+                showToast('Opponent disconnected.', '#ef4444');
+                leaveGame();
+                break;
+        }
+    }
+
+    function rebuildUnitsFromState(stateArr) {
+        units.forEach(u => {
+            scene.remove(u.mesh);
+            if(u.uiEl) u.uiEl.remove();
+        });
+        units = [];
+        for(let x=0; x<BOARD_SIZE; x++) {
+            for(let z=0; z<BOARD_SIZE; z++) tiles[x][z].unit = null;
+        }
+
+        stateArr.forEach(s => {
+            const visColor = s.team === 'player' ? (s.name === 'Commander' ? 0xfacc15 : 0x3b82f6) : 0x991b1b;
+            const newU = new Unit({ name: s.name, team: s.team, hp: s.maxHp, atk: s.atk, moveRange: s.moveRange, dashRange: s.dashRange, atkRange: s.atkRange, accuracy: s.accuracy, actions: s.actions, visual: { color: visColor } }, s.x, s.z);
+            newU.id = s.id;
+            newU.hp = s.hp;
+            units.push(newU);
+        });
+
+        playerTurnOrder = shuffleArray(units.filter(u => u.team === 'player'));
+        enemyTurnOrder = shuffleArray(units.filter(u => u.team === 'enemy'));
+        startPlayerTurn();
+    }
+
+
+    /** --- SYSTEM & UTILS --- **/
+    const ALL_DICE_FACES = {
+        'move': { id: 'move', abbr: 'MOV', name: 'MOVE' },
+        'attack': { id: 'attack', abbr: 'ATK', name: 'ATTACK' },
+        'magic': { id: 'magic', abbr: 'MAG', name: 'MAGIC' },
+        'dash': { id: 'dash', abbr: 'DSH', name: 'DASH' },
+        'defend': { id: 'defend', abbr: 'DEF', name: 'DEFEND' },
+        'wild': { id: 'wild', abbr: 'WLD', name: 'WILD' }
+    };
+
+    const Tweens = [];
+    function tween(obj, props, duration, easing = (t)=>t, onUpdate = null, onComplete = null) {
+        const startProps = {};
+        for (let k in props) startProps[k] = obj[k];
+        Tweens.push({ obj, startProps, targetProps: props, duration, elapsed: 0, easing, onUpdate, onComplete });
+    }
+    function tweenAsync(obj, props, duration, easing = (t)=>t, onUpdate = null) {
+        return new Promise(resolve => {
+            tween(obj, props, duration, easing, onUpdate, resolve);
+        });
+    }
+    
+    function updateTweens(dt) {
+        for (let i = Tweens.length - 1; i >= 0; i--) {
+            let t = Tweens[i];
+            t.elapsed += dt;
+            let progress = Math.min(t.elapsed / t.duration, 1);
+            let e = t.easing(progress);
+            for (let k in t.targetProps) {
+                t.obj[k] = t.startProps[k] + (t.targetProps[k] - t.startProps[k]) * e;
+            }
+            if (t.onUpdate) t.onUpdate();
+            if (progress >= 1) {
+                if (t.onComplete) t.onComplete();
+                Tweens.splice(i, 1);
+            }
+        }
+    }
+    const Easing = {
+        Linear: t => t,
+        OutQuad: t => t * (2 - t),
+        InQuad: t => t * t,
+        OutElastic: t => t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1
+    };
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    /** --- UI TOGGLE LOGIC --- **/
+    let namesVisible = true;
+    const toggleBtn = document.getElementById('toggle-names-btn');
+    
+    toggleBtn.addEventListener('click', () => {
+        namesVisible = !namesVisible;
+        if(namesVisible) toggleBtn.classList.remove('off');
+        else toggleBtn.classList.add('off');
+        units.forEach(u => {
+            if (!u.hpForceVisible) u.uiEl.style.opacity = namesVisible ? '1' : '0';
+        });
+    });
+
+    /** --- 3D ENGINE SETUP & BOARD SPECS --- **/
+    const TILE_SCALE = 1.4;
+    const BOARD_SIZE = 8;
+    const CENTER_POS = ((BOARD_SIZE - 1) / 2) * TILE_SCALE;
+
+    const canvas = document.getElementById('game-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050508);
+    scene.fog = new THREE.Fog(0x050508, 15, 60);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 150);
+    
+    let targetCamTheta = Math.PI / 4;
+    let targetCamPhi = Math.PI / 3;
+    let targetCamRadius = 24;
+    
+    let camTheta = targetCamTheta;
+    let camPhi = targetCamPhi;
+    let camRadius = targetCamRadius;
+    let cameraShake = { x: 0, y: 0, z: 0, intensity: 0 };
+    
+    const ambientLight = new THREE.AmbientLight(0x202030, 2.0);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfffaed, 3.0);
+    dirLight.position.set(CENTER_POS + 5, 20, CENTER_POS + 5);
+    dirLight.castShadow = true;
+    dirLight.shadow.camera.left = -15;
+    dirLight.shadow.camera.right = 15;
+    dirLight.shadow.camera.top = 15;
+    dirLight.shadow.camera.bottom = -15;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    scene.add(dirLight);
+
+    class ParticleSystem {
+        constructor() {
+            this.particles = [];
+            const geo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            this.meshTemplate = new THREE.Mesh(geo, mat);
+        }
+        spawnBurst(pos, colorHex, count, speed = 1) {
+            for(let i=0; i<count; i++) {
+                const p = this.meshTemplate.clone();
+                p.material = p.material.clone();
+                p.material.color.setHex(colorHex);
+                p.position.copy(pos);
+                const vx = (Math.random() - 0.5) * speed;
+                const vy = (Math.random() * 0.5 + 0.5) * speed;
+                const vz = (Math.random() - 0.5) * speed;
+                scene.add(p);
+                this.particles.push({ mesh: p, vel: new THREE.Vector3(vx, vy, vz), life: 1.0 });
+            }
+        }
+        update(dt) {
+            for(let i = this.particles.length-1; i>=0; i--) {
+                let p = this.particles[i];
+                p.life -= dt * 2;
+                p.vel.y -= dt * 3;
+                p.mesh.position.addScaledVector(p.vel, dt);
+                p.mesh.scale.setScalar(p.life);
+                if(p.life <= 0) {
+                    scene.remove(p.mesh);
+                    this.particles.splice(i, 1);
+                }
+            }
+        }
+    }
+    const vfx = new ParticleSystem();
+
+    function triggerShake(intensity) { cameraShake.intensity = intensity; }
+    
+    function spawnFloatingText(unit, text, color, emptyTargetPos = null) {
+        const el = document.createElement('div');
+        el.innerText = text;
+        el.style.position = 'absolute';
+        el.style.color = color;
+        el.style.fontWeight = '900';
+        el.style.fontSize = '24px';
+        el.style.textShadow = '0px 2px 4px black, 0px 0px 8px rgba(0,0,0,0.8)';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '100';
+        el.style.transition = 'all 1s ease-out';
+        
+        let pos = emptyTargetPos ? emptyTargetPos.clone() : unit.mesh.position.clone();
+        pos.y += 2.5;
+        pos.project(camera);
+        const x = (pos.x * .5 + .5) * window.innerWidth;
+        const y = (pos.y * -.5 + .5) * window.innerHeight;
+        
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        el.style.transform = 'translate(-50%, -50%) scale(0.5)';
+        el.style.opacity = '1';
+        document.body.appendChild(el);
+        
+        setTimeout(() => { el.style.transform = 'translate(-50%, -150%) scale(1.2)'; }, 10);
+        setTimeout(() => { el.style.opacity = '0'; }, 500);
+        setTimeout(() => { el.remove(); }, 1050);
+    }
+
+    /** --- BOARD & UNITS --- **/
+    const tiles = [];
+    const tileMeshes = [];
+    let units = [];
+
+    const matTileDark = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.9, metalness: 0.1 });
+    const matTileLight = new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.9, metalness: 0.1 });
+    const matTileHighlight = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5, transparent: true, opacity: 0.5 });
+    const matTileAttack = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5, transparent: true, opacity: 0.5 });
+    const matTileAoE = new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.5, transparent: true, opacity: 0.6 });
+    const matTileFacing = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5, transparent: true, opacity: 0.6 });
+    const matTileActive = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, emissive: 0xa16207, emissiveIntensity: 0.5 });
+
+    const boardGroup = new THREE.Group();
+    const tileGeo = new THREE.BoxGeometry(0.96 * TILE_SCALE, 0.2, 0.96 * TILE_SCALE);
+    for (let x = 0; x < BOARD_SIZE; x++) {
+        tiles[x] = [];
+        for (let z = 0; z < BOARD_SIZE; z++) {
+            const isLight = (x + z) % 2 === 0;
+            const mesh = new THREE.Mesh(tileGeo, isLight ? matTileLight : matTileDark);
+            mesh.position.set(x * TILE_SCALE, 0, z * TILE_SCALE);
+            mesh.receiveShadow = true;
+            mesh.userData = { x, z, originalMat: mesh.material };
+            boardGroup.add(mesh);
+            tiles[x][z] = { mesh, unit: null, type: 'normal' };
+            tileMeshes.push(mesh);
+        }
+    }
+    scene.add(boardGroup);
+
+    class Unit {
+        constructor(config, x, z) {
+            this.id = Math.random().toString(36).substr(2, 9);
+            this.name = config.name;
+            this.team = config.team; 
+            this.maxHp = config.hp;
+            this.hp = config.hp;
+            this.atk = config.atk;
+            this.moveRange = config.moveRange;
+            this.dashRange = config.dashRange;
+            this.atkRange = config.atkRange;
+            this.actions = config.actions;
+            this.accuracy = config.accuracy;
+            this.x = x;
+            this.z = z;
+            this.isDefending = false;
+            this.hpForceVisible = false;
+
+            this.parts = {};
+            this.mesh = this.buildRiggedHumanoid(config.visual);
+            this.mesh.position.set(x * TILE_SCALE, 0.2, z * TILE_SCALE);
+            scene.add(this.mesh);
+            
+            const shieldGeo = new THREE.SphereGeometry(0.6, 16, 16);
+            const shieldMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.3, wireframe: true });
+            this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+            this.shieldMesh.position.y = 0.8;
+            this.shieldMesh.visible = false;
+            this.mesh.add(this.shieldMesh);
+
+            this.uiEl = document.createElement('div');
+            this.uiEl.className = 'hp-bar';
+            this.uiEl.innerHTML = `<div>${this.name}</div><div class="hp-fill" style="width:100%"></div>`;
+            this.uiEl.style.opacity = namesVisible ? '1' : '0';
+            document.getElementById('hp-container').appendChild(this.uiEl);
+
+            tiles[x][z].unit = this;
+            this.updateUIPosition();
+        }
+
+        buildRiggedHumanoid(vis) {
+            const group = new THREE.Group();
+            const matBody = new THREE.MeshStandardMaterial({ color: vis.color, roughness: 0.6, metalness: 0.2 });
+            const matSkin = new THREE.MeshStandardMaterial({ color: 0xffdcb3, roughness: 0.4 });
+            const matDark = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+            const matMetal = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
+
+            const torsoGeo = new THREE.BoxGeometry(0.5, 0.7, 0.35);
+            const torso = new THREE.Mesh(torsoGeo, matBody);
+            torso.position.y = 0.85;
+            torso.castShadow = true;
+            group.add(torso);
+            this.parts.torso = torso;
+
+            const legGeo = new THREE.BoxGeometry(0.18, 0.4, 0.18);
+            const legR = new THREE.Mesh(legGeo, matBody);
+            legR.position.set(0.15, -0.55, 0);
+            legR.castShadow = true;
+            torso.add(legR);
+            this.parts.legR = legR;
+
+            const legL = new THREE.Mesh(legGeo, matBody);
+            legL.position.set(-0.15, -0.55, 0);
+            legL.castShadow = true;
+            torso.add(legL);
+            this.parts.legL = legL;
+
+            const headGeo = new THREE.BoxGeometry(0.35, 0.35, 0.35);
+            const head = new THREE.Mesh(headGeo, this.team === 'enemy' ? matDark : matSkin);
+            head.position.y = 0.6;
+            head.castShadow = true;
+            torso.add(head);
+            this.parts.head = head;
+            
+            const visorGeo = new THREE.BoxGeometry(0.36, 0.1, 0.1);
+            const matEye = new THREE.MeshStandardMaterial({ color: this.team === 'enemy' ? 0xff0000 : 0xffffff, emissive: this.team === 'enemy' ? 0xff0000 : 0x000000 });
+            const visor = new THREE.Mesh(visorGeo, matEye);
+            visor.position.set(0, 0, 0.15);
+            head.add(visor);
+
+            const armRGroup = new THREE.Group();
+            armRGroup.position.set(0.35, 0.25, 0); 
+            const armGeo = new THREE.BoxGeometry(0.2, 0.5, 0.2);
+            const armR = new THREE.Mesh(armGeo, matBody);
+            armR.position.y = -0.25; 
+            armR.castShadow = true;
+            armRGroup.add(armR);
+            torso.add(armRGroup);
+            this.parts.armR = armRGroup;
+
+            const armLGroup = new THREE.Group();
+            armLGroup.position.set(-0.35, 0.25, 0); 
+            const armL = new THREE.Mesh(armGeo, matBody);
+            armL.position.y = -0.25;
+            armL.castShadow = true;
+            armLGroup.add(armL);
+            torso.add(armLGroup);
+            this.parts.armL = armLGroup;
+
+            if (this.name === 'Vanguard' || this.name === 'Commander' || this.team === 'enemy') {
+                const swordGeo = new THREE.BoxGeometry(0.1, 0.8, 0.2);
+                const sword = new THREE.Mesh(swordGeo, matMetal);
+                sword.position.set(0, -0.4, 0.2);
+                sword.rotation.x = Math.PI / 2;
+                armRGroup.add(sword);
+                if(this.name === 'Vanguard' || this.name === 'Commander') {
+                    const shieldBoxGeo = new THREE.BoxGeometry(0.1, 0.8, 0.6);
+                    const shieldBox = new THREE.Mesh(shieldBoxGeo, matBody);
+                    shieldBox.position.set(-0.2, -0.2, 0);
+                    armLGroup.add(shieldBox);
+                }
+            } else if (this.name === 'Mage') {
+                const staffGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.2);
+                const staffMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 });
+                const staff = new THREE.Mesh(staffGeo, staffMat);
+                staff.position.set(0, -0.2, 0.2);
+                staff.rotation.x = Math.PI / 2;
+                const gemGeo = new THREE.SphereGeometry(0.15);
+                const gemMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, emissive: 0x0ea5e9 });
+                const gem = new THREE.Mesh(gemGeo, gemMat);
+                gem.position.y = 0.6;
+                staff.add(gem);
+                armRGroup.add(staff);
+            } else if (this.name === 'Archer') {
+                const bowGeo = new THREE.BoxGeometry(0.1, 1.0, 0.1);
+                const bowMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
+                const bow = new THREE.Mesh(bowGeo, bowMat);
+                bow.position.set(0, -0.2, 0.2);
+                armLGroup.add(bow);
+            } else if (this.name === 'Assassin') {
+                const daggerGeo = new THREE.BoxGeometry(0.05, 0.4, 0.1);
+                const dagger1 = new THREE.Mesh(daggerGeo, matMetal);
+                dagger1.position.set(0, -0.2, 0.2);
+                dagger1.rotation.x = Math.PI / 2;
+                armRGroup.add(dagger1);
+                const dagger2 = dagger1.clone();
+                armLGroup.add(dagger2);
+            }
+            group.userData.unitMesh = true; 
+            return group;
+        }
+
+        updateUIPosition() {
+            const pos = this.mesh.position.clone();
+            pos.y += 1.8;
+            pos.project(camera);
+            const x = (pos.x * .5 + .5) * window.innerWidth;
+            const y = (pos.y * -.5 + .5) * window.innerHeight;
+            this.uiEl.style.left = `${x}px`;
+            this.uiEl.style.top = `${y}px`;
+        }
+
+        setDefending(val) {
+            this.isDefending = val;
+            this.shieldMesh.visible = val;
+        }
+
+        takeDamage(amount) {
+            if(this.isDefending) {
+                amount = Math.max(1, Math.floor(amount / 2));
+                vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0x3b82f6, 10, 2);
+            }
+            this.hp = Math.max(0, this.hp - amount);
+            this.uiEl.querySelector('.hp-fill').style.width = `${(this.hp / this.maxHp) * 100}%`;
+            
+            this.hpForceVisible = true;
+            this.uiEl.style.opacity = '1';
+            if (this.hpForceTimeout) clearTimeout(this.hpForceTimeout);
+            this.hpForceTimeout = setTimeout(() => {
+                this.hpForceVisible = false;
+                if (!namesVisible) this.uiEl.style.opacity = '0';
+            }, 2000);
+
+            vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0xe11d48, 20, 3);
+            triggerShake(0.2);
+
+            const bodyMat = this.parts.torso.material;
+            const ogColor = bodyMat.color.getHex();
+            bodyMat.color.setHex(0xff0000);
+            setTimeout(() => { if(this.hp>0 && this.mesh) bodyMat.color.setHex(ogColor); }, 150);
+
+            if (this.hp <= 0) this.die();
+        }
+
+        die() {
+            tiles[this.x][this.z].unit = null;
+            this.uiEl.style.opacity = '0';
+            tween(this.parts.torso.rotation, {x: -Math.PI/2}, 0.4, Easing.OutQuad);
+            
+            setTimeout(() => {
+                vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.2, 0)), 0xff0000, 60, 6);
+                tween(this.mesh.position, {y: -2}, 0.5, Easing.InQuad, null, () => {
+                    scene.remove(this.mesh);
+                    this.uiEl.remove();
+                    units = units.filter(u => u !== this);
+                    triggerShake(0.4);
+                    checkWinCondition();
+                });
+            }, 400);
+        }
+
+        lookAtTile(tx, tz) {
+            const dx = (tx * TILE_SCALE) - this.mesh.position.x;
+            const dz = (tz * TILE_SCALE) - this.mesh.position.z;
+            if(dx === 0 && dz === 0) return; 
+            
+            const angle = Math.atan2(dx, dz);
+            let currentY = this.mesh.rotation.y;
+            let diff = angle - currentY;
+            while(diff < -Math.PI) diff += Math.PI * 2;
+            while(diff > Math.PI) diff -= Math.PI * 2;
+            tween(this.mesh.rotation, { y: currentY + diff }, 0.2, Easing.OutQuad);
+        }
+    }
+
+    const UNIT_TYPES = {
+        commander: { name: 'Commander', team: 'player', hp: 12, atk: 4, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.95, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0xfacc15 } },
+        vanguard: { name: 'Vanguard', team: 'player', hp: 15, atk: 3, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.90, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x3b82f6 } },
+        assassin: { name: 'Assassin', team: 'player', hp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x8b5cf6 } },
+        archer: { name: 'Archer', team: 'player', hp: 8, atk: 3, moveRange: 2, dashRange: 4, atkRange: 4, accuracy: 0.92, actions: ['move', 'dash', 'attack', 'defend', 'wild'], visual: { color: 0x10b981 } },
+        mage: { name: 'Mage', team: 'player', hp: 6, atk: 4, moveRange: 2, dashRange: 4, atkRange: 3, accuracy: 0.85, actions: ['move', 'dash', 'magic', 'defend', 'wild'], visual: { color: 0x0ea5e9 } },
+        grunt: { name: 'Corrupt', team: 'enemy', hp: 6, atk: 2, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.80, actions: ['move', 'attack'], visual: { color: 0x991b1b } },
+        brute: { name: 'Demon', team: 'enemy', hp: 12, atk: 4, moveRange: 2, dashRange: 3, atkRange: 1, accuracy: 0.75, actions: ['move', 'attack'], visual: { color: 0x7f1d1d } }
+    };
+
+    function initBoardUnits() {
+        units.forEach(u => {
+            scene.remove(u.mesh);
+            if(u.uiEl) u.uiEl.remove();
+        });
+        units = [];
+        for(let x=0; x<BOARD_SIZE; x++) {
+            for(let z=0; z<BOARD_SIZE; z++) tiles[x][z].unit = null;
+        }
+
+        units.push(new Unit(UNIT_TYPES.commander, 3, 7));
+        units.push(new Unit(UNIT_TYPES.vanguard, 2, 6));
+        units.push(new Unit(UNIT_TYPES.vanguard, 4, 6));
+        units.push(new Unit(UNIT_TYPES.assassin, 1, 7));
+        units.push(new Unit(UNIT_TYPES.archer, 5, 7));
+        units.push(new Unit(UNIT_TYPES.mage, 4, 7));
+
+        units.push(new Unit(UNIT_TYPES.brute, 3, 0));
+        units.push(new Unit(UNIT_TYPES.brute, 4, 0));
+        units.push(new Unit(UNIT_TYPES.grunt, 1, 1));
+        units.push(new Unit(UNIT_TYPES.grunt, 6, 1));
+        units.push(new Unit(UNIT_TYPES.grunt, 2, 2));
+    }
+
+    /** --- GAME STATE & TURN LOGIC --- **/
+    let state = 'IDLE'; 
+    let ap = 0;
+    let diceRolled = [];
+    let activeUnit = null;
+    let selectedDieIndex = -1;
+    let highlightMeshes = [];
+    
+    let playerTurnOrder = [];
+    let enemyTurnOrder = [];
+    let playerTurnIndex = 0;
+    let enemyTurnIndex = 0;
+
+    initBoardUnits();
+    playerTurnOrder = shuffleArray(units.filter(u => u.team === 'player'));
+    enemyTurnOrder = shuffleArray(units.filter(u => u.team === 'enemy'));
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const toastEl = document.getElementById('toast');
+    const apContainer = document.getElementById('ap-container');
+    const diceContainer = document.getElementById('dice-container');
+    const unitInfo = document.getElementById('unit-info');
+    const btnEndTurn = document.getElementById('btn-end-turn');
+
+    function updateAPUI() {
+        apContainer.innerHTML = '';
+        for(let i=0; i<3; i++) {
+            if(i < ap) apContainer.innerHTML += `<div class="w-4 h-4 bg-gradient-to-b from-yellow-300 to-yellow-600 rounded-full shadow-[0_0_12px_#facc15] border border-yellow-200"></div>`;
+            else apContainer.innerHTML += `<div class="w-4 h-4 bg-gray-700 rounded-full shadow-inner border border-gray-600"></div>`;
+        }
+    }
+
+    function rollDice() {
+        diceRolled = [];
+        diceContainer.innerHTML = '';
+        
+        const movActs = activeUnit.actions.filter(a => a === 'move' || a === 'dash');
+        const offActs = activeUnit.actions.filter(a => a === 'attack' || a === 'magic');
+        const utilActs = activeUnit.actions.filter(a => a === 'defend' || a === 'wild');
+        
+        const generatedFaces = [];
+        if(movActs.length > 0) generatedFaces.push(movActs[Math.floor(Math.random() * movActs.length)]);
+        if(offActs.length > 0) generatedFaces.push(offActs[Math.floor(Math.random() * offActs.length)]);
+        if(utilActs.length > 0) generatedFaces.push(utilActs[Math.floor(Math.random() * utilActs.length)]);
+        
+        while(generatedFaces.length < 3) {
+            generatedFaces.push(activeUnit.actions[Math.floor(Math.random() * activeUnit.actions.length)]);
+        }
+        
+        shuffleArray(generatedFaces);
+        
+        for(let i=0; i<3; i++) {
+            const d = ALL_DICE_FACES[generatedFaces[i]];
+            diceRolled.push({ ...d, used: false });
+            
+            const btn = document.createElement('button');
+            btn.className = `die-btn rolling`;
+            btn.innerHTML = `<span class="die-icon">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-gray-200 relative z-10">${d.name}</span>`;
+            btn.onclick = () => selectDie(i, btn);
+            diceContainer.appendChild(btn);
+            
+            setTimeout(() => btn.classList.remove('rolling'), 500);
+        }
+    }
+
+    function selectDie(index, btnEl) {
+        if (state !== 'PLAYER_TURN' || diceRolled[index].used) return;
+        
+        selectedDieIndex = index;
+        Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+        btnEl.classList.add('selected');
+        
+        const die = diceRolled[index];
+        if(die.id === 'defend') {
+            executeActionLocally({type: 'defend'});
+            return;
+        }
+        showValidTargets(die.id);
+    }
+
+    function clearHighlights() {
+        tileMeshes.forEach(m => {
+            if (activeUnit && m.userData.x === activeUnit.x && m.userData.z === activeUnit.z) {
+                m.material = matTileActive;
+            } else {
+                m.material = m.userData.originalMat;
+            }
+        });
+        highlightMeshes = [];
+    }
+
+    function showValidTargets(actionType) {
+        clearHighlights();
+        const isMove = actionType === 'move' || actionType === 'wild';
+        const isDash = actionType === 'dash' || actionType === 'wild';
+        const isAttack = actionType === 'attack' || actionType === 'magic' || actionType === 'wild';
+        
+        let maxRange = 0;
+        if (isDash) maxRange = Math.max(maxRange, activeUnit.dashRange);
+        if (isMove) maxRange = Math.max(maxRange, activeUnit.moveRange);
+
+        let distMap = {};
+        for(let ix = 0; ix < BOARD_SIZE; ix++) {
+            distMap[ix] = {};
+            for(let iz = 0; iz < BOARD_SIZE; iz++) distMap[ix][iz] = 999;
+        }
+        
+        if (isMove || isDash) {
+            let queue = [{x: activeUnit.x, z: activeUnit.z, d: 0}];
+            distMap[activeUnit.x][activeUnit.z] = 0;
+            
+            while(queue.length > 0) {
+                let {x, z, d} = queue.shift();
+                if (d >= maxRange) continue;
+                
+                const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+                for (let i = 0; i < dirs.length; i++) {
+                    let nx = x + dirs[i][0];
+                    let nz = z + dirs[i][1];
+                    if (nx >= 0 && nx < BOARD_SIZE && nz >= 0 && nz < BOARD_SIZE) {
+                        let tile = tiles[nx][nz];
+                        let isEnemy = tile.unit && tile.unit.team !== activeUnit.team;
+                        let cost = d + 1;
+                        if (!isEnemy && cost < distMap[nx][nz]) {
+                            distMap[nx][nz] = cost;
+                            queue.push({x: nx, z: nz, d: cost});
+                        }
+                    }
+                }
+            }
+        }
+
+        for (let x = 0; x < BOARD_SIZE; x++) {
+            for (let z = 0; z < BOARD_SIZE; z++) {
+                const manhattanDist = Math.abs(x - activeUnit.x) + Math.abs(z - activeUnit.z);
+                const pathDist = distMap[x][z];
+                const tile = tiles[x][z];
+                let highlighted = false;
+
+                if (isDash && pathDist <= activeUnit.dashRange && pathDist > 0 && !tile.unit) {
+                    tile.mesh.material = matTileHighlight;
+                    highlightMeshes.push({x, z, type: 'dash'});
+                    highlighted = true;
+                } else if (!highlighted && isMove && pathDist <= activeUnit.moveRange && pathDist > 0 && !tile.unit) {
+                    tile.mesh.material = matTileHighlight;
+                    highlightMeshes.push({x, z, type: 'move'});
+                }
+                
+                const canTarget = !tile.unit || tile.unit.team !== activeUnit.team;
+                if (isAttack && manhattanDist <= activeUnit.atkRange && manhattanDist > 0 && canTarget) {
+                    if (actionType === 'magic' && activeUnit.name !== 'Mage' && actionType !== 'wild') continue;
+                    if (actionType === 'attack' && activeUnit.name === 'Mage' && actionType !== 'wild') continue;
+
+                    tile.mesh.material = matTileAttack;
+                    highlightMeshes.push({x, z, type: 'attack'});
+                }
+            }
+        }
+    }
+
+    /** --- CAMERA & POINTER HANDLING --- **/
+    const activePointers = {};
+    let initialPinchDist = -1;
+    let initialDownX = 0;
+    let initialDownY = 0;
+    let isDraggingCam = false;
+
+    window.addEventListener('pointerdown', (e) => {
+        if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return;
+        activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+        if (Object.keys(activePointers).length === 1) {
+            initialDownX = e.clientX;
+            initialDownY = e.clientY;
+            isDraggingCam = false;
+        }
+    });
+
+    window.addEventListener('pointermove', (e) => {
+        if(activePointers[e.pointerId]) {
+            const prev = activePointers[e.pointerId];
+            const deltaX = e.clientX - prev.x;
+            const deltaY = e.clientY - prev.y;
+            activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+            
+            const pointerIds = Object.keys(activePointers);
+            if (pointerIds.length === 1 && e.buttons === 1 && !e.target.closest('#ui-layer')) {
+                if(Math.hypot(e.clientX - initialDownX, e.clientY - initialDownY) > 5) isDraggingCam = true;
+                targetCamTheta -= deltaX * 0.01;
+                targetCamPhi -= deltaY * 0.01;
+                targetCamPhi = Math.max(0.1, Math.min(Math.PI/2 - 0.05, targetCamPhi));
+                return;
+            } else if (pointerIds.length === 2 && !e.target.closest('#ui-layer')) {
+                isDraggingCam = true;
+                const p1 = activePointers[pointerIds[0]];
+                const p2 = activePointers[pointerIds[1]];
+                const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                if (initialPinchDist > 0) {
+                    const pinchDelta = initialPinchDist - dist;
+                    targetCamRadius += pinchDelta * 0.05;
+                    targetCamRadius = Math.max(8, Math.min(45, targetCamRadius));
+                }
+                initialPinchDist = dist;
+                return;
+            }
+        }
+
+        if(state !== 'PLAYER_TURN' || selectedDieIndex === -1 || activeUnit.name !== 'Mage' || isDraggingCam) return;
+        const die = diceRolled[selectedDieIndex];
+        if(die.id !== 'magic' && die.id !== 'wild') return;
+
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        highlightMeshes.forEach(h => {
+            if (h.type === 'attack') tiles[h.x][h.z].mesh.material = matTileAttack;
+            else tiles[h.x][h.z].mesh.material = matTileHighlight;
+        });
+
+        const tileIntersects = raycaster.intersectObjects(tileMeshes);
+        if (tileIntersects.length > 0) {
+            const {x, z} = tileIntersects[0].object.userData;
+            const targetHighlight = highlightMeshes.find(h => h.x === x && h.z === z && h.type === 'attack');
+            if (targetHighlight) {
+                const aoe = [{x,z}, {x:x+1,z}, {x:x-1,z}, {x,z:z+1}, {x,z:z-1}];
+                aoe.forEach(pos => {
+                    if(pos.x >= 0 && pos.x < BOARD_SIZE && pos.z >= 0 && pos.z < BOARD_SIZE) {
+                        tiles[pos.x][pos.z].mesh.material = matTileAoE;
+                    }
+                });
+                tiles[x][z].mesh.material = matTileAttack;
+            }
+        }
+    });
+
+    window.addEventListener('pointerup', (e) => {
+        delete activePointers[e.pointerId];
+        if (Object.keys(activePointers).length < 2) initialPinchDist = -1;
+        if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return;
+
+        const totalDragDist = Math.hypot(e.clientX - initialDownX, e.clientY - initialDownY);
+        if (totalDragDist > 10 || isDraggingCam) {
+            isDraggingCam = false;
+            return;
+        }
+
+        if(state !== 'PLAYER_TURN' && state !== 'CHOOSE_FACING') return;
+
+        // Multiplayer Turn restriction:
+        // P1 plays Player units, P2 plays Enemy units (or vice versa depending on setup).
+        // By default in Bloodbound, P1 controls Player army, P2 controls Enemy army if online!
+        if (isMultiplayerActive) {
+            const isMyTeamTurn = (playerNumber === 1 && activeUnit.team === 'player') || (playerNumber === 2 && activeUnit.team === 'enemy');
+            if (!isMyTeamTurn && state === 'PLAYER_TURN') {
+                showToast("Not your turn / army!", '#ef4444');
+                return;
+            }
+        }
+
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        if(state === 'CHOOSE_FACING') {
+            const tileIntersects = raycaster.intersectObjects(tileMeshes);
+            if (tileIntersects.length > 0) {
+                const {x, z} = tileIntersects[0].object.userData;
+                const highlight = highlightMeshes.find(h => h.x === x && h.z === z && h.type === 'face');
+                if (highlight) {
+                    activeUnit.lookAtTile(x, z);
+                    broadcastEvent('SET_FACING', { unitId: activeUnit.id, x, z });
+                    endPlayerTurnPhase();
+                }
+            }
+            return;
+        }
+
+        const unitMeshes = units.map(u => u.parts.torso);
+        const unitIntersects = raycaster.intersectObjects(unitMeshes, true);
+        
+        if (unitIntersects.length > 0) {
+            let clickedMesh = unitIntersects[0].object;
+            while(clickedMesh.parent && !clickedMesh.userData.unitMesh) {
+                clickedMesh = clickedMesh.parent;
+            }
+            const unit = units.find(u => u.mesh === clickedMesh);
+            if (unit && unit.team !== activeUnit.team && selectedDieIndex !== -1) {
+                 const hl = highlightMeshes.find(h => h.x === unit.x && h.z === unit.z && h.type === 'attack');
+                 if(hl) { executeActionLocally(hl); return; }
+            }
+        }
+
+        const tileIntersects = raycaster.intersectObjects(tileMeshes);
+        if (tileIntersects.length > 0) {
+            const tileMesh = tileIntersects[0].object;
+            const {x, z} = tileMesh.userData;
+            const highlight = highlightMeshes.find(h => h.x === x && h.z === z);
+            if (highlight && selectedDieIndex !== -1) {
+                executeActionLocally(highlight);
+            } else {
+                clearHighlights();
+                Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+                selectedDieIndex = -1;
+            }
+        }
+    });
+
+    window.addEventListener('pointercancel', (e) => {
+        delete activePointers[e.pointerId];
+        initialPinchDist = -1;
+        isDraggingCam = false;
+    });
+
+    window.addEventListener('wheel', (e) => {
+        if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return;
+        targetCamRadius += e.deltaY * 0.02;
+        targetCamRadius = Math.max(8, Math.min(45, targetCamRadius));
+    });
+
+    /** --- COMBAT & ACTION EXECUTION --- **/
+    function calculateHit(attacker, target, baseDamage) {
+        const targetForward = new THREE.Vector3(Math.sin(target.mesh.rotation.y), 0, Math.cos(target.mesh.rotation.y)).normalize();
+        const toAttacker = new THREE.Vector3(attacker.x - target.x, 0, attacker.z - target.z).normalize();
+        if(toAttacker.lengthSq() < 0.01) toAttacker.copy(targetForward).negate();
+        
+        const dot = targetForward.dot(toAttacker);
+        let hitChance = attacker.accuracy;
+        let damageMult = 1.0;
+        
+        if (dot > 0.5) { hitChance = Math.min(attacker.accuracy * 0.85, 1.0); damageMult = 0.95; }
+        else if (dot < -0.5) { hitChance = 1.0; damageMult = 1.15; }
+        else { hitChance = Math.min(attacker.accuracy * 0.90, 1.0); damageMult = 1.05; }
+        
+        const isHit = Math.random() <= hitChance;
+        const finalDamage = Math.max(1, Math.round(baseDamage * damageMult));
+        return { isHit, finalDamage };
+    }
+
+    function executeActionLocally(targetInfo) {
+        // Broadcast action before animation if multiplayer
+        broadcastEvent('EXECUTE_ACTION', {
+            unitId: activeUnit.id,
+            dieIndex: selectedDieIndex,
+            target: targetInfo
+        });
+        performActionAnimation(activeUnit, selectedDieIndex, targetInfo);
+    }
+
+    function receiveRemoteAction(data) {
+        const remoteUnit = units.find(u => u.id === data.unitId);
+        if (remoteUnit) {
+            performActionAnimation(remoteUnit, data.dieIndex, data.target);
+        }
+    }
+
+    async function performActionAnimation(unit, dieIdx, targetInfo) {
+        state = 'ACTION_ANIMATING';
+        clearHighlights();
+        
+        const {x, z, type} = targetInfo;
+        const die = diceRolled[dieIdx] || diceRolled[0];
+        
+        if(die) {
+            die.used = true;
+            if(diceContainer.children[dieIdx]) {
+                diceContainer.children[dieIdx].classList.add('used');
+                diceContainer.children[dieIdx].classList.remove('selected');
+            }
+        }
+        ap--;
+        updateAPUI();
+
+        if (type === 'defend') {
+            unit.setDefending(true);
+            await tweenAsync(unit.mesh.scale, {y: 1.2}, 0.1, Easing.OutQuad);
+            await tweenAsync(unit.mesh.scale, {y: 1.0}, 0.1, Easing.InQuad);
+            finishAction();
+            return;
+        }
+
+        unit.lookAtTile(x, z);
+
+        if (type === 'move' || type === 'dash') {
+            tiles[unit.x][unit.z].unit = null;
+            unit.x = x;
+            unit.z = z;
+            tiles[x][z].unit = unit;
+            clearHighlights();
+            
+            const speed = type === 'dash' ? 0.35 : 0.5; 
+            const steps = type === 'dash' ? 4 : 6;
+            const stepDur = speed / steps;
+            
+            tween(unit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, speed, Easing.Linear, () => unit.updateUIPosition());
+            
+            for(let i=0; i<steps; i++) {
+                let isRight = i % 2 === 0;
+                let legAngle = type === 'dash' ? 0.8 : 0.5;
+                tween(unit.parts.legR.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear);
+                tween(unit.parts.legL.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear);
+                tween(unit.parts.armR.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear);
+                tween(unit.parts.armL.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear);
+                await tweenAsync(unit.mesh.position, {y: 0.6}, stepDur/2, Easing.OutQuad);
+                await tweenAsync(unit.mesh.position, {y: 0.2}, stepDur/2, Easing.InQuad);
+            }
+
+            tween(unit.parts.legR.rotation, {x: 0}, 0.1);
+            tween(unit.parts.legL.rotation, {x: 0}, 0.1);
+            tween(unit.parts.armR.rotation, {x: 0}, 0.1);
+            tween(unit.parts.armL.rotation, {x: 0}, 0.1);
+            finishAction();
+        } 
+        else if (type === 'attack') {
+            const targetUnit = tiles[x][z].unit;
+            let dir = new THREE.Vector3(unit.x - x, 0, unit.z - z).normalize();
+            let startPos = { x: unit.mesh.position.x, z: unit.mesh.position.z };
+            let emptyTargetPos = new THREE.Vector3(x * TILE_SCALE, 0.2, z * TILE_SCALE);
+            let oldCamRadius = targetCamRadius;
+
+            if (unit.name === 'Archer') {
+                targetCamRadius = Math.max(14, targetCamRadius - 6);
+                await tweenAsync(unit.parts.armL.rotation, { x: -Math.PI/2, y: Math.PI/4 }, 0.3, Easing.OutQuad);
+                await tweenAsync(unit.parts.armR.rotation, { x: -Math.PI/2 }, 0.3, Easing.OutQuad);
+                
+                const arrowGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.7);
+                const arrowMat = new THREE.MeshStandardMaterial({color: 0xcccccc, metalness: 0.8});
+                const arrow = new THREE.Mesh(arrowGeo, arrowMat);
+                arrow.position.copy(unit.mesh.position).add(new THREE.Vector3(0, 1.2, 0));
+                arrow.lookAt(targetUnit ? targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)) : emptyTargetPos);
+                arrow.rotateX(Math.PI/2);
+                scene.add(arrow);
+
+                await tweenAsync(unit.parts.armR.position, { z: -0.3 }, 0.3);
+                tween(unit.parts.armR.position, { z: 0 }, 0.1);
+                tween(unit.parts.armR.rotation, { x: 0 }, 0.2);
+                tween(unit.parts.armL.rotation, { x: 0, y: 0 }, 0.3);
+                
+                await tweenAsync(arrow.position, {x: x * TILE_SCALE, z: z * TILE_SCALE}, 0.15, Easing.InQuad);
+                scene.remove(arrow);
+
+                if (targetUnit) {
+                    const { isHit, finalDamage } = calculateHit(unit, targetUnit, unit.atk);
+                    if(isHit) {
+                        targetUnit.takeDamage(finalDamage);
+                        spawnFloatingText(targetUnit, `-${finalDamage}`, '#ef4444');
+                    } else {
+                        spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
+                    }
+                }
+                targetCamRadius = oldCamRadius;
+                finishAction();
+            } else {
+                targetCamRadius = Math.max(12, targetCamRadius - 8);
+                let clashPos = { x: startPos.x - dir.x*(0.6 * TILE_SCALE), z: startPos.z - dir.z*(0.6 * TILE_SCALE) };
+                await tweenAsync(unit.mesh.position, clashPos, 0.2, Easing.OutQuad);
+
+                if (targetUnit) {
+                    for(let i=0; i<3; i++) {
+                        tween(unit.parts.armR.rotation, { x: -Math.PI/2 - 0.5 + Math.random()*0.5 }, 0.1);
+                        await tweenAsync(unit.mesh.position, {x: clashPos.x - dir.x*0.1, z: clashPos.z - dir.z*0.1}, 0.1);
+                        await tweenAsync(unit.mesh.position, {x: clashPos.x + dir.x*0.1, z: clashPos.z + dir.z*0.1}, 0.1);
+                    }
+                    await tweenAsync(unit.parts.armR.rotation, {x: -Math.PI}, 0.2, Easing.InQuad);
+                    await tweenAsync(unit.parts.armR.rotation, {x: 0}, 0.1, Easing.OutElastic);
+
+                    const { isHit, finalDamage } = calculateHit(unit, targetUnit, unit.atk);
+                    if(isHit) {
+                        targetUnit.takeDamage(finalDamage);
+                        spawnFloatingText(targetUnit, `-${finalDamage}`, '#ef4444');
+                    } else {
+                        spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
+                    }
+                }
+                targetCamRadius = oldCamRadius;
+                await tweenAsync(unit.mesh.position, { x: startPos.x, z: startPos.z }, 0.3, Easing.OutElastic);
+                finishAction();
+            }
+        }
+    }
+
+    function triggerFacingPhase() {
+        state = 'CHOOSE_FACING';
+        clearHighlights();
+        diceContainer.innerHTML = '';
+        
+        btnEndTurn.innerText = "Confirm Direction";
+        btnEndTurn.classList.add('facing-mode');
+        showToast('Choose Facing', '#10b981');
+        document.getElementById('unit-desc').innerText = "Select an adjacent tile to set unit facing.";
+
+        const dirs = [ {x:0,z:1}, {x:0,z:-1}, {x:1,z:0}, {x:-1,z:0} ];
+        dirs.forEach(d => {
+            let tx = activeUnit.x + d.x;
+            let tz = activeUnit.z + d.z;
+            if (tx >= 0 && tx < BOARD_SIZE && tz >= 0 && tz < BOARD_SIZE) {
+                tiles[tx][tz].mesh.material = matTileFacing;
+                highlightMeshes.push({x: tx, z: tz, type: 'face'});
+            }
+        });
+    }
+
+    function endPlayerTurnPhase() {
+        clearHighlights();
+        btnEndTurn.innerText = "End Turn";
+        btnEndTurn.classList.remove('facing-mode');
+        playerTurnIndex++;
+        
+        // Switch turn to Enemy / Player 2 team
+        const nextState = 'ENEMY_TURN';
+        broadcastEvent('END_TURN', { nextState });
+        switchTurnRemote(nextState);
+    }
+
+    function switchTurnRemote(nextState) {
+        clearHighlights();
+        if (nextState === 'ENEMY_TURN') {
+            startEnemyTurn();
+        } else {
+            startPlayerTurn();
+        }
+    }
+
+    function finishAction() {
+        if(checkWinCondition()) return;
+        if (ap <= 0 || diceRolled.every(d => d.used)) {
+            if(activeUnit.team === 'player' && (!isMultiplayerActive || playerNumber === 1)) {
+                triggerFacingPhase();
+            } else if(activeUnit.team === 'enemy' && (!isMultiplayerActive || playerNumber === 2)) {
+                enemyTurnIndex++;
+                startPlayerTurn();
+            } else {
+                // Remote unit finished turn
+                state = 'IDLE';
+            }
+        } else {
+            state = 'PLAYER_TURN';
+            selectedDieIndex = -1;
+        }
+    }
+
+    btnEndTurn.addEventListener('click', () => {
+        if(state === 'PLAYER_TURN') {
+            triggerFacingPhase();
+        } else if (state === 'CHOOSE_FACING') {
+            endPlayerTurnPhase();
+        }
+    });
+
+    function startPlayerTurn() {
+        if(checkWinCondition()) return;
+        state = 'PLAYER_TURN';
+        ap = 3;
+        btnEndTurn.innerText = "End Turn";
+        btnEndTurn.classList.remove('facing-mode');
+        
+        playerTurnOrder = playerTurnOrder.filter(u => units.includes(u));
+        if (playerTurnOrder.length === 0 || playerTurnIndex >= playerTurnOrder.length) {
+            let players = units.filter(u => u.team === 'player');
+            if (players.length === 0) return;
+            playerTurnOrder = shuffleArray([...players]);
+            playerTurnIndex = 0;
+        }
+        
+        activeUnit = playerTurnOrder[playerTurnIndex];
+        activeUnit.setDefending(false); 
+        clearHighlights();
+
+        document.getElementById('turn-indicator').innerText = (isMultiplayerActive && playerNumber === 2) ? "OPPONENT TURN" : (activeUnit.name.toUpperCase() + "'S TURN");
+        document.getElementById('unit-name').innerText = activeUnit.name;
+        document.getElementById('unit-desc').innerText = "Select an action.";
+        updateAPUI();
+        rollDice();
+    }
+
+    function startEnemyTurn() {
+        if(checkWinCondition()) return;
+        state = 'ENEMY_TURN';
+        ap = 3;
+        
+        enemyTurnOrder = enemyTurnOrder.filter(u => units.includes(u));
+        if (enemyTurnOrder.length === 0 || enemyTurnIndex >= enemyTurnOrder.length) {
+            let enemies = units.filter(u => u.team === 'enemy');
+            if (enemies.length === 0) return;
+            enemyTurnOrder = shuffleArray([...enemies]);
+            enemyTurnIndex = 0;
+        }
+        
+        activeUnit = enemyTurnOrder[enemyTurnIndex];
+        activeUnit.setDefending(false);
+        clearHighlights();
+        
+        document.getElementById('turn-indicator').innerText = (isMultiplayerActive && playerNumber === 1) ? "OPPONENT TURN" : "ENEMY / P2 TURN";
+        document.getElementById('unit-name').innerText = activeUnit.name;
+        document.getElementById('unit-desc').innerText = "Active unit ready.";
+        diceContainer.innerHTML = '';
+        updateAPUI();
+        rollDice();
+    }
+
+    function checkWinCondition() {
+        if(state === 'GAME_OVER') return true;
+        let p = units.filter(u => u.team === 'player');
+        let e = units.filter(u => u.team === 'enemy');
+        let comm = units.find(u => u.name === 'Commander');
+        
+        if (p.length === 0 || !comm) {
+            triggerGameOver(2); // P2 wins
+            return true;
+        }
+        if (e.length === 0) {
+            triggerGameOver(1); // P1 wins
+            return true;
+        }
+        return false;
+    }
+
+    function triggerGameOver(winnerNum) {
+        state = 'GAME_OVER';
+        const modal = document.getElementById('gameover-modal');
+        const title = document.getElementById('gameover-title');
+        const sub = document.getElementById('gameover-sub');
+        const icon = document.getElementById('gameover-icon');
+        const iconBg = document.getElementById('gameover-icon-bg');
+        modal.classList.remove('hidden');
+
+        if (winnerNum === playerNumber) {
+            title.textContent = 'VICTORY!';
+            title.className = 'text-2xl font-black text-emerald-400';
+            sub.textContent = 'You triumphed in tactical combat!';
+            icon.className = 'fa-solid fa-trophy';
+            iconBg.className = 'w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center text-4xl';
+        } else {
+            title.textContent = 'DEFEAT';
+            title.className = 'text-2xl font-black text-rose-500';
+            sub.textContent = 'Your forces were overwhelmed.';
+            icon.className = 'fa-solid fa-skull';
+            iconBg.className = 'w-20 h-20 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 mx-auto flex items-center justify-center text-4xl';
+        }
+    }
+
+    function resetGameForRematch() {
+        document.getElementById('gameover-modal').classList.add('hidden');
+        document.getElementById('rematch-status-box').classList.add('hidden');
+        initBoardUnits();
+        playerTurnOrder = shuffleArray(units.filter(u => u.team === 'player'));
+        enemyTurnOrder = shuffleArray(units.filter(u => u.team === 'enemy'));
+        playerTurnIndex = 0;
+        enemyTurnIndex = 0;
+        startPlayerTurn();
+    }
+
+    function leaveGame() {
+        broadcastEvent('PLAYER_LEFT', {});
+        if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel);
+        window.removeEventListener('storage', handleSimulatorStorage);
+
+        isMultiplayerActive = false;
+        document.getElementById('leave-game-btn').classList.add('hidden');
+        document.getElementById('gameover-modal').classList.add('hidden');
+        document.getElementById('lobby-modal').classList.add('hidden');
+        document.getElementById('room-badge').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
+        initBoardUnits();
+    }
+
+    /** --- MAIN ANIMATION & EVENT BINDINGS --- **/
+    const clock = new THREE.Clock();
+
+    function animate() {
+        requestAnimationFrame(animate);
+        let dt = clock.getDelta();
+
+        updateTweens(dt);
+        vfx.update(dt);
+        
+        camTheta += (targetCamTheta - camTheta) * 0.1;
+        camPhi += (targetCamPhi - camPhi) * 0.1;
+        camRadius += (targetCamRadius - camRadius) * 0.1;
+        
+        let targetX = CENTER_POS + camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+        let targetY = camRadius * Math.cos(camPhi);
+        let targetZ = CENTER_POS + camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+        
+        if (cameraShake.intensity > 0) {
+            camera.position.x = targetX + (Math.random() - 0.5) * cameraShake.intensity;
+            camera.position.y = targetY + (Math.random() - 0.5) * cameraShake.intensity;
+            camera.position.z = targetZ + (Math.random() - 0.5) * cameraShake.intensity;
+            cameraShake.intensity -= dt * 2;
+            if(cameraShake.intensity < 0) cameraShake.intensity = 0;
+        } else {
+            camera.position.set(targetX, targetY, targetZ);
+        }
+        camera.lookAt(CENTER_POS, 0, CENTER_POS);
+        
+        units.forEach(u => {
+            u.updateUIPosition();
+            if (state !== 'ACTION_ANIMATING' && u.parts && u.parts.torso) {
+                 u.parts.torso.position.y = 0.85 + Math.sin(clock.elapsedTime * 4 + u.mesh.position.x) * 0.03;
+                 u.parts.armR.rotation.z = Math.sin(clock.elapsedTime * 3) * 0.05;
+                 u.parts.armL.rotation.z = -Math.sin(clock.elapsedTime * 3) * 0.05;
+            }
+        });
+
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initSupabase();
+        startPlayerTurn();
+        animate();
+
+        // Main Menu UI Handlers
+        const playBtn = document.getElementById('play-btn');
+        const menuActions = document.getElementById('menu-actions');
+        const playSubmenu = document.getElementById('play-submenu');
+
+        playBtn.addEventListener('click', () => {
+            menuActions.classList.add('hidden');
+            playSubmenu.classList.remove('hidden');
+        });
+
+        document.getElementById('back-to-menu-btn').addEventListener('click', () => {
+            playSubmenu.classList.add('hidden');
+            menuActions.classList.remove('hidden');
+        });
+
+        document.getElementById('create-room-btn').addEventListener('click', () => {
+            playerNumber = 1;
+            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+            setupRealtimeChannel(code);
+            document.getElementById('lobby-code-display').textContent = code;
+            document.getElementById('lobby-modal').classList.remove('hidden');
+            document.getElementById('main-menu').classList.add('hidden');
+        });
+
+        document.getElementById('show-join-input-btn').addEventListener('click', () => {
+            document.getElementById('join-box').classList.toggle('hidden');
+        });
+
+        document.getElementById('confirm-join-btn').addEventListener('click', () => {
+            const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
+            if (codeInput.length !== 6) {
+                showToast('Please enter a valid 6-character room code.', '#ef4444');
+                return;
+            }
+            playerNumber = 2;
+            setupRealtimeChannel(codeInput);
+            document.getElementById('main-menu').classList.add('hidden');
+            showToast('Joined room successfully!', '#10b981');
+        });
+
+        document.getElementById('copy-code-btn').addEventListener('click', () => {
+            const code = document.getElementById('lobby-code-display').textContent;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code);
+            } else {
+                const temp = document.createElement("input");
+                temp.value = code;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand("copy");
+                document.body.removeChild(temp);
+            }
+            showToast('Room code copied: ' + code);
+        });
+
+        document.getElementById('cancel-lobby-btn').addEventListener('click', () => {
+            document.getElementById('lobby-modal').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+            if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel);
+        });
+
+        // Tutorial Modal
+        const tutorialModal = document.getElementById('tutorial-modal');
+        const openTutorial = () => tutorialModal.classList.remove('hidden');
+        const closeTutorial = () => tutorialModal.classList.add('hidden');
+        document.getElementById('tutorial-btn').addEventListener('click', openTutorial);
+        document.getElementById('menu-tutorial-btn').addEventListener('click', openTutorial);
+        document.getElementById('close-tutorial-btn').addEventListener('click', closeTutorial);
+        document.getElementById('tutorial-got-it-btn').addEventListener('click', closeTutorial);
+
+        // Leave & Rematch
+        document.getElementById('leave-game-btn').addEventListener('click', () => {
+            showConfirm('Are you sure you want to leave the match?', () => leaveGame());
+        });
+
+        document.getElementById('rematch-btn').addEventListener('click', () => {
+            rematchRequestedByMe = true;
+            broadcastEvent('REMATCH_REQUEST', {});
+            document.getElementById('rematch-status-box').classList.remove('hidden');
+            document.getElementById('rematch-status-box').textContent = 'Waiting for opponent to accept...';
+            if (rematchRequestedByOpponent) {
+                broadcastEvent('REMATCH_ACCEPT', {});
+                resetGameForRematch();
+            }
+        });
+
+        document.getElementById('quit-btn').addEventListener('click', () => leaveGame());
+
+        // Supabase Config Modal
+        const sbModal = document.getElementById('supabase-modal');
+        const openSbModal = () => {
+            document.getElementById('sb-url-input').value = localStorage.getItem('sb_url') || '';
+            document.getElementById('sb-key-input').value = localStorage.getItem('sb_key') || '';
+            sbModal.classList.remove('hidden');
+        };
+        document.getElementById('config-btn').addEventListener('click', openSbModal);
+        document.getElementById('supabase-config-link').addEventListener('click', openSbModal);
+        document.getElementById('close-supabase-btn').addEventListener('click', () => sbModal.classList.add('hidden'));
+
+        document.getElementById('save-sb-btn').addEventListener('click', () => {
+            const url = document.getElementById('sb-url-input').value.trim();
+            const key = document.getElementById('sb-key-input').value.trim();
+            localStorage.setItem('sb_url', url);
+            localStorage.setItem('sb_key', key);
+            initSupabase();
+            sbModal.classList.add('hidden');
+            showToast('Supabase credentials saved successfully.', '#10b981');
+        });
+    });
+</script>
 </body>
 </html>
 
