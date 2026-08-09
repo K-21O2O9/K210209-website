@@ -75,18 +75,18 @@
             <p class="text-gray-300 text-xs md:text-sm mb-6 tracking-[0.2em] uppercase font-bold">Realistic Ninja Parkour</p>
             
             <div class="bg-gray-900/80 border border-gray-700 rounded-2xl p-4 mb-8 inline-block text-left shadow-2xl w-full">
-                <h3 class="text-yellow-400 font-bold text-sm uppercase tracking-wider mb-3 border-b border-gray-700 pb-2 text-center">10 New Ultimate Combos</h3>
+                <h3 class="text-yellow-400 font-bold text-sm uppercase tracking-wider mb-3 border-b border-gray-700 pb-2 text-center">Ultimate Combos</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-white/90 text-[11px] font-bold tracking-wide">
                     <div><span class="text-purple-400 text-glow">VOID CRASH:</span> ↑ &rarr; ↓ &rarr; ↑ &rarr; ↓</div>
                     <div><span class="text-red-500 text-glow">HELLFIRE SPRINT:</span> ↓ (Gnd) &rarr; ↓ (Gnd) &rarr; →</div>
                     <div><span class="text-cyan-400 text-glow">OMEGA BURST:</span> → &rarr; → &rarr; →</div>
-                    <div><span class="text-green-400 text-glow">PLASMA GLIDE:</span> ↑ &rarr; ↑ &rarr; ↓ &rarr; →</div>
-                    <div><span class="text-yellow-400 text-glow">THUNDERBOLT:</span> → &rarr; ↑ &rarr; ↓ &rarr; →</div>
+                    <div><span class="text-green-400 text-glow">PLASMA GLIDE:</span> ↑ &rarr; ↑ &rarr; →</div>
+                    <div><span class="text-yellow-400 text-glow">THUNDERBOLT:</span> → &rarr; ↑ &rarr; →</div>
                     <div><span class="text-gray-400 text-glow">SHADOW STEP:</span> ↓ &rarr; → &rarr; ↓</div>
                     <div><span class="text-orange-500 text-glow">TITAN KICK:</span> Wall Hit &rarr; ↑ &rarr; ↓</div>
                     <div><span class="text-pink-400 text-glow">ASTRAL FLOAT:</span> → &rarr; ↑ &rarr; ↑</div>
                     <div><span class="text-amber-500 text-glow">DRAGON ASCENT:</span> ↓ (Gnd) &rarr; → &rarr; ↑</div>
-                    <div><span class="text-white text-glow">SUPERNOVA:</span> ↓ &rarr; ↑ &rarr; → &rarr; ↑</div>
+                    <div><span class="text-white text-glow">SUPERNOVA:</span> → &rarr; ↓ &rarr; ↑</div>
                 </div>
                 <div class="mt-4 pt-3 border-t border-gray-700 text-center">
                     <span class="text-red-400 font-bold text-xs">Warning:</span> Hitting obstacles or falling is fatal.
@@ -122,7 +122,7 @@
 
 <script>
 /**
- * HORIZON RUSH - LAG-FREE PROCEDURAL PHOTOREALISM ENGINE WITH 10 NEW UNIQUE COMBOS
+ * HORIZON RUSH - LAG-FREE PROCEDURAL PHOTOREALISM ENGINE WITH UNIQUE COMBOS
  */
 
 const AssetCache = {
@@ -464,7 +464,7 @@ class Player {
 
     recordMove(move) {
         this.moveHistory.push(move);
-        if(this.moveHistory.length > 8) this.moveHistory.shift(); // Increased to 8 to store longer combos
+        if(this.moveHistory.length > 8) this.moveHistory.shift(); 
     }
 
     update(dt, world) {
@@ -480,12 +480,11 @@ class Player {
         if (['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
             this.dashTimer -= dt; this.vy = 0; 
             
-            // Render specific trail colors based on combo state
             if (this.state === 'HELLFIRE') Particles.dashTrail(this.x, this.y, this.w, this.h, '#ef4444');
             else if (this.state === 'OMEGA') Particles.dashTrail(this.x, this.y, this.w, this.h, '#06b6d4');
             else if (this.state === 'PLASMA_GLIDE') Particles.dashTrail(this.x, this.y, this.w, this.h, '#22c55e');
             else if (this.state === 'THUNDERBOLT') Particles.dashTrail(this.x, this.y, this.w, this.h, '#eab308');
-            else Particles.dashTrail(this.x, this.y, this.w, this.h, '#0ea5e9'); // Default DASHING
+            else Particles.dashTrail(this.x, this.y, this.w, this.h, '#0ea5e9'); 
 
             if (this.dashTimer <= 0) this.setState(this.grounded ? 'RUNNING' : 'FALLING');
         } else {
@@ -496,7 +495,7 @@ class Player {
             let grav = CONFIG.gravity;
             if (this.state === 'DIVING') grav = CONFIG.diveGravity;
             if (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) grav = CONFIG.meteorGravity;
-            if (this.state === 'ASTRAL') grav = 200; // Low gravity float
+            if (this.state === 'ASTRAL') grav = 200; 
             
             this.vy += grav * dt;
             if (this.state === 'WALL_RUN' && this.vy > CONFIG.wallSlideSpeed) {
@@ -507,7 +506,7 @@ class Player {
         if (this.dashCooldown > 0) this.dashCooldown -= dt;
         
         // --- DASH INPUT & COMBOS ---
-        if (Input.consume('dash') && this.dashCooldown <= 0 && !['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
+        if (Input.consume('dash') && this.dashCooldown <= 0) {
             this.recordMove('DASH');
             let hist = this.moveHistory.join(',');
 
@@ -519,11 +518,11 @@ class Player {
                 this.setState('OMEGA'); this.dashTimer = 0.4; this.vx = 2600; this.vy = 0;
                 Game.showComboText("OMEGA BURST!", "text-cyan-300 text-glow-cyan text-5xl");
                 AudioSys.playDash(); this.moveHistory = [];
-            } else if (hist.endsWith('JUMP,JUMP,DIVE,DASH')) {
+            } else if (hist.endsWith('JUMP,JUMP,DASH')) {
                 this.setState('PLASMA_GLIDE'); this.dashTimer = 0.6; this.vx = 1900; this.vy = 0;
                 Game.showComboText("PLASMA GLIDE!", "text-green-400 text-glow text-5xl");
                 AudioSys.playDash(); this.moveHistory = [];
-            } else if (hist.endsWith('DASH,JUMP,DIVE,DASH')) {
+            } else if (hist.endsWith('DASH,JUMP,DASH')) {
                 this.setState('THUNDERBOLT'); this.dashTimer = 0.5; this.vx = 2000; this.vy = 0;
                 Game.showComboText("THUNDERBOLT!", "text-yellow-400 text-glow-orange text-5xl");
                 AudioSys.playDash(); this.moveHistory = [];
@@ -536,7 +535,7 @@ class Player {
         }
 
         // --- DIVE / SLIDE INPUT & COMBOS ---
-        if (Input.consume('dive') && !this.grounded && !['DIVING', 'METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state) && !['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
+        if (Input.consume('dive') && !this.grounded && !['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
             this.recordMove('DIVE');
             let hist = this.moveHistory.join(',');
             
@@ -547,7 +546,7 @@ class Player {
             } else if (hist.endsWith('DIVE,DASH,DIVE')) {
                 this.setState('SHADOW_STEP'); 
                 Particles.burst(this.x, this.y, 30, '#1e293b', 400, 'glow');
-                this.x += 600; this.y -= 150; this.vy = -300; // Teleport & pop up to avoid wall clip
+                this.x += 600; this.y -= 150; this.vy = -300; 
                 Particles.burst(this.x, this.y, 30, '#475569', 400, 'glow');
                 AudioSys.playDash(); Game.showComboText("SHADOW STEP!", "text-gray-400 text-glow text-5xl");
                 this.moveHistory = [];
@@ -596,7 +595,7 @@ class Player {
                 AudioSys.playTripleJump(); Game.showComboText("DRAGON ASCENT!", "text-amber-500 text-glow-orange text-5xl");
                 Particles.burst(this.x, this.y, 50, '#f59e0b', 500, 'glow');
                 this.moveHistory = [];
-            } else if (hist.endsWith('DIVE,JUMP,DASH,JUMP')) {
+            } else if (hist.endsWith('DASH,DIVE,JUMP')) {
                 this.setState('SUPERNOVA'); this.vy = -1200; this.grounded = false; this.jumpCount = 2;
                 AudioSys.playTripleJump(); Game.showComboText("SUPERNOVA!", "text-white text-glow text-5xl");
                 Particles.burst(this.x, this.y, 60, '#ffffff', 600, 'glow');
@@ -621,7 +620,7 @@ class Player {
                 AudioSys.playDoubleJump();
                 Particles.burst(this.x, this.y + this.h, 20, '#f59e0b', 200, 'glow');
                 Game.addScore(120); Game.addFlow(15);
-            } else if (this.jumpCount < 2 && !['DIVING', 'METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
+            } else if (this.jumpCount < 2 && !['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
                 this.vy = CONFIG.jumpForce * 1.1; 
                 this.setState('DOUBLE_JUMPING'); this.jumpCount = 2;
                 AudioSys.playDoubleJump();
@@ -643,7 +642,7 @@ class Player {
                     if (this.state !== 'WALL_RUN') {
                         this.setState('WALL_RUN');
                         this.recordMove('WALL_RUN');
-                        this.vy = -350; // Pop up slightly upon hitting a wall
+                        this.vy = -350; 
                         Particles.burst(this.x + this.w, this.y, 12, '#f59e0b', 120);
                     }
                     
@@ -703,7 +702,7 @@ class Player {
                         this.setState('RUNNING'); Particles.burst(this.x + this.w/2, this.y + this.h, 15, '#cbd5e1', 120);
                     }
                 }
-            } else if (this.vy < 0 && colY.type !== CONFIG.platformTypes.WIRE) {
+            } else if (this.vy < 0) { // Will now bump your head off of wires/panels!
                 this.y = colY.y + colY.h; this.vy = 0;
             }
         } else {
@@ -906,7 +905,7 @@ class World {
     }
 
     generateAhead(camX) {
-        while (this.lastX < camX + 3600) {
+        while (this.lastX < camX + 4800) {
             let gap = Math.random() * 180 + 110;
             let width = Math.random() * 520 + 400;
             
@@ -941,10 +940,8 @@ class World {
     checkCollision(player, nextX, nextY, checkYOnly = false) {
         for (let p of this.platforms) {
             if (nextX < p.x + p.w && nextX + player.w > p.x && nextY < p.y + p.h && nextY + player.h > p.y) {
-                if (checkYOnly) {
-                    if (p.type === CONFIG.platformTypes.WIRE && player.vy < 0) continue;
-                    if (p.type === CONFIG.platformTypes.WIRE && player.y > p.y) continue;
-                }
+                // Ignore horizontal collision hits against wires completely to avoid side-impact game overs
+                if (p.type === CONFIG.platformTypes.WIRE && !checkYOnly) continue;
                 return p;
             }
         }
@@ -952,9 +949,10 @@ class World {
     }
 
     draw(ctx, camX, camY) {
+        const vw = window.innerWidth / (Game.zoom || 0.7);
         for (let p of this.platforms) {
             let drawX = p.x - camX; let drawY = p.y - camY;
-            if (drawX > window.innerWidth + 300 || drawX + p.w < -300) continue;
+            if (drawX > vw + 600 || drawX + p.w < -600) continue;
 
             if (p.type === CONFIG.platformTypes.BUILDING) {
                 ctx.save();
@@ -1054,13 +1052,14 @@ const Game = {
     canvas: null, ctx: null, player: null, world: null,
     lastTime: 0, camX: 0, camY: 0, targetCamY: 0, cameraShake: 0,
     score: 0, distance: 0, flowMeter: 0, combo: 1.0, comboTimer: 0,
+    zoom: 0.7, // Set global zoom level here
     
     init() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.resize(); 
         
-        AssetCache.init(Math.max(1200, window.innerWidth), Math.max(800, window.innerHeight));
+        AssetCache.init(Math.max(1600, window.innerWidth * 1.5), Math.max(1200, window.innerHeight * 1.5));
         
         window.addEventListener('resize', () => this.resize());
         Input.init(); this.bindUI();
@@ -1102,7 +1101,13 @@ const Game = {
     startPlay() {
         this.player = new Player(); this.world = new World(); Particles.clear();
         this.score = 0; this.distance = 0; this.flowMeter = 0; this.combo = 1.0; this.comboTimer = 0;
-        this.camX = 0; this.camY = this.player.y - this.canvas.height/2 + 100;
+        
+        const vw = this.canvas.width / this.zoom;
+        const vh = this.canvas.height / this.zoom;
+
+        // Position camera so player is at 10% from left
+        this.camX = this.player.x - vw * 0.10;
+        this.camY = this.player.y - vh * 0.5;
         this.cameraShake = 0;
         
         document.getElementById('hud').style.display = 'flex';
@@ -1164,10 +1169,14 @@ const Game = {
         
         this.distance = Math.max(this.distance, this.player.x / 100);
         
-        let targetX = this.player.x - this.canvas.width * 0.35;
+        const vw = this.canvas.width / this.zoom;
+        const vh = this.canvas.height / this.zoom;
+
+        // Shift camera so the player is positioned exactly at 10% from the left edge of the screen
+        let targetX = this.player.x - vw * 0.10; 
         this.camX += (targetX - this.camX) * dt * 8;
         
-        this.targetCamY = this.player.y - this.canvas.height * 0.5;
+        this.targetCamY = this.player.y - vh * 0.5;
         this.camY += (this.targetCamY - this.camY) * dt * 5;
 
         if (this.player.state === 'RUNNING' || this.player.state === 'SLIDING') {
@@ -1179,17 +1188,23 @@ const Game = {
         const ctx = this.ctx; const w = this.canvas.width; const h = this.canvas.height;
         ctx.clearRect(0, 0, w, h);
         
+        const vw = w / this.zoom;
+        const vh = h / this.zoom;
+
+        ctx.save();
+        ctx.scale(this.zoom, this.zoom);
+
         if (GAME_STATE === 'MENU') {
-            Background.draw(ctx, w, h, Date.now()*0.08, 0);
+            Background.draw(ctx, vw, vh, Date.now()*0.08, 0);
+            ctx.restore();
             return;
         }
 
-        ctx.save();
         if (this.cameraShake > 0) {
             ctx.translate((Math.random()-0.5)*this.cameraShake, (Math.random()-0.5)*this.cameraShake);
         }
 
-        Background.draw(ctx, w, h, this.camX, this.camY);
+        Background.draw(ctx, vw, vh, this.camX, this.camY);
         this.world.draw(ctx, this.camX, this.camY);
         this.player.draw(ctx, this.camX, this.camY);
         
