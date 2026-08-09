@@ -1922,6 +1922,75 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     }
 });
 </script>
+
+<!-- NEW CODE: Web Games Overlay with X button -->
+<style>
+#game-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 10000;
+}
+#game-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+#game-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    color: white;
+    font-family: monospace;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 15px;
+    border-radius: 8px;
+    user-select: none;
+    transition: 0.3s;
+    z-index: 10001;
+}
+#game-close-btn:hover {
+    background: rgba(255,0,0,0.8);
+}
+</style>
+<div id="game-overlay">
+    <div id="game-close-btn" onclick="closeGameOverlay()">x</div>
+    <iframe id="game-iframe" src=""></iframe>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const gameLinks = document.querySelectorAll('.download-btn');
+    gameLinks.forEach(link => {
+        if (link.textContent.trim() === "Play Web Version") {
+            link.addEventListener("click", function(e) {
+                e.preventDefault();
+                document.getElementById("game-iframe").src = this.href;
+                document.getElementById("game-overlay").style.display = "block";
+                document.getElementById("game-close-btn").textContent = "x";
+            });
+        }
+    });
+});
+
+function closeGameOverlay() {
+    const btn = document.getElementById("game-close-btn");
+    btn.textContent = "<--";
+    setTimeout(() => {
+        document.getElementById("game-overlay").style.display = "none";
+        document.getElementById("game-iframe").src = "";
+        if (typeof switchView === "function") {
+            switchView("home");
+        }
+    }, 300);
+}
+</script>
 </body>
 </html>
 
