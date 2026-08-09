@@ -1973,24 +1973,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault();
                 document.getElementById("game-iframe").src = this.href;
                 document.getElementById("game-overlay").style.display = "block";
-                document.getElementById("game-close-btn").textContent = "x";
             });
         }
     });
 });
 
 function closeGameOverlay() {
-    const btn = document.getElementById("game-close-btn");
-    btn.textContent = "<--";
-    setTimeout(() => {
-        document.getElementById("game-overlay").style.display = "none";
-        document.getElementById("game-iframe").src = "";
-        if (typeof switchView === "function") {
-            switchView("home");
-        }
-    }, 300);
+    document.getElementById("game-overlay").style.display = "none";
+    document.getElementById("game-iframe").src = "";
+    if (typeof switchView === "function") {
+        switchView("games");
+    }
 }
 </script>
 </body>
 </html>
+
 
