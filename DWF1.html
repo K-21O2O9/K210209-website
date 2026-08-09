@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Added minimum-scale=1.0 and viewport-fit=cover for better WebView rendering -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dimensional Warfare - Retro Multiplayer Edition</title>
     
     <!-- ==========================================
@@ -685,7 +686,7 @@
             transform-origin: center center;
         }
 
-        /* --- MOBILE MEDIA QUERIES --- */
+        /* --- MOBILE MEDIA QUERIES (Portrait Fixes) --- */
         @media (max-height: 500px) {
             .overlay-screen h1 {
                 font-size: 28px !important;
@@ -734,6 +735,33 @@
                 margin-top: 10px !important;
                 font-size: 13px !important;
             }
+        }
+        
+        /* --- MOBILE MEDIA QUERIES (Landscape UI Shrink Fix) --- */
+        @media (orientation: landscape) and (max-height: 600px) {
+            /* Shrink HUD Controls */
+            #joystick-base, #fire-joystick-base { width: 70px; height: 70px; }
+            #joystick-knob, #fire-joystick-knob { width: 26px; height: 26px; top: 22px; left: 22px; }
+            .action-btn { width: 60px; height: 50px; font-size: 8px; }
+            #controls-container { padding: 5px 15px 15px 15px; }
+            
+            /* Shrink Menus */
+            .overlay-screen h1 { font-size: 26px !important; margin-bottom: 5px !important; }
+            .overlay-screen p { font-size: 11px; }
+            .menu-buttons { flex-direction: row; flex-wrap: wrap; justify-content: center; width: 95%; gap: 8px; margin-top: 5px; }
+            .start-btn { width: 100%; font-size: 14px; padding: 10px; }
+            button { padding: 8px 12px; font-size: 12px; }
+            .btn-small { width: 34px !important; min-width: 34px !important; height: 34px !important; }
+            
+            /* Preview UI */
+            .preview-container { height: 60vh; }
+            
+            /* In-game HUD */
+            .hud-top { padding: 6px 12px; }
+            .cyber-text { font-size: 14px; }
+            #score { font-size: 14px; }
+            #stage-display { font-size: 14px; }
+            .health-bar-container { width: 120px; height: 10px; }
         }
     </style>
 
@@ -1587,10 +1615,11 @@
 
         let cameraOrbitAngle = 0;
         let cameraOrbitPitch = 0.55;
-        let cameraOrbitDistance = 38;
+        // Dynamically push the camera back on wider screens so it doesn't look overly zoomed in vertically
+        let cameraOrbitDistance = window.innerWidth > window.innerHeight ? 48 : 38;
         let targetOrbitAngle = 0;
         let targetOrbitPitch = 0.55;
-        let targetOrbitDistance = 38;
+        let targetOrbitDistance = window.innerWidth > window.innerHeight ? 48 : 38;
         let isOrbitingCamera = false;
         let orbitTouchId = null;
         let orbitStartPos = { x: 0, y: 0 };
@@ -1601,7 +1630,7 @@
         window.resetCameraAngle = function() {
             targetOrbitAngle = 0;
             targetOrbitPitch = 0.55;
-            targetOrbitDistance = 38;
+            targetOrbitDistance = window.innerWidth > window.innerHeight ? 48 : 38;
             document.getElementById('cam-rotate-indicator').style.display = 'none';
         };
 
@@ -3288,7 +3317,7 @@
                 targetOrbitAngle += 0.002;
                 cameraOrbitAngle = THREE.MathUtils.lerp(cameraOrbitAngle, targetOrbitAngle, 0.04);
                 cameraOrbitPitch = THREE.MathUtils.lerp(cameraOrbitPitch, 0.55, 0.04);
-                cameraOrbitDistance = THREE.MathUtils.lerp(cameraOrbitDistance, 38, 0.04);
+                cameraOrbitDistance = THREE.MathUtils.lerp(cameraOrbitDistance, window.innerWidth > window.innerHeight ? 48 : 38, 0.04);
             }
 
             if (GAME.active && entities.player && GAME.started) {
@@ -3404,10 +3433,10 @@
             
             targetOrbitAngle = 0;
             targetOrbitPitch = 0.55;
-            targetOrbitDistance = 38;
+            targetOrbitDistance = window.innerWidth > window.innerHeight ? 48 : 38;
             cameraOrbitAngle = 0;
             cameraOrbitPitch = 0.55;
-            cameraOrbitDistance = 38;
+            cameraOrbitDistance = window.innerWidth > window.innerHeight ? 48 : 38;
             
             document.getElementById('cam-rotate-indicator').style.display = 'none';
             document.getElementById('score').innerText = "SCORE: 000000";
@@ -3749,6 +3778,9 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             setRendererSize();
+            if (GAME.active) {
+                targetOrbitDistance = window.innerWidth > window.innerHeight ? 48 : 38;
+            }
         });
 
         // Initialize Loop
