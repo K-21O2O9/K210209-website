@@ -1546,8 +1546,8 @@
         function setRendererSize() {
             const targetWidth = window.innerWidth;
             const targetHeight = window.innerHeight;
-            // Cap internal resolution to 900px wide/tall for retro look and immense performance
-            const scaleFactor = Math.min(1, 900 / Math.max(targetWidth, targetHeight));
+            // Cap internal resolution to 600px wide/tall for retro look and immense performance
+            const scaleFactor = Math.min(1, 600 / Math.max(targetWidth, targetHeight));
             const renderWidth = Math.floor(targetWidth * scaleFactor);
             const renderHeight = Math.floor(targetHeight * scaleFactor);
             
@@ -1565,19 +1565,20 @@
         container.appendChild(renderer.domElement);
         
         const renderScenePass = new RenderPass(scene, camera);
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(renderer.domElement.width, renderer.domElement.height), 2.0, 0.5, 0.85);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(512, 512), 2.0, 0.5, 0.85);
         const composer = new EffectComposer(renderer);
         window.composer = composer;
         composer.addPass(renderScenePass);
         composer.addPass(bloomPass);
 
         const starGeo = new THREE.BufferGeometry();
-        const starCount = 1200; // GREATLY INCREASED FOR HIGHER QUALITY
+        const starCount = 800; // Optimized count for infinite wrap
         const starPos = new Float32Array(starCount * 3);
+        const starBoxSize = 600;
         for (let i = 0; i < starCount * 3; i += 3) { 
-            starPos[i] = (Math.random() - 0.5) * 240;
-            starPos[i + 1] = (Math.random() - 0.5) * 2000;
-            starPos[i + 2] = (Math.random() - 0.5) * 2000; 
+            starPos[i] = (Math.random() - 0.5) * starBoxSize;
+            starPos[i + 1] = (Math.random() - 0.5) * starBoxSize;
+            starPos[i + 2] = (Math.random() - 0.5) * starBoxSize; 
         }
         starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
         const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x00ffff, size: 1.2, transparent: true, opacity: 0.75, depthTest: false, sizeAttenuation: true }));
@@ -3195,22 +3196,37 @@
             requestAnimationFrame(animate);
             if (!now) now = performance.now();
             
-            if (!GAME.active && !GAME.paused) {
-                const starArr = stars.geometry.attributes.position.array;
-                for (let i = 0; i < starCount * 3; i += 3) {
+            const starArr = stars.geometry.attributes.position.array;
+            const camPos = camera.position;
+            const sBox = 600;
+            const halfBox = sBox / 2;
+
+            for (let i = 0; i < starCount * 3; i += 3) {
+                // Menu movement effect
+                if (!GAME.active && !GAME.paused) {
                     starArr[i + 2] += 0.12;
-                    if (starArr[i + 2] > 100) starArr[i + 2] -= 200;
                 }
-                stars.geometry.attributes.position.needsUpdate = true;
+
+                // Infinite wrapping around camera
+                if (camPos.x - starArr[i] > halfBox) starArr[i] += sBox;
+                else if (starArr[i] - camPos.x > halfBox) starArr[i] -= sBox;
+
+                if (camPos.y - starArr[i + 1] > halfBox) starArr[i + 1] += sBox;
+                else if (starArr[i + 1] - camPos.y > halfBox) starArr[i + 1] -= sBox;
+
+                if (camPos.z - starArr[i + 2] > halfBox) starArr[i + 2] += sBox;
+                else if (starArr[i + 2] - camPos.z > halfBox) starArr[i + 2] -= sBox;
             }
+            stars.geometry.attributes.position.needsUpdate = true;
 
             if (GAME.bombCooldown > 0) { 
                 GAME.bombCooldown--;
                 if (GAME.bombCooldown % 3 === 0) {
                     document.getElementById('bomb-cooldown').style.height = (GAME.bombCooldown / 380) * 100 + '%';
                 }
-            } else { 
-                document.getElementById('bomb-cooldown').style.height = '0%'; 
+                if (GAME.bombCooldown === 0) {
+                    document.getElementById('bomb-cooldown').style.height = '0%'; 
+                }
             }
 
             let isSkinScreen = document.getElementById('skins-screen').style.display === 'flex';
@@ -3740,5 +3756,4 @@
     </script>
 </body>
 </html>
-
 
