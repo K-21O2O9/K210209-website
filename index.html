@@ -720,10 +720,101 @@ footer p{
     .forum-input-area .form-input { width: 100%; }
     .forum-input-area button { width: 100%; }
 }
+
+/* =========================================
+   12. WEB GAME PLAYER OVERLAY
+========================================= */
+#web-game-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 100005; /* High enough to cover navbar and mobile menus */
+    display: none; /* Hidden by default */
+}
+#web-game-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #050505;
+}
+
+/* Floating Exit Button */
+#game-exit-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 100010;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+    border: none;
+}
+
+/* State 1: Very Small × */
+.exit-state-small {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(30, 30, 30, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.5rem;
+}
+.exit-state-small:hover {
+    background: rgba(50, 50, 50, 0.8);
+    color: white;
+}
+.exit-state-small .exit-text {
+    display: none;
+}
+.exit-state-small .exit-icon {
+    display: inline-block;
+    line-height: 0;
+    margin-bottom: 3px;
+}
+
+/* State 2: Big <-- Button */
+.exit-state-big {
+    width: auto;
+    height: 45px;
+    padding: 0 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ff1f1f, #8b0000);
+    border: 1px solid #ff3b3b;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+.exit-state-big .exit-icon {
+    display: none;
+}
+.exit-state-big .exit-text {
+    display: inline-block;
+}
 </style>
 </head>
 
 <body>
+
+<!-- =======================================================
+     WEB GAME OVERLAY & EXIT BUTTON
+======================================================== -->
+<div id="web-game-overlay">
+    <button id="game-exit-btn" class="exit-state-small" onclick="handleGameExitClick()">
+        <span class="exit-icon">&times;</span>
+        <span class="exit-text">&larr; Return to App</span>
+    </button>
+    <iframe id="web-game-frame" src=""></iframe>
+</div>
 
 <!-- Background Elements -->
 <div class="bg-glow"></div>
@@ -838,7 +929,8 @@ footer p{
                         <h3>Mirror-verse</h3>
                         <p>One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="https://mirror-verse.k210209-studios.workers.dev" class="download-btn" target="_blank" rel="noopener noreferrer">Play Web Version</a>
+                            <!-- MODIFIED to launch securely in overlay -->
+                            <button class="download-btn" onclick="launchWebGame('https://mirror-verse.k210209-studios.workers.dev')">Play Web Version</button>
                         </div>
                     </div>
                 </div>
@@ -851,7 +943,8 @@ footer p{
                         <h3>Horizon Rush</h3>
                         <p>An adrenaline-fueled endless runner. Dodge obstacles, collect power-ups, and race towards the ever-expanding horizon in this fast-paced arcade experience.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="horizon_rush.html" class="download-btn">Play Web Version</a>
+                            <!-- MODIFIED to launch securely in overlay -->
+                            <button class="download-btn" onclick="launchWebGame('horizon_rush.html')">Play Web Version</button>
                         </div>
                     </div>
                 </div>
@@ -864,7 +957,8 @@ footer p{
                         <h3>Blood-Bound</h3>
                         <p>An intense, blood-bound experience. Step into the darkness and fight for your survival in this thrilling new web-based title.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="Blood-bound.html" class="download-btn">Play Web Version</a>
+                            <!-- MODIFIED to launch securely in overlay -->
+                            <button class="download-btn" onclick="launchWebGame('Blood-bound.html')">Play Web Version</button>
                         </div>
                     </div>
                 </div>
@@ -1194,6 +1288,61 @@ function switchView(viewName) {
         loadAdminUserList();
     } else if (viewName === 'admin') {
         switchView('home'); // Kick out unauthorized attempts
+    }
+}
+
+// =========================================
+// WEB GAME PLAYER LOGIC (IFRAME OVERLAY)
+// =========================================
+let exitButtonState = 0; // 0 = Small "x", 1 = Big "<-- Return to App"
+let exitButtonTimeout;
+
+function launchWebGame(gameUrl) {
+    const overlay = document.getElementById('web-game-overlay');
+    const frame = document.getElementById('web-game-frame');
+    const btn = document.getElementById('game-exit-btn');
+    
+    // Set game URL and show overlay
+    frame.src = gameUrl;
+    overlay.style.display = 'block';
+    
+    // Prevent scrolling on the main website behind the game
+    document.body.style.overflow = 'hidden';
+    
+    // Reset button to small state
+    exitButtonState = 0;
+    btn.className = 'exit-state-small';
+    clearTimeout(exitButtonTimeout);
+}
+
+function handleGameExitClick() {
+    const btn = document.getElementById('game-exit-btn');
+    
+    if (exitButtonState === 0) {
+        // First click: expand the button to prevent accidental exit
+        exitButtonState = 1;
+        btn.className = 'exit-state-big';
+        
+        // Auto-shrink back to small if not clicked again within 3 seconds
+        clearTimeout(exitButtonTimeout);
+        exitButtonTimeout = setTimeout(() => {
+            if (exitButtonState === 1) {
+                exitButtonState = 0;
+                btn.className = 'exit-state-small';
+            }
+        }, 3000);
+        
+    } else if (exitButtonState === 1) {
+        // Second click: safely close the game
+        const overlay = document.getElementById('web-game-overlay');
+        const frame = document.getElementById('web-game-frame');
+        
+        overlay.style.display = 'none';
+        frame.src = ''; // Clean up memory and stop audio from the game
+        document.body.style.overflow = ''; // Restore website scrollability
+        
+        clearTimeout(exitButtonTimeout);
+        exitButtonState = 0;
     }
 }
 
