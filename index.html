@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
 
-<title>K210209♤ Studios</title>
+<title>K210209 Studios</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -720,101 +720,10 @@ footer p{
     .forum-input-area .form-input { width: 100%; }
     .forum-input-area button { width: 100%; }
 }
-
-/* =========================================
-   12. WEB GAME PLAYER OVERLAY
-========================================= */
-#web-game-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-    z-index: 100005; /* High enough to cover navbar and mobile menus */
-    display: none; /* Hidden by default */
-}
-#web-game-frame {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: #050505;
-}
-
-/* Floating Exit Button */
-#game-exit-btn {
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    z-index: 100010;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    backdrop-filter: blur(8px);
-    border: none;
-}
-
-/* State 1: Very Small × */
-.exit-state-small {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: rgba(30, 30, 30, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 1.5rem;
-}
-.exit-state-small:hover {
-    background: rgba(50, 50, 50, 0.8);
-    color: white;
-}
-.exit-state-small .exit-text {
-    display: none;
-}
-.exit-state-small .exit-icon {
-    display: inline-block;
-    line-height: 0;
-    margin-bottom: 3px;
-}
-
-/* State 2: Big <-- Button */
-.exit-state-big {
-    width: auto;
-    height: 45px;
-    padding: 0 20px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #ff1f1f, #8b0000);
-    border: 1px solid #ff3b3b;
-    box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
-    color: white;
-    font-weight: 700;
-    font-size: 1rem;
-    letter-spacing: 0.5px;
-}
-.exit-state-big .exit-icon {
-    display: none;
-}
-.exit-state-big .exit-text {
-    display: inline-block;
-}
 </style>
 </head>
 
 <body>
-
-<!-- =======================================================
-     WEB GAME OVERLAY & EXIT BUTTON
-======================================================== -->
-<div id="web-game-overlay">
-    <button id="game-exit-btn" class="exit-state-small" onclick="handleGameExitClick()">
-        <span class="exit-icon">&times;</span>
-        <span class="exit-text">&larr; Return to App</span>
-    </button>
-    <iframe id="web-game-frame" src=""></iframe>
-</div>
 
 <!-- Background Elements -->
 <div class="bg-glow"></div>
@@ -840,7 +749,7 @@ footer p{
 <!-- Sticky Navbar -->
 <nav>
     <div class="menu-icon" onclick="openMenu()">&#9776;</div>
-    <div class="logo" onclick="switchView('home')">K210209♤ <span>STUDIOS</span></div>
+    <div class="logo" onclick="switchView('home')">K210209 <span>STUDIOS</span></div>
 </nav>
 
 <!-- =======================================================
@@ -852,7 +761,7 @@ footer p{
             <div class="hero-tag">Independent Game Development Studio</div>
             <h1>Building <span>immersive</span><br>games & experiences.</h1>
             <p>
-                K210209♤ Studios creates unique single-player and multiplayer experiences
+                K210209 Studios creates unique single-player and multiplayer experiences
                 focused on strategy, survival, atmosphere, and innovation.
             </p>
             <div class="hero-buttons">
@@ -863,9 +772,9 @@ footer p{
     </section>
 
     <section id="about">
-        <h2 class="section-title">About <span>K210209♤ Studios</span></h2>
+        <h2 class="section-title">About <span>K210209 Studios</span></h2>
         <div class="about-box">
-            K210209♤ Studios is an independent game development studio focused on
+            K210209 Studios is an independent game development studio focused on
             creating immersive and memorable experiences.
             <br><br>
             The studio explores strategy, survival, fantasy,
@@ -883,7 +792,7 @@ footer p{
 <div id="view-games" style="display: none;">
     <section id="games">
         <h2 class="section-title">Featured <span>Games</span></h2>
-        <p class="section-sub">Explore current projects from K210209♤ Studios. Download available titles directly below.</p>
+        <p class="section-sub">Explore current projects from K210209 Studios. Download available titles directly below.</p>
 
         <!-- NEW: Logged out message for Games -->
         <div id="gamesLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
@@ -916,6 +825,7 @@ footer p{
                         <p>An intense 3D space shooter experience. Navigate through hostile dimensions, epic bosses. Do your best to survive waves of high-tech enemies.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
                             <a href="dimensionalwarfare.apk" class="download-btn" download>Download APK</a>
+                            <a href="DWF1.html" class="download-btn">Play Web Version</a>
                             <button class="download-btn" onclick="openDWGuide()">About Game</button>
                         </div>
                     </div>
@@ -929,8 +839,7 @@ footer p{
                         <h3>Mirror-verse</h3>
                         <p>One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <!-- MODIFIED to launch securely in overlay -->
-                            <button class="download-btn" onclick="launchWebGame('https://mirror-verse.k210209-studios.workers.dev')">Play Web Version</button>
+                            <a href="https://mirror-verse.k210209-studios.workers.dev" class="download-btn" target="_blank" rel="noopener noreferrer">Play Web Version</a>
                         </div>
                     </div>
                 </div>
@@ -943,8 +852,7 @@ footer p{
                         <h3>Horizon Rush</h3>
                         <p>An adrenaline-fueled endless runner. Dodge obstacles, collect power-ups, and race towards the ever-expanding horizon in this fast-paced arcade experience.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <!-- MODIFIED to launch securely in overlay -->
-                            <button class="download-btn" onclick="launchWebGame('horizon_rush.html')">Play Web Version</button>
+                            <a href="horizon_rush.html" class="download-btn">Play Web Version</a>
                         </div>
                     </div>
                 </div>
@@ -955,10 +863,9 @@ footer p{
                     </div>
                     <div class="game-info">
                         <h3>Blood-Bound</h3>
-                        <p>A new multiplayer turn based rpg game with various classes, connect with same wifi and try out the thrilling battles</p>
+                        <p>An intense, blood-bound experience. Step into the darkness and fight for your survival in this thrilling new web-based title.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <!-- MODIFIED to launch securely in overlay -->
-                            <button class="download-btn" onclick="launchWebGame('Blood-bound.html')">Play Web Version</button>
+                            <a href="blood-bound.html" class="download-btn">Play Web Version</a>
                         </div>
                     </div>
                 </div>
@@ -998,12 +905,12 @@ footer p{
         <div class="contact-container">
             <div class="email-box">
                 <h3>Studio Email</h3>
-                <a href="mailto:k210209.studios@gmail.com">k210209.studios@gmail.com    </a>
+                <a href="mailto:k210209.studios@gmail.com">k210209.studios@gmail.com</a>
             </div>
 
             <div class="whatsapp-box">
-                <p>Follow the K210209_STUDIOS channel on WhatsApp for updates, development news, future releases, and announcements.</p>
-                <a class="whatsapp-link" href="https://whatsapp.com/channel/0029Vb7sWjABadmXSFsPxG1Y" target="_blank">Join WhatsApp Channel</a>
+                <p>Follow the K210209♤_STUDIOS channel on WhatsApp for updates, development news, future releases, and announcements.</p>
+                <a class="whatsapp-link" href="https://whatsapp.com/channel/0029Vb7sWjABadmXSFsPxG1Y" target="_blank" rel="noopener noreferrer">Join WhatsApp Channel</a>
             </div>
         </div>
     </section>
@@ -1288,61 +1195,6 @@ function switchView(viewName) {
         loadAdminUserList();
     } else if (viewName === 'admin') {
         switchView('home'); // Kick out unauthorized attempts
-    }
-}
-
-// =========================================
-// WEB GAME PLAYER LOGIC (IFRAME OVERLAY)
-// =========================================
-let exitButtonState = 0; // 0 = Small "x", 1 = Big "<-- Return to App"
-let exitButtonTimeout;
-
-function launchWebGame(gameUrl) {
-    const overlay = document.getElementById('web-game-overlay');
-    const frame = document.getElementById('web-game-frame');
-    const btn = document.getElementById('game-exit-btn');
-    
-    // Set game URL and show overlay
-    frame.src = gameUrl;
-    overlay.style.display = 'block';
-    
-    // Prevent scrolling on the main website behind the game
-    document.body.style.overflow = 'hidden';
-    
-    // Reset button to small state
-    exitButtonState = 0;
-    btn.className = 'exit-state-small';
-    clearTimeout(exitButtonTimeout);
-}
-
-function handleGameExitClick() {
-    const btn = document.getElementById('game-exit-btn');
-    
-    if (exitButtonState === 0) {
-        // First click: expand the button to prevent accidental exit
-        exitButtonState = 1;
-        btn.className = 'exit-state-big';
-        
-        // Auto-shrink back to small if not clicked again within 3 seconds
-        clearTimeout(exitButtonTimeout);
-        exitButtonTimeout = setTimeout(() => {
-            if (exitButtonState === 1) {
-                exitButtonState = 0;
-                btn.className = 'exit-state-small';
-            }
-        }, 3000);
-        
-    } else if (exitButtonState === 1) {
-        // Second click: safely close the game
-        const overlay = document.getElementById('web-game-overlay');
-        const frame = document.getElementById('web-game-frame');
-        
-        overlay.style.display = 'none';
-        frame.src = ''; // Clean up memory and stop audio from the game
-        document.body.style.overflow = ''; // Restore website scrollability
-        
-        clearTimeout(exitButtonTimeout);
-        exitButtonState = 0;
     }
 }
 
