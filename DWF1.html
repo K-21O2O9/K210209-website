@@ -1,0 +1,3879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dimensional Warfare - Multiplayer Edition</title>
+    
+    <!-- ==========================================
+         CORE STYLES
+         ========================================== -->
+    <style>
+        /* --- BASE LAYOUT --- */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #010004;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* --- VISUAL EFFECTS --- */
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 50;
+            background-size: 100% 4px, 4px 100%;
+            pointer-events: none;
+        }
+
+        #low-health-vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 49;
+            background: radial-gradient(circle, rgba(255, 0, 0, 0) 35%, rgba(255, 0, 0, 0.65) 100%);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        @keyframes pulse-alarm {
+            0% { opacity: 0.2; }
+            50% { opacity: 1.0; }
+            100% { opacity: 0.2; }
+        }
+
+        .alarm-active {
+            animation: pulse-alarm 0.7s infinite;
+        }
+
+        /* --- UI LAYER --- */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hud-top {
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .cyber-text {
+            color: #0ff;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 18px;
+            text-shadow: 1px 1px 2px #000, 0 0 8px #0ff;
+        }
+
+        .alert-text {
+            color: #f0f;
+            text-shadow: 1px 1px 2px #000, 0 0 8px #f0f;
+        }
+
+        #score { font-size: 18px; }
+        #stage-display { font-size: 18px; color: #ff00ff; margin-left: 14px; }
+        
+        #weapon-status {
+            font-size: 11px;
+            color: #ffff00;
+            margin-top: 4px;
+            display: none;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .health-bar-container {
+            width: 150px;
+            height: 12px;
+            background: rgba(0, 255, 255, 0.15);
+            border: 2px solid #0ff;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+            position: relative;
+        }
+
+        #player-health {
+            width: 100%;
+            height: 100%;
+            background: #0ff;
+            box-shadow: 0 0 12px #0ff;
+            transition: width 0.1s linear;
+        }
+        
+        #spectator-label {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            color: #ff0055;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+            display: none;
+            animation: pulse-alarm 1s infinite;
+        }
+
+        #boss-ui {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28%;
+            min-width: 180px;
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        #boss-name {
+            font-size: 11px;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .boss-health-container {
+            width: 100%;
+            height: 10px;
+            border: 2px solid #f0f;
+            background: rgba(255, 0, 255, 0.05);
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.25);
+            position: relative;
+        }
+
+        #boss-health {
+            width: 100%;
+            height: 100%;
+            background: #f0f;
+            box-shadow: 0 0 10px #f0f;
+            transition: width 0.04s linear;
+        }
+
+        /* --- CONTROLS --- */
+        #controls-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 10px 25px 28px 25px;
+            pointer-events: none;
+        }
+
+        #right-control-cluster {
+            display: flex;
+            align-items: flex-end;
+            gap: 18px;
+            pointer-events: none;
+        }
+
+        .action-btn {
+            width: 72px;
+            height: 62px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: transform 0.05s;
+            overflow: hidden;
+            pointer-events: auto;
+            margin-bottom: 5px;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .action-btn:active {
+            transform: scale(0.9);
+        }
+
+        .bomb-btn {
+            background: rgba(0, 110, 255, 0.2);
+            border: 2px solid #00aaff;
+            color: #00aaff;
+            box-shadow: 0 0 14px rgba(0, 170, 255, 0.5);
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .cooldown-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: rgba(1, 0, 4, 0.88);
+            pointer-events: none;
+        }
+
+        #joystick-base,
+        #fire-joystick-base {
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        #joystick-base {
+            border: 2px solid rgba(0, 255, 255, 0.45);
+            box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.15);
+        }
+
+        #fire-joystick-base {
+            border: 2px solid rgba(255, 0, 255, 0.45);
+            box-shadow: inset 0 0 20px rgba(255, 0, 255, 0.15);
+        }
+
+        #joystick-knob,
+        #fire-joystick-knob {
+            width: 34px;
+            height: 34px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            pointer-events: none;
+        }
+
+        #joystick-knob {
+            background: rgba(0, 255, 255, 0.8);
+            box-shadow: 0 0 12px #0ff;
+        }
+
+        #fire-joystick-knob {
+            background: rgba(255, 0, 255, 0.8);
+            box-shadow: 0 0 12px #f0f;
+        }
+
+        #cam-rotate-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 9;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 10px;
+            letter-spacing: 2px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            display: none;
+            text-shadow: 0 0 6px rgba(0, 255, 255, 0.5);
+        }
+
+        /* --- MENUS & OVERLAYS --- */
+        .overlay-screen {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(1, 0, 3, 0.90);
+            z-index: 20;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        #main-menu {
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.05) 0%, transparent 70%);
+        }
+
+        .overlay-screen h1 {
+            margin: 0;
+            font-size: 52px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px 4px #000, 0 0 12px #0ff;
+            margin-bottom: 12px;
+            line-height: 1.05;
+            color: #0ff;
+            font-weight: 900;
+        }
+
+        .overlay-screen p {
+            color: #d0d0d0;
+            text-shadow: 1px 1px 2px #000;
+            font-size: 15px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 15px;
+            align-items: center;
+            width: 90%;
+            max-width: 540px;
+        }
+
+        .menu-row {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        button {
+            padding: 14px 22px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #010004;
+            background: #0ff;
+            border: none;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .retro-btn {
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid #0ff;
+            border-left: 5px solid #0ff;
+            border-right: 5px solid #0ff;
+            color: #0ff;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.15), inset 0 0 8px rgba(0, 255, 255, 0.05);
+            text-shadow: 1px 1px 2px #000;
+            flex: 1;
+        }
+
+        .retro-btn:hover {
+            background: rgba(0, 255, 255, 0.22);
+            box-shadow: 0 0 18px #0ff, inset 0 0 10px #0ff;
+            color: #fff;
+            transform: scale(1.02);
+            text-shadow: 0 0 4px #fff;
+        }
+
+        .retro-btn:active {
+            transform: scale(0.97);
+        }
+
+        .start-btn {
+            font-size: 22px;
+            padding: 18px;
+            background: rgba(0, 255, 255, 0.1);
+            border-color: #fff;
+            border-left: 6px solid #fff;
+            border-right: 6px solid #fff;
+            color: #fff;
+            box-shadow: 0 0 24px rgba(0, 255, 255, 0.4);
+            width: 100%;
+            flex: none;
+            text-shadow: 0 0 5px #fff;
+        }
+
+        .multiplayer-btn {
+            border-color: #ffaa00;
+            color: #ffaa00;
+            box-shadow: 0 0 12px rgba(255, 170, 0, 0.25);
+            border-left: 5px solid #ffaa00;
+            border-right: 5px solid #ffaa00;
+        }
+        
+        .multiplayer-btn:hover {
+            background: rgba(255, 170, 0, 0.2);
+            box-shadow: 0 0 20px #ffaa00, inset 0 0 12px #ffaa00;
+            color: #fff;
+        }
+
+        .boss-btn {
+            border-color: #ff0055;
+            color: #ff0055;
+            box-shadow: 0 0 12px rgba(255, 0, 85, 0.25);
+            border-left: 5px solid #ff0055;
+            border-right: 5px solid #ff0055;
+        }
+
+        .boss-btn:hover {
+            background: rgba(255, 0, 85, 0.2);
+            box-shadow: 0 0 20px #ff0055, inset 0 0 12px #ff0055;
+            color: #fff;
+        }
+
+        .btn-small {
+            flex: none !important;
+            width: 32px;
+            min-width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            padding: 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pointer-on {
+            pointer-events: auto;
+        }
+
+        .back-btn {
+            padding: 12px 35px !important;
+            min-width: 170px !important;
+            margin-top: 20px !important;
+            font-size: 15px !important;
+            width: auto !important;
+            flex: none;
+        }
+        
+        .cyber-input {
+            background: rgba(0, 255, 255, 0.05);
+            border: 2px solid #0ff;
+            color: #0ff;
+            padding: 12px 18px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+            width: 80%;
+            max-width: 300px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.1);
+        }
+        .cyber-input:focus {
+            background: rgba(0, 255, 255, 0.15);
+            box-shadow: 0 0 15px #0ff, inset 0 0 10px rgba(0, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        /* --- PREVIEW SCREENS (BOSS / SKINS) --- */
+        .preview-container {
+            display: flex;
+            flex-direction: row;
+            width: 95%;
+            max-width: 1200px;
+            height: 70vh;
+            background: rgba(0, 255, 255, 0.02);
+            border: 2px solid #0ff;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .list-panel {
+            width: 38%;
+            overflow-y: auto;
+            padding: 14px;
+            border-right: 2px solid #0ff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .list-panel::-webkit-scrollbar,
+        .preview-bottom-half::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .list-panel::-webkit-scrollbar-thumb,
+        .preview-bottom-half::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 255, 0.4);
+            border-radius: 4px;
+        }
+
+        .list-panel::-webkit-scrollbar-track,
+        .preview-bottom-half::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .preview-panel {
+            width: 62%;
+            display: flex;
+            flex-direction: row;
+            position: relative;
+            cursor: grab;
+        }
+
+        .preview-panel:active {
+            cursor: grabbing;
+        }
+
+        .preview-top-half {
+            flex: 0 0 55%;
+            height: 100%;
+            position: relative;
+        }
+
+        .preview-bottom-half {
+            flex: 1;
+            overflow-y: auto;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            border-left: 1px solid rgba(0, 255, 255, 0.2);
+            min-width: 150px;
+        }
+
+        #boss-preview-desc,
+        .detail-text {
+            font-size: 15px !important;
+            line-height: 1.6 !important;
+            color: #e0e0e0;
+            margin-top: 10px;
+            padding: 0 10px;
+        }
+
+        .list-btn {
+            width: 100%;
+            min-width: auto;
+            padding: 14px;
+            background: transparent;
+            border: 1px solid #0ff;
+            color: #0ff;
+            text-align: left;
+            transition: all 0.15s;
+            font-size: 13px;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .list-btn:hover,
+        .list-btn.active {
+            background: rgba(0, 255, 255, 0.14);
+            box-shadow: 0 0 12px rgba(0, 255, 255, 0.25);
+            color: #fff;
+            text-shadow: 0 0 3px #fff;
+        }
+
+        .equip-active-state {
+            background: linear-gradient(90deg, rgba(255, 0, 255, 0.15), rgba(0, 255, 255, 0.15)) !important;
+            border: 2px solid #ff00ff !important;
+            color: #ff00ff !important;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.6) !important;
+            text-shadow: 1px 1px 2px #000 !important;
+        }
+
+        .equip-locked-state {
+            background: rgba(255, 0, 0, 0.1) !important;
+            border-color: #ff0000 !important;
+            color: #ff0000 !important;
+            box-shadow: none !important;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        #score-screen,
+        #stage-clear-screen,
+        #game-over-screen,
+        #pause-screen,
+        #sound-screen,
+        #boss-info-screen,
+        #skins-screen,
+        #profile-screen,
+        #multiplayer-screen,
+        #lobby-screen {
+            display: none;
+        }
+
+        .detail-block {
+            margin: 8px 0;
+            padding: 10px;
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            width: 95%;
+            border-radius: 4px;
+        }
+
+        .detail-title {
+            font-size: 11px;
+            color: #00aaff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        
+        .lobby-list {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+        
+        .lobby-list li {
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid #0ff;
+            padding: 10px;
+            margin-bottom: 5px;
+            color: #fff;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .lobby-list li.host {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+        
+        /* --- MULTIPLAYER UI MARKERS --- */
+        #multiplayer-ui {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            overflow: hidden;
+        }
+        .player-nametag {
+            position: absolute;
+            color: #0ff;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+            transform: translate(-50%, -100%);
+            white-space: nowrap;
+        }
+        .offscreen-indicator {
+            position: absolute;
+            width: 0; 
+            height: 0; 
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 12px solid rgba(0, 255, 255, 0.8);
+            transform-origin: center center;
+        }
+
+        /* --- MOBILE MEDIA QUERIES --- */
+        @media (max-height: 500px) {
+            .overlay-screen h1 {
+                font-size: 28px !important;
+                margin-bottom: 5px !important;
+            }
+            .menu-buttons {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 6px;
+                margin-top: 5px;
+                max-width: 660px;
+            }
+            .start-btn {
+                width: 100%;
+                flex: 1 1 100%;
+                font-size: 17px;
+                padding: 10px;
+            }
+            .menu-row {
+                flex: 1 1 45%;
+                gap: 6px;
+            }
+            button {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            .btn-small {
+                width: 38px !important;
+                min-width: 38px !important;
+                height: 38px !important;
+                font-size: 18px;
+            }
+            .preview-container {
+                height: 74vh;
+            }
+            .list-panel {
+                padding: 10px;
+            }
+            .list-btn {
+                padding: 8px;
+                font-size: 12px;
+            }
+            .back-btn {
+                padding: 8px 22px !important;
+                margin-top: 10px !important;
+                font-size: 13px !important;
+            }
+        }
+    </style>
+
+    <!-- ==========================================
+         SCRIPTS & IMPORTS
+         ========================================== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body class="crt">
+    <!-- UI DOM ELEMENTS -->
+    <div id="game-canvas"></div>
+    <div id="low-health-vignette"></div>
+    <div id="cam-rotate-indicator">◈ SWIPE TO ORBIT CAM ◈</div>
+    <div id="multiplayer-ui"></div>
+
+    <!-- MAIN GAME HUD -->
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div style="display:flex;flex-direction:column;gap:4px;">
+                <div id="score" class="cyber-text">SCORE: 000000</div>
+                <div id="stage-display" class="cyber-text alert-text">SECTOR 1</div>
+                <div id="weapon-status" class="cyber-text">MATRIX OVERCLOCKED</div>
+            </div>
+            <div style="display:flex;flex-direction:row;align-items:center;gap:10px;">
+                <div class="health-bar-container">
+                    <div id="player-health"></div>
+                    <div id="spectator-label">SPECTATING</div>
+                </div>
+                <button class="retro-btn btn-small pointer-on" style="border-left:2px solid #0ff;border-right:2px solid #0ff;" onclick="togglePause()">||</button>
+                <button class="retro-btn btn-small pointer-on" style="border-left:2px solid #0ff;border-right:2px solid #0ff;font-size:11px;" onclick="resetCameraAngle()">⟳</button>
+            </div>
+        </div>
+        
+        <div id="boss-ui">
+            <div id="boss-name" class="cyber-text alert-text">SYSTEM CORE MATRIX</div>
+            <div class="boss-health-container">
+                <div id="boss-health"></div>
+                <span id="boss-hp-text" style="position:absolute;width:100%;text-align:center;top:50%;transform:translateY(-50%);font-size:9px;color:#fff;font-family:'Courier New',monospace;font-weight:bold;text-shadow:1px 1px 2px #000;pointer-events:none;"></span>
+            </div>
+        </div>
+
+        <div id="controls-container">
+            <div id="joystick-base"><div id="joystick-knob"></div></div>
+            <div id="right-control-cluster">
+                <div id="bomb-label-btn" class="action-btn bomb-btn" onpointerdown="triggerBomb()">
+                    <span id="super-name-ui" style="font-size:11px;">VOID REVERSE</span>
+                    <div id="bomb-cooldown" class="cooldown-overlay"></div>
+                </div>
+                <div id="fire-joystick-base"><div id="fire-joystick-knob"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN MENU -->
+    <div id="main-menu" class="overlay-screen">
+        <h1 class="cyber-text">DIMENSIONAL<br>WARFARE</h1>
+        <p style="color:#0ff;font-size:12px;margin-top:-5px;letter-spacing:4px;text-shadow:1px 1px 2px #000;">FULL 3D ORBITAL v6.2 (MP)</p>
+        <div class="menu-buttons">
+            <button class="retro-btn start-btn" onclick="startGame(false)">SINGLE PLAYER</button>
+            <div class="menu-row">
+                <button class="retro-btn boss-btn" onclick="startGame(true)">BOSS RUSH</button>
+                <button class="retro-btn boss-btn btn-small" onclick="showBossInfo()">?</button>
+            </div>
+            <div class="menu-row">
+                <button class="retro-btn multiplayer-btn" onclick="showMultiplayerMenu()">MULTIPLAYER</button>
+                <button class="retro-btn multiplayer-btn btn-small" onclick="showProfile()">P</button>
+            </div>
+            <div class="menu-row">
+                <button class="retro-btn" onclick="showSkins()">NEURAL SHELLS</button>
+                <button class="retro-btn" onclick="showScore()">ARCHIVE HIGH</button>
+            </div>
+            <div class="menu-row">
+                <button class="retro-btn" style="border-color:#0077ff;color:#0077ff;" onclick="showSoundMenu()">AUDIO DECK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAYS AND SUB-MENUS -->
+    <div id="profile-screen" class="overlay-screen">
+        <h1 class="cyber-text">USER PROFILE</h1>
+        <p>ENTER MULTIPLAYER IDENTIFICATION</p>
+        <input type="text" id="username-input" class="cyber-input" maxlength="12" placeholder="USERNAME">
+        <div class="menu-buttons">
+            <button class="retro-btn start-btn" onclick="saveProfile()">SAVE & RETURN</button>
+        </div>
+    </div>
+
+    <div id="multiplayer-screen" class="overlay-screen">
+        <div style="position:absolute;top:20px;right:20px;z-index:30;"><button class="retro-btn boss-btn btn-small" onclick="backToMenu()">X</button></div>
+        <h1 class="cyber-text multiplayer-btn" style="border:none;box-shadow:none;background:transparent;">NETWORK LINK</h1>
+        <div class="menu-buttons">
+            <button class="retro-btn start-btn multiplayer-btn" onclick="createRoom()">CREATE ROOM</button>
+            <p style="margin: 15px 0;">-- OR --</p>
+            <input type="text" id="room-code-input" class="cyber-input" style="text-transform:uppercase;margin-bottom:10px;" maxlength="4" placeholder="ROOM CODE">
+            <button class="retro-btn boss-btn" style="width:100%;font-size:18px;" onclick="joinRoom()">JOIN ROOM</button>
+        </div>
+        <p id="mp-status-msg" style="color:#ffaa00; margin-top:15px; font-weight:bold;"></p>
+    </div>
+    
+    <div id="lobby-screen" class="overlay-screen">
+        <div style="position:absolute;top:20px;right:20px;z-index:30;"><button class="retro-btn boss-btn btn-small" onclick="leaveLobby()">X</button></div>
+        <h1 class="cyber-text multiplayer-btn" style="border:none;box-shadow:none;background:transparent;">LOBBY</h1>
+        <h2 id="lobby-room-code" style="color:#fff; letter-spacing:4px; font-size:32px; margin: 10px 0;">CODE: ----</h2>
+        <ul id="lobby-players" class="lobby-list">
+            <!-- Players populated here -->
+        </ul>
+        <div class="menu-buttons" id="lobby-controls">
+            <button class="retro-btn start-btn multiplayer-btn" id="start-mp-btn" style="display:none;" onclick="startMultiplayerGame()">INITIATE SEQUENCE</button>
+            <p id="waiting-host-msg" style="color:#0ff; font-weight:bold;">WAITING FOR HOST TO START...</p>
+        </div>
+    </div>
+
+    <div id="boss-info-screen" class="overlay-screen">
+        <div style="position:absolute;top:20px;right:20px;z-index:30;"><button class="retro-btn boss-btn btn-small" onclick="backToMenu()">X</button></div>
+        <h1 class="cyber-text alert-text">THREAT DATABASE</h1>
+        <div class="preview-container"><div id="boss-list-panel" class="list-panel"></div><div class="preview-panel" id="boss-mouse-area"><div id="boss-canvas-container" class="preview-top-half"></div><div class="preview-bottom-half"><h2 id="boss-preview-name">...</h2><p id="boss-preview-desc"></p></div></div></div>
+    </div>
+
+    <div id="skins-screen" class="overlay-screen">
+        <div style="position:absolute;top:20px;right:20px;z-index:30;"><button class="retro-btn boss-btn btn-small" onclick="backToMenu()">X</button></div>
+        <h1 class="cyber-text">NEURAL CONNECTIONS</h1>
+        <div class="preview-container"><div id="skin-list-panel" class="list-panel"></div><div class="preview-panel" id="skin-mouse-area"><div id="skin-canvas-container" class="preview-top-half"></div><div class="preview-bottom-half" id="skin-details-container"><h2 id="skin-preview-name" style="margin:0;color:#fff;letter-spacing:2px;font-size:20px;font-weight:900;text-shadow:2px 2px 4px #000;">SELECT ARCHETYPE</h2><div class="detail-block"><div class="detail-title">Primary Armament</div><div class="detail-text" id="skin-preview-weapon">Awaiting sync...</div></div><div class="detail-block"><div class="detail-title" style="color:#00ff66;">Passive Modifier</div><div class="detail-text" id="skin-preview-desc">Awaiting sync...</div></div><div class="detail-block"><div class="detail-title" style="color:#ff00ff;">Overdrive Protocol</div><div class="detail-text" id="skin-preview-super">Awaiting sync...</div></div><button id="equip-skin-btn" class="retro-btn start-btn pointer-on" style="margin-top:15px;width:90%;font-size:15px;padding:12px;display:none;" onclick="equipCurrentSkin()">SYNCHRONIZE</button></div></div></div>
+    </div>
+
+    <div id="sound-screen" class="overlay-screen"><h1 class="cyber-text">AUDIO RECEPTORS</h1><button id="sound-toggle-btn" class="retro-btn boss-btn back-btn" onclick="toggleMute()" style="margin:25px 0;width:260px;">AUDIO SYSTEM: ENGAGED</button><button class="retro-btn back-btn" onclick="backToMenu()">RETURN</button></div>
+    <div id="score-screen" class="overlay-screen"><h1 class="cyber-text">HIGHEST VALUATION</h1><p id="best-score-display" class="cyber-text alert-text" style="font-size:45px;margin:25px 0;">0</p><button class="retro-btn back-btn" onclick="backToMenu()">DISMISS</button></div>
+    <div id="stage-clear-screen" class="overlay-screen"><h1 id="stage-clear-text" class="cyber-text">SECTOR PURGED</h1></div>
+    <div id="pause-screen" class="overlay-screen"><h1 class="cyber-text" style="color:#fff;text-shadow:0 0 20px #fff;">EXECUTION SUSPENDED</h1><div class="menu-buttons"><button class="retro-btn start-btn" onclick="togglePause()">RESUME SIMULATION</button><button class="retro-btn boss-btn" style="width:100%;font-size:16px;" onclick="window.location.href = window.location.href;">TERMINATE SIMULATION</button></div></div>
+    
+    <div id="game-over-screen" class="overlay-screen">
+        <h1 class="cyber-text alert-text">SHELL CRITICAL DECAY</h1>
+        <p id="final-stats" style="color:#fff;font-size:18px;font-weight:bold;"></p>
+        <p id="new-record-msg" class="cyber-text" style="display:none;color:#0ff;text-shadow:0 0 15px #0ff;">RECORD METRICS CONSOLIDATED!</p>
+        <div class="menu-buttons" style="width:90%;max-width:420px;">
+            <button id="play-again-btn" class="retro-btn start-btn" onclick="playAgain()">PLAY AGAIN</button>
+            <button id="leave-btn" class="retro-btn back-btn" style="margin-top:0;" onclick="leaveGame()">LEAVE</button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MAIN GAME LOGIC
+         ========================================== -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- GLOBAL STATE & CONFIGURATION ---
+        window.scene = null;
+
+        let bestScore = parseInt(localStorage.getItem('dimWarfareBest_v6.1')) || 0;
+        let unlockedSkins = JSON.parse(localStorage.getItem('dimWarfareSkins_v6.1')) || ['Default'];
+        let equippedSkin = localStorage.getItem('dimWarfareEquip_v6.1') || 'Default';
+
+        const GAME = { 
+            active: false, started: false, paused: false, 
+            score: 0, stage: 1, kills: 0, killsToAdvance: 12,
+            isBossStage: false, maxEnemies: 8, isBossRush: false, 
+            hyperdriveMode: false, hyperdriveTimer: 0,
+            glitchEffectTimer: 0, bombCooldown: 0, gameOverShown: false 
+        };
+        
+        const input = { x: 0, y: 0, fireX: 0, fireY: 0, isFiring: false };
+        let stageTransitionLock = false;
+        window.__stageTransitionActive = false;
+        window.__stageTransitionProjectileBufferFrames = 0;
+
+        // --- SUPABASE MULTIPLAYER SETUP ---
+        const SUPABASE_URL = 'https://eqduxnrcqbqxfuysokif.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_jyEYDxKTfF0WwkvaFpVCXw_-jgktgQJ';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let isMultiplayer = false;
+        let isHost = false;
+        let roomCode = '';
+        let mpChannel = null;
+        let localUserId = Math.random().toString(36).substring(2, 9);
+        let myUsername = localStorage.getItem('dimWarfareUsername') || ('Player_' + localUserId.substring(0,4));
+        let lobbyPlayers = {}; // Track who is in the room
+        let nextSyncTime = 0;
+        
+        window.showProfile = function() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('username-input').value = myUsername;
+            document.getElementById('profile-screen').style.display = 'flex';
+        };
+        
+        window.saveProfile = function() {
+            let val = document.getElementById('username-input').value.trim();
+            if (val) {
+                myUsername = val;
+                localStorage.setItem('dimWarfareUsername', myUsername);
+            }
+            document.getElementById('profile-screen').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'flex';
+        };
+
+        window.showMultiplayerMenu = function() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('mp-status-msg').innerText = '';
+            document.getElementById('room-code-input').value = '';
+            document.getElementById('multiplayer-screen').style.display = 'flex';
+        };
+        
+        function joinMpChannel(code, asHost) {
+            document.getElementById('mp-status-msg').innerText = 'CONNECTING...';
+            isHost = asHost;
+            roomCode = code.toUpperCase();
+            
+            if (mpChannel) { supabase.removeChannel(mpChannel); mpChannel = null; }
+            
+            mpChannel = supabase.channel(`room:${roomCode}`, {
+                config: { presence: { key: localUserId } }
+            });
+            
+            mpChannel.on('presence', { event: 'sync' }, () => {
+                lobbyPlayers = mpChannel.presenceState();
+                updateLobbyUI();
+                updateRemotePlayers();
+            });
+            
+            mpChannel.on('broadcast', { event: 'start_game' }, (payload) => {
+                if (!isHost) startGame(false, true); 
+            });
+            
+            mpChannel.on('broadcast', { event: 'p_state' }, ({payload}) => {
+                if (payload.uuid !== localUserId && entities.remotePlayers[payload.uuid]) {
+                    let rp = entities.remotePlayers[payload.uuid];
+                    rp.targetPos.set(payload.x, 0, payload.z);
+                    rp.targetRot = payload.rot;
+                    rp.skin = payload.skin;
+                    rp.username = payload.username;
+                    rp.isSpectator = payload.isSpectator;
+                }
+            });
+            
+            mpChannel.on('broadcast', { event: 'p_shoot' }, ({payload}) => {
+                if (payload.uuid !== localUserId) {
+                    const origin = new THREE.Vector3(payload.ox, 0, payload.oz);
+                    const dir = new THREE.Vector3(payload.dx, 0, payload.dz);
+                    spawnPlayerProjectiles(origin, dir, payload.skin, payload.col, payload.pw, false);
+                }
+            });
+
+            mpChannel.on('broadcast', { event: 'p_bomb' }, ({payload}) => {
+                if (payload.uuid !== localUserId) {
+                    const origin = new THREE.Vector3(payload.ox, 0, payload.oz);
+                    let col = payload.skin === 'Default' ? 0x00ffff : parseInt(BOSS_DATABASE.find(b => b.id === payload.skin).color.replace('#', '0x'), 16);
+                    executeSuper(origin, payload.skin, col, null, false); // false = not local
+                }
+            });
+
+            mpChannel.on('broadcast', { event: 'spawn_entity' }, ({payload}) => {
+                if (isHost) return;
+                const pos = new THREE.Vector3(payload.x, 0, payload.z);
+                if (payload.type === 'enemy') {
+                    let e = new Enemy(pos, payload.variant);
+                    e.networkId = payload.id;
+                    entities.enemies.push(e);
+                } else if (payload.type === 'boss') {
+                    let b = new Boss(pos, payload.variant);
+                    b.networkId = payload.id;
+                    entities.enemies.push(b);
+                    document.getElementById('boss-ui').style.display = 'flex';
+                } else if (payload.type === 'powerup') {
+                    let p = new PowerUp(pos);
+                    p.networkId = payload.id;
+                    entities.powerups.push(p);
+                } else if (payload.type === 'healthdrop') {
+                    let h = new HealthDrop(pos);
+                    h.networkId = payload.id;
+                    entities.healthDrops.push(h);
+                } else if (payload.type === 'hazard') {
+                    let m = new Meteorite(pos);
+                    m.networkId = payload.id;
+                    entities.hazards.push(m);
+                }
+            });
+
+            mpChannel.on('broadcast', { event: 'sync_host' }, ({payload}) => {
+                if (isHost) return;
+                GAME.score = payload.score;
+                document.getElementById('score').innerText = `SCORE: ${String(GAME.score).padStart(6, '0')}`;
+                
+                payload.enemies.forEach(es => {
+                    let e = entities.enemies.find(en => en.networkId === es.id);
+                    if (e) {
+                        e.targetPos = new THREE.Vector3(es.x, 0, es.z);
+                        e.hp = es.hp;
+                        if (e instanceof Boss) {
+                            e.currentPhase = es.phase;
+                            e.updateUI();
+                        }
+                    }
+                });
+            });
+
+            mpChannel.on('broadcast', { event: 'remove_entity' }, ({payload}) => {
+                if (isHost) return;
+                let removeFromList = (list) => {
+                    for (let i = list.length - 1; i >= 0; i--) {
+                        if (list[i].networkId === payload.id) {
+                            if(payload.type === 'enemy' && list[i] instanceof Boss) {
+                                document.getElementById('boss-ui').style.display = 'none';
+                            }
+                            if (list[i].mesh) spawnExplosion(list[i].mesh.position, 0xffffff, 6);
+                            list[i].destroy();
+                            list.splice(i, 1);
+                        }
+                    }
+                };
+                if (payload.type === 'enemy') removeFromList(entities.enemies);
+                else if (payload.type === 'hazard') removeFromList(entities.hazards);
+                else if (payload.type === 'powerup') removeFromList(entities.powerups);
+                else if (payload.type === 'healthdrop') removeFromList(entities.healthDrops);
+            });
+
+            mpChannel.on('broadcast', { event: 'hit_enemy' }, ({payload}) => {
+                if (!isHost) return; // Only host handles damage to avoid double application
+                let e = entities.enemies.find(en => en.networkId === payload.id);
+                if (e) {
+                    if (e.takeDamage(payload.dmg)) {
+                        spawnExplosion(e.mesh.position, e.mesh.children[1] ? e.mesh.children[1].material.color.getHex() : 0xffffff, e instanceof Boss ? 30 : 6);
+                        addScore(e instanceof Boss ? 500 : 15);
+                        handleKill(e instanceof Boss, e);
+                        mpChannel.send({ type: 'broadcast', event: 'remove_entity', payload: { id: payload.id, type: 'enemy' }});
+                        e.destroy();
+                        entities.enemies = entities.enemies.filter(en => en.networkId !== payload.id);
+                    }
+                }
+            });
+            
+            mpChannel.on('broadcast', { event: 'stage_advance' }, ({payload}) => {
+                if (!isHost) requestStageAdvance(payload.stage);
+            });
+
+            mpChannel.on('broadcast', { event: 'game_over' }, () => {
+                if (!isHost) gameOver(true);
+            });
+
+            mpChannel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await mpChannel.track({ username: myUsername, skin: equippedSkin, isHost: isHost, isSpectator: false });
+                    document.getElementById('multiplayer-screen').style.display = 'none';
+                    document.getElementById('lobby-room-code').innerText = `CODE: ${roomCode}`;
+                    if (isHost) {
+                        document.getElementById('start-mp-btn').style.display = 'block';
+                        document.getElementById('waiting-host-msg').style.display = 'none';
+                    } else {
+                        document.getElementById('start-mp-btn').style.display = 'none';
+                        document.getElementById('waiting-host-msg').style.display = 'block';
+                    }
+                    document.getElementById('lobby-screen').style.display = 'flex';
+                } else {
+                    document.getElementById('mp-status-msg').innerText = 'CONNECTION FAILED';
+                }
+            });
+        }
+        
+        window.createRoom = function() {
+            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+            joinMpChannel(code, true);
+        };
+        
+        window.joinRoom = function() {
+            const code = document.getElementById('room-code-input').value.trim();
+            if (code.length === 4) {
+                joinMpChannel(code, false);
+            } else {
+                document.getElementById('mp-status-msg').innerText = 'INVALID CODE';
+            }
+        };
+        
+        window.leaveLobby = function() {
+            if (mpChannel) { supabase.removeChannel(mpChannel); mpChannel = null; }
+            document.getElementById('lobby-screen').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'flex';
+        };
+        
+        function updateLobbyUI() {
+            const listEl = document.getElementById('lobby-players');
+            listEl.innerHTML = '';
+            Object.keys(lobbyPlayers).forEach(key => {
+                const p = lobbyPlayers[key][0];
+                const li = document.createElement('li');
+                if (p.isHost) li.className = 'host';
+                li.innerHTML = `<span>${p.username}</span> <span>${p.isHost ? '(HOST)' : ''}</span>`;
+                listEl.appendChild(li);
+            });
+        }
+        
+        window.startMultiplayerGame = function() {
+            if (isHost && mpChannel) {
+                mpChannel.send({ type: 'broadcast', event: 'start_game', payload: { bossRush: false } });
+                startGame(false, true);
+            }
+        };
+
+        const BOSS_DATABASE = [
+            { id: 'Core', name: 'SYSTEM CORE MATRIX', color: '#ff0022', symbol: '♦', skinWpn: 'Quad-directional burst. Shoots in 4 cardinal directions simultaneously.',
+                buff: 'Standard agility parameters.', super: 'OMNI-BEAM SPLIT: Fires 32 projectiles in a massive radial 360-degree spread.',
+                desc: 'Sector 5 Guardian. Emits high-density geometric bullet walls paired with tracking beams.' },
+            { id: 'Glitcher', name: 'ENTROPY OVERLORD', color: '#00ff66', symbol: '⬢', skinWpn: 'High-speed linear pulse fire.',
+                buff: 'PHASE LEAP: Automatically teleports and evades incoming fatal damage (300 frame cooldown).',
+                super: 'CHRONO FRACTION FLICKER: Instantly damages all enemies on screen and disrupts camera feeds.',
+                desc: 'Sector 10 Anomaly. Matrix signature fixed at 1500 HP. Repositions unpredictably via fast space-folds.' },
+            { id: 'Devourer', name: 'QUANTUM DEVOURER', color: '#ccff00', symbol: '⬟', skinWpn: 'Triple-wave forward spread.',
+                buff: 'LIFE VAMPIRISM: Passively restores minor HP whenever an enemy unit is destroyed.',
+                super: 'SINGULARITY COLLAPSE: Spawns a massive gravity well behind the ship that pulls in and damages foes.',
+                desc: 'Sector 15 Leviathan. Casts expanding horizontal data waves that close off arena movement grids.' },
+            { id: 'Phantom', name: 'PHANTOM ASSASSIN', color: '#aa00ff', symbol: '▲', skinWpn: 'Standard linear pulse fire.',
+                buff: 'CLOAK SHIFT: Reduces enemy tracking logic slightly (standard mobility).',
+                super: 'MIRAGE BLADE SPECTRUM: Fires 3 gigantic, wide energy waves forward that clear lanes.',
+                desc: 'Sector 20 Phantom. Executes predictive lane intercept maneuvers that outrun auto-targeting.' },
+            { id: 'Fortress', name: 'AEGIS FORTRESS', color: '#0055ff', symbol: '■', skinWpn: 'Heavy linear pulse fire.',
+                buff: 'ARMOR BLOCK: Passively reduces all incoming damage by 20%.',
+                super: 'TITAN DEFLECTION FORCE: Grants temporary complete invulnerability and spawns a defensive ring.',
+                desc: 'Sector 25 Juggernaut. Drags localized deflection fields while compressing space with heavy fire.' },
+            { id: 'SwarmQueen', name: 'SWARM MOTHER', color: '#00ffff', symbol: '◎',
+                skinWpn: 'Widescreen scatter fire. Emits projectiles from multiple lateral hardpoints.',
+                buff: 'Horizontal alignment profile allows easier side-to-side sweeping.',
+                super: 'WASP FLOOD EMBARGO: Fires 25 erratic, randomly angled projectiles across the grid.',
+                desc: 'Sector 30 Spawner. Spawns linked geometric screening vectors to establish spatial lane superiority.' },
+            { id: 'Sniper', name: 'ORBITAL SNIPER', color: '#ff8800', symbol: '▼',
+                skinWpn: 'High-velocity armor-piercing rounds that travel through multiple targets.',
+                buff: 'RAIL PIERCE: Standard rounds do not stop upon hitting the first enemy.',
+                super: 'IONIZED RAILSTRIKE: Fires a massive, ultra-fast hyper-beam down the central axis.',
+                desc: 'Sector 35 Hunter. Prepares highly precise, long-distance target channels that cut across grids.' },
+            { id: 'Pulsar', name: 'PULSAR ANOMALY', color: '#ffffff', symbol: '●', skinWpn: 'Standard linear pulse fire.',
+                buff: 'REPULSION: Standard agility parameters.',
+                super: 'SUPERNOVA REACTION: 12-way burst fire sequence radiating outward.',
+                desc: 'Sector 40 Engine. Generates expanding, offset shock waves that interrupt and deflect counter-attacks.' },
+            { id: 'Weaver', name: 'MATRIX WEAVER', color: '#ff00aa', symbol: '◒', skinWpn: 'Standard linear pulse fire.',
+                buff: 'PLASMA TRAILS: Standard agility parameters.',
+                super: 'THREAD TANGLE EMISSION: 12-way burst fire sequence radiating outward.',
+                desc: 'Sector 45 Core. Tracks target axes with oscillating lines of pure light.' },
+            { id: 'Chaos', name: 'CHAOS NODE', color: '#ff00ff', symbol: '✺', skinWpn: 'Standard linear pulse fire.',
+                buff: 'REAR FLARE: Horizontal ship profile.',
+                super: 'ANARCHY CASCADE STORM: 12-way burst fire sequence radiating outward.',
+                desc: 'Sector 50 Matrix. Projects rapid, chaotic bullet storms that destabilize tactical evasive patterns.' },
+            { id: 'Ragnarok', name: 'RAGNAROK DOOM', color: '#ff3300', symbol: '☠', skinWpn: 'Quad-directional burst fire.',
+                buff: 'BURNING FIELDS: Standard agility parameters.',
+                super: 'APOCALYPSE ECLIPSE: Fires a massive, ultra-fast hyper-beam down the central axis.',
+                desc: 'Sector 55 Elite. Deploys cross-cutting expanding spirals that split upon reaching target coordinates.' },
+            { id: 'Aether', name: 'AETHER CELESTIAL', color: '#00ffcc', symbol: '✵', skinWpn: 'Standard linear pulse fire.',
+                buff: 'REGEN MATRIX: Slowly regenerates health constantly over time (8 HP per second).',
+                super: 'NEXUS STARBURST: 12-way burst fire sequence radiating outward.',
+                desc: 'Sector 60 Elite. Controls arena coordinates with light bursts and changing gravitational fields.' },
+            { id: 'Oblivion', name: 'OBLIVION HARBINGER', color: '#4d0099', symbol: '👁', skinWpn: 'Standard linear pulse fire.',
+                buff: 'GRAVITY SLOW: Standard agility parameters.',
+                super: 'VOID DEVIL DISRUPTION: Spawns a massive gravity well behind the ship that pulls in and damages foes.',
+                desc: 'Sector 65 Elite. Sub-gravitational cluster that reduces escape vector velocity.' },
+            { id: 'Singularity', name: 'SINGULARITY ZERO', color: '#ff00ff', symbol: '🌀', skinWpn: 'Standard linear pulse fire.',
+                buff: 'PULL ENGINE: Standard agility parameters.',
+                super: 'BLACK HOLE CRUSH: Spawns a massive gravity well behind the ship that pulls in and damages foes.',
+                desc: 'Sector 70 Elite. Drops temporary structural displacement pools that explode sequentially.' },
+            { id: 'Vortex', name: 'MAELSTROM VORTEX', color: '#0033ff', symbol: '🌪', skinWpn: 'Standard linear pulse fire.',
+                buff: 'VELOCITY FORCE: Horizontal ship profile.',
+                super: 'TYPHOON ENERGY CYCLONE: Fires 3 gigantic, wide energy waves forward that clear lanes.',
+                desc: 'Sector 75 Elite. Emits interlocking spiral pattern waves that follow evasion targets directly.' },
+            { id: 'Goliath', name: 'GOLIATH BREAKER', color: '#990000', symbol: '🧱', skinWpn: 'Standard linear pulse fire.',
+                buff: 'STUN RIFF: Passively reduces all incoming damage by 20%.',
+                super: 'SEISMIC SHOCK RIFT: Grants temporary complete invulnerability and spawns a defensive ring.',
+                desc: 'Sector 80 Elite. Titan unit that impacts the arena floor with wide, expanding seismic shockwaves.' },
+            { id: 'Chronos', name: 'CHRONOS RIFT MASTER', color: '#ffcc00', symbol: '⏳', skinWpn: 'Standard linear pulse fire.',
+                buff: 'STASIS MATRIX: Standard agility parameters.',
+                super: 'TEMPORAL TIME LOCK: Instantly damages all enemies on screen and disrupts camera feeds.',
+                desc: 'Sector 85 Elite. Manifests localized time rifts that delay and compress active combat lines.' },
+            { id: 'Nebula', name: 'NEBULA STARDUST', color: '#ff0099', symbol: '🌌', skinWpn: 'Standard linear pulse fire.',
+                buff: 'CLOUD SHIFT: Standard agility parameters.',
+                super: 'NEBULAR SHRAPNEL FIELD: Fires 25 erratic, randomly angled projectiles across the grid.',
+                desc: 'Sector 90 Elite. Spawns highly volatile nebular dust nodes that burst into sharp projectile patterns.' },
+            { id: 'Dominator', name: 'OVERLORD DOMINATOR', color: '#cc00ff', symbol: '👑',
+                skinWpn: 'Triple-wave forward spread.', buff: 'COMMAND AMPLIFIER: Standard agility parameters.',
+                super: 'SOVEREIGN SATELLITE RAY: Spawns two persistent flanking orbital drones that automatically fire at nearby targets.',
+                desc: 'Sector 95 Elite. Commands sub-turrets that track and slice coordinates with orbital lasers.' },
+            { id: 'Infinity', name: 'INFINITY ARCHITECT', color: '#ffffff', symbol: '∞',
+                skinWpn: 'Quad-directional burst. Shoots in 4 cardinal directions simultaneously.',
+                buff: 'OMNI FREQUENCY: Standard agility parameters.',
+                super: 'COSMIC RENEWAL EMISSION: Fires 32 projectiles in a massive radial 360-degree spread.',
+                desc: 'Sector 100 Sovereign. Orchestrates massive geometric sheets of alternating grid beams.' }
+        ];
+
+        // --- AUDIO SYSTEM ---
+        let audioCtx = null;
+        let soundMuted = false;
+        window.__suppressShootSfx = false;
+
+        function initAudio() { 
+            if (!audioCtx) audioCtx = new(window.AudioContext || window.webkitAudioContext)(); 
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
+        }
+
+        window.toggleMute = function() {
+            initAudio();
+            soundMuted = !soundMuted;
+            document.getElementById('sound-toggle-btn').innerText = soundMuted ? "AUDIO SYSTEM: DISENGAGED" : "AUDIO SYSTEM: ENGAGED";
+            document.getElementById('sound-toggle-btn').style.background = soundMuted ? "rgba(255,0,85,0.05)" : "rgba(255,0,85,0.2)";
+        };
+
+        function playSynthSound(type) {
+            if (soundMuted) return;
+            if (type === 'shoot' && window.__suppressShootSfx) return;
+            initAudio();
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+            
+            if (type === 'shoot') { 
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.07);
+                gainNode.gain.setValueAtTime(0.08, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.07);
+                osc.start(now);
+                osc.stop(now + 0.07); 
+            } else if (type === 'damage') { 
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(130, now);
+                osc.frequency.linearRampToValueAtTime(30, now + 0.15);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15); 
+            } else if (type === 'kill') { 
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.setValueAtTime(550, now + 0.05);
+                gainNode.gain.setValueAtTime(0.06, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05); 
+            } else if (type === 'boss_die') { 
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(8, now + 1.1);
+                gainNode.gain.setValueAtTime(0.35, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 1.1);
+                osc.start(now);
+                osc.stop(now + 1.1); 
+            } else if (type === 'die') { 
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(1, now + 1.4);
+                gainNode.gain.setValueAtTime(0.45, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 1.4);
+                osc.start(now);
+                osc.stop(now + 1.4); 
+            } else if (type === 'powerup') { 
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(280, now);
+                osc.frequency.exponentialRampToValueAtTime(1400, now + 0.25);
+                gainNode.gain.setValueAtTime(0.25, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25); 
+            }
+        }
+
+        // --- PREVIEW ENGINE (UI Models) ---
+        let previewRenderer, previewScene, previewCamera, previewComposer;
+        let currentPreviewMesh, currentPreviewSkin = 'Default', selectedSkinId = 'Default';
+        let previewTimer = 0;
+        let previewEntities = [];
+        let isDraggingPreview = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let previewRotationTarget = { x: 0, y: 0 };
+
+        function initPreviewEngine(containerId) {
+            const container = document.getElementById(containerId);
+            if (!previewRenderer) {
+                previewRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                previewScene = new THREE.Scene();
+                previewScene.add(new THREE.AmbientLight(0xffffff, 0.65));
+                let dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+                dirLight.position.set(5, 12, 12);
+                previewScene.add(dirLight);
+                previewCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+                previewCamera.position.set(0, 5, 16);
+                previewCamera.lookAt(0, 0, 0);
+                const renderScene = new RenderPass(previewScene, previewCamera);
+                const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+                previewComposer = new EffectComposer(previewRenderer);
+                previewComposer.addPass(renderScene);
+                previewComposer.addPass(bloomPass);
+            }
+            previewCamera.aspect = container.clientWidth / container.clientHeight;
+            previewCamera.updateProjectionMatrix();
+            previewRenderer.setSize(container.clientWidth, container.clientHeight);
+            previewComposer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(previewRenderer.domElement);
+            previewRotationTarget = { x: 0, y: 0 };
+        }
+
+        function setupDragHandlers(areaId) {
+            const area = document.getElementById(areaId);
+            if (!area) return;
+            const onDown = (e) => {
+                isDraggingPreview = true;
+                let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                previousMousePosition = { x: clientX, y: clientY };
+            };
+            const onMove = (e) => {
+                if (!isDraggingPreview) return;
+                let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                previewRotationTarget.y += (clientX - previousMousePosition.x) * 0.012;
+                previewRotationTarget.x += (clientY - previousMousePosition.y) * 0.012;
+                previousMousePosition = { x: clientX, y: clientY };
+            };
+            const onUp = () => { isDraggingPreview = false; };
+            area.addEventListener('mousedown', onDown);
+            area.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+            area.addEventListener('touchstart', onDown, { passive: true });
+            area.addEventListener('touchmove', onMove, { passive: true });
+            window.addEventListener('touchend', onUp);
+        }
+
+        function clearPreviewScene() {
+            if (currentPreviewMesh) {
+                const target = currentPreviewMesh.wrapper || currentPreviewMesh;
+                previewScene.remove(target);
+                disposeRetroMesh(target);
+            }
+            previewEntities.forEach(e => {
+                if (e.mesh) {
+                    previewScene.remove(e.mesh);
+                    disposeRetroMesh(e.mesh);
+                }
+                if (typeof e.destroy === 'function') e.destroy();
+            });
+            previewEntities = [];
+            previewTimer = 0;
+            currentPreviewMesh = null;
+        }
+
+        class PreviewProj {
+            constructor(pos, dir, col, spd) {
+                this.mesh = createRetroMesh(getCachedGeo('preview_proj_geom', () => new THREE.BoxGeometry(0.2, 0.2, 1.2)), col, col, 0.7);
+                this.mesh.position.copy(pos);
+                this.mesh.rotation.y = Math.atan2(dir.x, dir.z);
+                this.vel = dir.normalize().multiplyScalar(spd);
+                this.life = 40;
+                previewScene.add(this.mesh);
+            }
+            update() { 
+                this.mesh.position.add(this.vel);
+                this.life--; 
+                return this.life > 0; 
+            }
+            destroy() { 
+                previewScene.remove(this.mesh); 
+                disposeRetroMesh(this.mesh); 
+            }
+        }
+
+        // --- UTILITY & CACHE ---
+        const _enemyGeoCache = {};
+        function getCachedGeo(key, factory) {
+            if (!_enemyGeoCache[key]) _enemyGeoCache[key] = factory();
+            return _enemyGeoCache[key];
+        }
+
+        function createRetroMesh(geometry, edgeColor, coreColor, opacity = 0.15) {
+            const group = new THREE.Group();
+            const hiddenMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+            group.add(new THREE.Mesh(geometry, hiddenMat));
+            const edgeGeom = getCachedGeo('edges_' + geometry.uuid, () => new THREE.EdgesGeometry(geometry));
+            const glowMat = new THREE.LineBasicMaterial({ color: edgeColor, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending });
+            const glowLines = new THREE.LineSegments(edgeGeom, glowMat);
+            glowLines.scale.setScalar(1.06);
+            group.add(glowLines);
+            group.add(new THREE.LineSegments(edgeGeom, new THREE.LineBasicMaterial({ color: edgeColor, linewidth: 2 })));
+            return group;
+        }
+
+        function setRetroGroupColor(group, colorHex) {
+            if (!group) return;
+            group.traverse(obj => {
+                if (obj.material && obj.material.color) {
+                    obj.material.color.setHex(colorHex);
+                }
+            });
+        }
+
+        function disposeRetroMesh(group) {
+            if (!group || (group.userData && group.userData.__retroDisposed)) return;
+            if (group.userData) group.userData.__retroDisposed = true;
+            const seen = new Set();
+            group.traverse(obj => {
+                const mat = obj.material;
+                if (!mat) return;
+                if (Array.isArray(mat)) {
+                    mat.forEach(m => { if (m && !seen.has(m)) { seen.add(m); if (typeof m.dispose === 'function') m.dispose(); } });
+                } else if (!seen.has(mat)) {
+                    seen.add(mat);
+                    if (typeof mat.dispose === 'function') mat.dispose();
+                }
+            });
+        }
+
+        function safeDestroy(obj, pool = null) {
+            if (!obj) return;
+            const root = obj.group || obj.mesh || obj;
+            if (!root || (root.userData && root.userData.__destroyed)) return;
+
+            if (root.parent) {
+                try { root.parent.remove(root); } catch (e) {}
+            } else if (window.scene && typeof window.scene.remove === 'function') {
+                try { window.scene.remove(root); } catch (e) {}
+            }
+
+            root.visible = false;
+            root.userData = root.userData || {};
+            root.userData.__destroyed = true;
+            root.userData.__pooled = !!pool;
+
+            if (pool) {
+                if (typeof pool.push === 'function' && !pool.includes(root)) pool.push(root);
+                return;
+            }
+
+            if (typeof root.traverse === 'function') {
+                root.traverse(node => {
+                    if (node.geometry && typeof node.geometry.dispose === 'function') {
+                        try { node.geometry.dispose(); } catch (e) {}
+                    }
+                    const mat = node.material;
+                    if (!mat) return;
+                    if (Array.isArray(mat)) {
+                        mat.forEach(m => { if (m && typeof m.dispose === 'function') { try { m.dispose(); } catch (e) {} } });
+                    } else if (typeof mat.dispose === 'function') {
+                        try { mat.dispose(); } catch (e) {}
+                    }
+                });
+            } else {
+                if (root.geometry && typeof root.geometry.dispose === 'function') {
+                    try { root.geometry.dispose(); } catch (e) {}
+                }
+                const mat = root.material;
+                if (Array.isArray(mat)) {
+                    mat.forEach(m => { if (m && typeof m.dispose === 'function') { try { m.dispose(); } catch (e) {} } });
+                } else if (mat && typeof mat.dispose === 'function') {
+                    try { mat.dispose(); } catch (e) {}
+                }
+            }
+        }
+
+        const DEFAULT_BOSS_BASE_RADIUS = 5.5;
+        function getBossPhaseScale(phase) {
+            return phase === 2 ? 1.3 : 1;
+        }
+
+        function syncBossCollisionRadius(entity, phaseScale = null) {
+            if (!entity) return DEFAULT_BOSS_BASE_RADIUS;
+            if (typeof entity.baseRadius !== 'number') entity.baseRadius = DEFAULT_BOSS_BASE_RADIUS;
+            const scale = phaseScale !== null ? phaseScale : ((entity.mesh && entity.mesh.scale && typeof entity.mesh.scale.x === 'number') ? entity.mesh.scale.x : 1);
+            entity.radius = entity.baseRadius * scale;
+            return entity.radius;
+        }
+
+        function getBossGeo(id) {
+            return getCachedGeo('boss_geo_' + id, () => {
+                if (id === 'Core') return new THREE.OctahedronGeometry(3.2, 0);
+                if (id === 'Glitcher') return new THREE.IcosahedronGeometry(3.2, 0);
+                if (id === 'Devourer') return new THREE.DodecahedronGeometry(3.4, 0);
+                if (id === 'Phantom') return new THREE.TetrahedronGeometry(3.6);
+                if (id === 'Fortress') return new THREE.BoxGeometry(4.5, 4.5, 4.5);
+                if (id === 'SwarmQueen') return new THREE.TorusGeometry(2.8, 1.0, 8, 20);
+                if (id === 'Sniper') return new THREE.ConeGeometry(2.2, 6.5, 6);
+                if (id === 'Pulsar') return new THREE.SphereGeometry(3.2, 8, 8);
+                if (id === 'Weaver') return new THREE.CylinderGeometry(2.2, 2.2, 6.5, 6);
+                if (id === 'Chaos') return new THREE.TorusKnotGeometry(2.0, 0.7, 48, 6);
+                if (id === 'Ragnarok') return new THREE.TorusKnotGeometry(2.2, 0.5, 80, 4, 3, 5);
+                if (id === 'Aether') return new THREE.OctahedronGeometry(3.6, 1);
+                if (id === 'Oblivion') { let geom = new THREE.IcosahedronGeometry(3.5, 1); geom.scale(1, 0.4, 1); return geom; }
+                if (id === 'Singularity') return new THREE.TorusGeometry(3.0, 0.7, 6, 32);
+                if (id === 'Vortex') return new THREE.CylinderGeometry(0.2, 3.5, 6.5, 12);
+                if (id === 'Goliath') return new THREE.BoxGeometry(5.0, 6.0, 3.8);
+                if (id === 'Chronos') return new THREE.DodecahedronGeometry(3.6, 1);
+                if (id === 'Nebula') return new THREE.IcosahedronGeometry(3.6, 2);
+                if (id === 'Dominator') return new THREE.CylinderGeometry(3.2, 1.2, 5.5, 8);
+                if (id === 'Infinity') return new THREE.OctahedronGeometry(4.0, 2);
+                return new THREE.BoxGeometry(2.5, 2.5, 2.5);
+            });
+        }
+
+        function getSkinGeo(id) {
+            return getCachedGeo('skin_geo_' + id, () => {
+                if (id === 'Default') return new THREE.ConeGeometry(1.0, 2.6, 4);
+                let cl = getBossGeo(id).clone();
+                cl.scale(0.45, 0.45, 0.45);
+                return cl;
+            });
+        }
+
+        // --- RENDERING & CAMERA SETUP ---
+        const container = document.getElementById('game-canvas');
+        const scene = new THREE.Scene();
+        window.scene = scene;
+        scene.fog = new THREE.FogExp2(0x010004, 0.012);
+        
+        const cameraRig = new THREE.Group();
+        const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 1, 1000);
+        camera.position.set(0, 38, 24);
+        cameraRig.add(camera);
+        scene.add(cameraRig);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+        
+        const renderScenePass = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.0, 0.5, 0.85);
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScenePass);
+        composer.addPass(bloomPass);
+        
+        const ambientLight = new THREE.AmbientLight(0x404040, 2.0);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        dirLight.position.set(50, 100, 50);
+        scene.add(dirLight);
+
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 200;
+        const starPos = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i += 3) { 
+            starPos[i] = (Math.random() - 0.5) * 240;
+            starPos[i + 1] = (Math.random() - 0.5) * 2000;
+            starPos[i + 2] = (Math.random() - 0.5) * 2000; 
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x00ffff, size: 1.2, transparent: true, opacity: 0.75, depthTest: false, sizeAttenuation: true }));
+        stars.renderOrder = -1;
+        scene.add(stars);
+
+        let cameraOrbitAngle = 0;
+        let cameraOrbitPitch = 0.55;
+        let cameraOrbitDistance = 38;
+        let targetOrbitAngle = 0;
+        let targetOrbitPitch = 0.55;
+        let targetOrbitDistance = 38;
+        let isOrbitingCamera = false;
+        let orbitTouchId = null;
+        let orbitStartPos = { x: 0, y: 0 };
+        let orbitStartAngle = 0;
+        let orbitStartPitch = 0.55;
+        let orbitActive = false;
+
+        window.resetCameraAngle = function() {
+            targetOrbitAngle = 0;
+            targetOrbitPitch = 0.55;
+            targetOrbitDistance = 38;
+            document.getElementById('cam-rotate-indicator').style.display = 'none';
+        };
+
+        function getCameraRelativeGroundVector(localX, localY) {
+            const cosA = Math.cos(cameraOrbitAngle);
+            const sinA = Math.sin(cameraOrbitAngle);
+            return new THREE.Vector3(
+                localX * cosA + localY * sinA,
+                0,
+                -localX * sinA + localY * cosA
+            );
+        }
+
+        function applyScreenShake(amount) {
+            const baseY = camera.position.y;
+            const baseZ = camera.position.z;
+            gsap.to(camera.position, {
+                x: (Math.random() - 0.5) * amount,
+                y: baseY + (Math.random() - 0.5) * amount,
+                z: baseZ + (Math.random() - 0.5) * amount,
+                duration: 0.06,
+                yoyo: true,
+                repeat: 4,
+                ease: "rough",
+                onComplete: () => { updateCameraOrbitalPosition(); }
+            });
+        }
+
+        function updateCameraOrbitalPosition() {
+            const clampedPitch = THREE.MathUtils.clamp(cameraOrbitPitch, 0.15, 1.35);
+            const dist = cameraOrbitDistance;
+            const y = Math.sin(clampedPitch) * dist;
+            const horizDist = Math.cos(clampedPitch) * dist;
+            const x = Math.sin(cameraOrbitAngle) * horizDist;
+            const z = Math.cos(cameraOrbitAngle) * horizDist;
+            camera.position.set(x, y, z);
+        }
+
+        // --- GAME ENTITIES ---
+        const entities = { 
+            player: null, remotePlayers: {}, projectiles: [], enemies: [], particles: [], 
+            visualFX: [], powerups: [], hazards: [], healthDrops: [] 
+        };
+
+        // Pools and caching
+        const _particleGeoPool = {};
+        function getParticleGeo(scale) {
+            const key = Math.round(scale * 100);
+            if (!_particleGeoPool[key]) _particleGeoPool[key] = new THREE.BoxGeometry(scale, scale, scale);
+            return _particleGeoPool[key];
+        }
+
+        const particleMeshPool = [];
+        function getPooledParticleMesh(scale) {
+            if (particleMeshPool.length) {
+                const mesh = particleMeshPool.pop();
+                mesh.visible = true;
+                return mesh;
+            }
+            return createRetroMesh(getParticleGeo(scale), 0xffffff, 0xffffff, 0.6);
+        }
+
+        class Particle {
+            constructor(pos, color, scale) {
+                this.mesh = getPooledParticleMesh(scale);
+                setRetroGroupColor(this.mesh, color);
+                this.mesh.position.copy(pos);
+                this.mesh.scale.setScalar(1.0);
+                this.mesh.rotation.set(0, 0, 0);
+                this.vel = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(Math.random() * 1.3);
+                this.life = 1.0;
+                scene.add(this.mesh);
+            }
+            update() { 
+                this.mesh.position.add(this.vel);
+                this.mesh.rotation.x += 0.1;
+                this.mesh.rotation.y += 0.1;
+                this.life -= 0.045;
+                this.mesh.scale.setScalar(Math.max(0.001, this.life)); 
+                return this.life > 0; 
+            }
+            destroy() {
+                this.mesh.visible = false;
+                safeDestroy(this.mesh, particleMeshPool.length < 300 ? particleMeshPool : null);
+            }
+        }
+
+        function spawnExplosion(pos, color, count) {
+            const maxAllowed = GAME.stage > 5 ? 8 : count;
+            const cappedCount = Math.min(count, maxAllowed);
+            if (entities.particles.length > 80) return;
+            for (let i = 0; i < cappedCount; i++) entities.particles.push(new Particle(pos, color, 0.65));
+        }
+
+        const projectilePools = { normal: [], power: [] };
+        function getPooledProjectileMesh(isPower) {
+            const pool = isPower ? projectilePools.power : projectilePools.normal;
+            if (pool.length) {
+                const mesh = pool.pop();
+                mesh.visible = true;
+                mesh.userData = mesh.userData || {};
+                mesh.userData.isPower = isPower;
+                mesh.userData.__destroyed = false;
+                mesh.userData.__pooled = false;
+                return mesh;
+            }
+            const geom = isPower
+                ? getCachedGeo('proj_power', () => new THREE.CylinderGeometry(0.1, 0.35, 3.8, 4))
+                : getCachedGeo('proj_normal', () => new THREE.BoxGeometry(0.22, 0.22, 2.2));
+            const mesh = createRetroMesh(geom, 0xffffff, 0xffffff, 0.85);
+            mesh.userData = mesh.userData || {};
+            mesh.userData.isPower = isPower;
+            mesh.userData.__destroyed = false;
+            mesh.userData.__pooled = false;
+            return mesh;
+        }
+
+        function returnProjectileMeshToPool(mesh) {
+            if (!mesh) return;
+            mesh.userData = mesh.userData || {};
+            const pool = mesh.userData.isPower ? projectilePools.power : projectilePools.normal;
+            safeDestroy(mesh, pool.length < 200 ? pool : null);
+        }
+
+        class Projectile {
+            constructor(pos, dir, color, speed, isEnemy, powerWeapon = false, pierce = false) {
+                this.mesh = getPooledProjectileMesh(powerWeapon);
+                this.mesh.scale.setScalar(1.0); 
+                setRetroGroupColor(this.mesh, color);
+                this.mesh.position.copy(pos);
+                this.mesh.position.y = 0;
+                this.mesh.rotation.set(0, Math.atan2(dir.x, dir.z), 0);
+
+                this.vel = dir.normalize().multiplyScalar(speed);
+                this.isEnemy = isEnemy;
+                this.powerWeapon = powerWeapon;
+                this.pierce = pierce;
+                this.hasPierced = false;
+                this.radius = powerWeapon ? 1.0 : 0.45;
+                this.distance = 0;
+                scene.add(this.mesh);
+            }
+            update() { 
+                this.mesh.position.add(this.vel);
+                this.distance += this.vel.length(); 
+                if (this.powerWeapon && !this.isEnemy) { this.mesh.rotation.z += 0.2; } 
+                return this.distance < 125; 
+            }
+            destroy() {
+                this.mesh.visible = false;
+                returnProjectileMeshToPool(this.mesh);
+            }
+        }
+
+        class PowerUp {
+            constructor(pos) {
+                this.mesh = new THREE.Group();
+                const coreGeo = getCachedGeo('powerup_core_geo', () => new THREE.OctahedronGeometry(1.6, 0));
+                const ringGeo = getCachedGeo('powerup_ring_geo', () => new THREE.TorusGeometry(2.2, 0.15, 4, 16));
+                let centerCore = createRetroMesh(coreGeo, 0xffff00, 0xffaa00, 0.8);
+                let frameRing = createRetroMesh(ringGeo, 0xffaa00, 0xff5500, 0.4);
+                frameRing.rotation.x = Math.PI / 2;
+                this.mesh.add(centerCore);
+                this.mesh.add(frameRing);
+                this.mesh.position.copy(pos);
+                this.mesh.position.y = 0;
+                this.radius = 2.2;
+                scene.add(this.mesh);
+            }
+            update() { 
+                this.mesh.rotation.y += 0.03;
+                this.mesh.children[1].rotation.x += 0.05; 
+                return true; 
+            }
+            destroy() { safeDestroy(this.mesh); }
+        }
+
+        class HealthDrop {
+            constructor(pos) {
+                this.mesh = new THREE.Group();
+                const mat = new THREE.MeshBasicMaterial({ color: 0x00ff66, transparent: true, opacity: 0.85 });
+                const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+                const hGeo = getCachedGeo('healthdrop_h_geo', () => new THREE.BoxGeometry(2.0, 0.5, 0.5));
+                const hEdges = getCachedGeo('healthdrop_h_edges', () => new THREE.EdgesGeometry(hGeo));
+                const hMesh = new THREE.Mesh(hGeo, mat);
+                hMesh.add(new THREE.LineSegments(hEdges, edgeMat));
+                const vGeo = getCachedGeo('healthdrop_v_geo', () => new THREE.BoxGeometry(0.5, 0.5, 2.0));
+                const vEdges = getCachedGeo('healthdrop_v_edges', () => new THREE.EdgesGeometry(vGeo));
+                const vMesh = new THREE.Mesh(vGeo, mat);
+                vMesh.add(new THREE.LineSegments(vEdges, edgeMat));
+                this.mesh.add(hMesh);
+                this.mesh.add(vMesh);
+                this.mesh.position.copy(pos);
+                this.mesh.position.y = 0;
+                this.radius = 1.5;
+                scene.add(this.mesh);
+            }
+            update() { this.mesh.rotation.y += 0.05; return true; }
+            destroy() { safeDestroy(this.mesh); }
+        }
+
+        class RemotePlayer {
+            constructor(uuid, skinId) {
+                this.uuid = uuid;
+                this.skin = skinId;
+                this.isSpectator = false;
+                this.username = "Player";
+                
+                let col = skinId === 'Default' ? 0x00ffff : parseInt(BOSS_DATABASE.find(b => b.id === skinId).color.replace('#', '0x'), 16);
+                this.mesh = createRetroMesh(getSkinGeo(skinId), col, col, 0.45);
+                if (['Default', 'Sniper', 'SwarmQueen', 'Chaos', 'Vortex'].includes(skinId)) {
+                    this.mesh.rotation.x = Math.PI / 2;
+                }
+                scene.add(this.mesh);
+                
+                this.targetPos = new THREE.Vector3(0, 0, 0);
+                this.targetRot = 0;
+            }
+            update() {
+                if (this.isSpectator) {
+                    this.mesh.traverse(child => {
+                        if (child.material) {
+                            if (Array.isArray(child.material)) child.material.forEach(m => { m.transparent = true; m.opacity = 0.2; });
+                            else { child.material.transparent = true; child.material.opacity = 0.2; }
+                        }
+                    });
+                } else {
+                    this.mesh.traverse(child => {
+                        if (child.material) {
+                            if (Array.isArray(child.material)) child.material.forEach(m => m.opacity = 0.45);
+                            else { child.material.opacity = 0.45; }
+                        }
+                    });
+                }
+                this.mesh.position.lerp(this.targetPos, 0.3);
+                
+                let diff = this.targetRot - this.mesh.rotation.y;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                this.mesh.rotation.y += diff * 0.3;
+            }
+            destroy() {
+                safeDestroy(this.mesh);
+            }
+        }
+
+        function updateRemotePlayers() {
+            if (!isMultiplayer) return;
+            const activeUUIDs = new Set();
+            Object.keys(lobbyPlayers).forEach(key => {
+                const lp = lobbyPlayers[key][0];
+                if (lp.isSpectator !== undefined) {
+                    if (key !== localUserId) {
+                        activeUUIDs.add(key);
+                        if (!entities.remotePlayers[key]) {
+                            entities.remotePlayers[key] = new RemotePlayer(key, lp.skin);
+                        } else if (entities.remotePlayers[key].skin !== lp.skin) {
+                            entities.remotePlayers[key].destroy();
+                            entities.remotePlayers[key] = new RemotePlayer(key, lp.skin);
+                        }
+                        entities.remotePlayers[key].username = lp.username;
+                        entities.remotePlayers[key].isSpectator = lp.isSpectator;
+                    }
+                }
+            });
+            Object.keys(entities.remotePlayers).forEach(key => {
+                if (!activeUUIDs.has(key)) {
+                    entities.remotePlayers[key].destroy();
+                    delete entities.remotePlayers[key];
+                }
+            });
+            
+            // Check for game over if multiplayer
+            if (isMultiplayer && isHost && GAME.active) {
+                let allDead = true;
+                if (entities.player && !entities.player.isSpectator) allDead = false;
+                Object.values(entities.remotePlayers).forEach(rp => { if (!rp.isSpectator) allDead = false; });
+                if (allDead) {
+                    mpChannel.send({ type: 'broadcast', event: 'game_over', payload: {} });
+                    gameOver(true);
+                }
+            }
+        }
+
+        class Player {
+            constructor() {
+                this.hp = 3000;
+                this.maxHp = 3000;
+                this.radius = 1.3;
+                this.fireTimer = 0;
+                this.speed = 0.62;
+                this.powerWeaponTime = 0;
+                this.skinTimer = 0;
+                this.lastDodge = 0;
+                this.invulnerable = false;
+                this.isSpectator = false;
+                
+                let col = equippedSkin === 'Default' ? 0x00ffff : parseInt(BOSS_DATABASE.find(b => b.id === equippedSkin).color.replace('#', '0x'), 16);
+                this.projColor = col;
+                this.mesh = createRetroMesh(getSkinGeo(equippedSkin), col, col, 0.45);
+                
+                if (['Default', 'Sniper', 'SwarmQueen', 'Chaos', 'Vortex'].includes(equippedSkin)) {
+                    this.mesh.rotation.x = Math.PI / 2;
+                }
+                scene.add(this.mesh);
+                document.getElementById('super-name-ui').innerText = BOSS_DATABASE.find(b => b.id === equippedSkin)?.super.split(':')[0] || 'VOID REVERSE BURST';
+                document.getElementById('spectator-label').style.display = 'none';
+            }
+            
+            update() {
+                this.skinTimer++;
+                
+                if (this.isSpectator) {
+                    this.mesh.traverse(child => {
+                        if (child.material) {
+                            if (Array.isArray(child.material)) child.material.forEach(m => { m.transparent = true; m.opacity = 0.2; });
+                            else { child.material.transparent = true; child.material.opacity = 0.2; }
+                        }
+                    });
+                } else {
+                    this.mesh.traverse(child => {
+                        if (child.material) {
+                            if (Array.isArray(child.material)) child.material.forEach(m => m.opacity = 0.45);
+                            else { child.material.opacity = 0.45; }
+                        }
+                    });
+                }
+
+                this.speed = 0.62 * Math.pow(1.012, Math.floor((GAME.stage - 1) / 5));
+                const moveVector = getCameraRelativeGroundVector(input.x, input.y);
+                
+                if (moveVector.lengthSq() > 0) {
+                    this.mesh.position.add(moveVector.clone().normalize().multiplyScalar(this.speed));
+                }
+                
+                let targetAngle = this.mesh.rotation.y;
+                if (!this.isSpectator && input.isFiring && (input.fireX !== 0 || input.fireY !== 0)) {
+                    const aimVector = getCameraRelativeGroundVector(input.fireX, input.fireY);
+                    targetAngle = Math.atan2(aimVector.x, aimVector.z);
+                } else if (input.x !== 0 || input.y !== 0) {
+                    targetAngle = Math.atan2(moveVector.x, moveVector.z);
+                }
+                
+                let diff = targetAngle - this.mesh.rotation.y;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                this.mesh.rotation.y += diff * 0.25;
+                this.mesh.rotation.z = THREE.MathUtils.lerp(this.mesh.rotation.z, -moveVector.x * 0.35, 0.1);
+                
+                if (this.powerWeaponTime > 0 && --this.powerWeaponTime <= 0) {
+                    document.getElementById('weapon-status').style.display = 'none';
+                }
+                
+                if (!this.isSpectator && input.isFiring && this.fireTimer <= 0) {
+                    if (!window.__suppressShootSfx) playSynthSound('shoot');
+                    let fireDir = getCameraRelativeGroundVector(input.fireX, input.fireY);
+                    if (fireDir.lengthSq() === 0) fireDir.set(Math.sin(this.mesh.rotation.y), 0, Math.cos(this.mesh.rotation.y));
+                    else fireDir.normalize();
+
+                    spawnPlayerProjectiles(this.mesh.position, fireDir, equippedSkin, this.projColor, this.powerWeaponTime, true);
+
+                    this.fireTimer = this.powerWeaponTime > 0 
+                        ? Math.max(3, (Math.max(5, 10 - Math.floor(GAME.stage / 10))) / 2) 
+                        : Math.max(5, 10 - Math.floor(GAME.stage / 10));
+                }
+                this.fireTimer--;
+                this.mesh.position.y = 0;
+                
+                if (!this.isSpectator && equippedSkin === 'Aether' && this.skinTimer % 60 === 0) { 
+                    this.hp = Math.min(this.maxHp, this.hp + 8); 
+                    this.updateUI(); 
+                }
+            }
+            
+            updateUI() {
+                let pct = (this.hp / this.maxHp) * 100;
+                document.getElementById('player-health').style.width = Math.max(0, Math.min(100, pct)) + '%';
+                if (!this.isSpectator) {
+                    document.getElementById('low-health-vignette').classList[pct < 30 ? 'add' : 'remove']('alarm-active');
+                }
+            }
+            
+            takeDamage(amt) {
+                if (this.invulnerable || this.isSpectator) return false;
+                
+                if (equippedSkin === 'Glitcher' && this.skinTimer > this.lastDodge + 300) { 
+                    this.lastDodge = this.skinTimer; 
+                    this.mesh.position.add(new THREE.Vector3(Math.sin(Math.random() * 6) * 10, 0, Math.cos(Math.random() * 6) * 10));
+                    spawnExplosion(this.mesh.position, this.projColor, 6); 
+                    return false; 
+                }
+                
+                if (equippedSkin === 'Fortress') amt *= 0.8;
+                
+                playSynthSound('damage');
+                GAME.glitchEffectTimer = 5;
+                this.hp -= amt;
+                this.updateUI();
+                applyScreenShake(1.6);
+                spawnExplosion(this.mesh.position, this.projColor, 3);
+                
+                if (this.hp <= 0) {
+                    this.hp = 0;
+                    if (isMultiplayer) {
+                        this.isSpectator = true;
+                        document.getElementById('spectator-label').style.display = 'block';
+                        document.getElementById('low-health-vignette').classList.remove('alarm-active');
+                        mpChannel.track({ username: myUsername, skin: equippedSkin, isHost: isHost, isSpectator: true });
+                    }
+                    return true;
+                }
+                return false;
+            }
+            
+            destroy() { 
+                document.getElementById('low-health-vignette').classList.remove('alarm-active');
+                safeDestroy(this.mesh); 
+            }
+        }
+
+        function getClosestAlivePlayerPos(refPos) {
+            let bestDist = Infinity; let bestPos = null;
+            let check = (p) => {
+                if (p.isSpectator) return;
+                let d = refPos.distanceTo(p.mesh.position);
+                if (d < bestDist) { bestDist = d; bestPos = p.mesh.position; }
+            };
+            if (entities.player && !entities.player.isSpectator) check(entities.player);
+            if (isMultiplayer) {
+                for (let id in entities.remotePlayers) {
+                    let rp = entities.remotePlayers[id];
+                    if (!rp.isSpectator && rp.mesh) check(rp);
+                }
+            }
+            return bestPos;
+        }
+
+        function getAllAlivePlayerTargets() {
+            let t = [];
+            if (entities.player && !entities.player.isSpectator && entities.player.mesh) t.push(entities.player.mesh);
+            if (isMultiplayer) {
+                for (let id in entities.remotePlayers) {
+                    let rp = entities.remotePlayers[id];
+                    if (!rp.isSpectator && rp.mesh) t.push(rp.mesh);
+                }
+            }
+            return t;
+        }
+
+        class Enemy {
+            constructor(pos, variantType = null) {
+                if (!variantType) { 
+                    let band = Math.floor((GAME.stage - 1) / 5); 
+                    if (band === 0) this.type = Math.random() < 0.6 ? 'scout_lane' : 'ranger_form'; 
+                    else if (band === 1) this.type = Math.random() < 0.5 ? 'ranger_form' : 'phase_stalker'; 
+                    else if (band === 2) this.type = Math.random() < 0.5 ? 'vector_weaver' : 'shield_bulwark'; 
+                    else this.type = Math.random() < 0.4 ? 'omega_cruiser' : 'vector_weaver'; 
+                } else { 
+                    this.type = variantType; 
+                }
+                
+                this.hp = this.type === 'minion' ? 12 : 25 + (GAME.stage * 12);
+                this.speed = 0.16 + GAME.stage * 0.012;
+                this.groupOffset = Math.random() * Math.PI * 2;
+                let geo, col;
+                
+                switch (this.type) {
+                    case 'scout_lane':
+                        geo = getCachedGeo('scout_lane', () => new THREE.TetrahedronGeometry(1.5));
+                        col = 0xffaa00;
+                        this.speed *= 2.0;
+                        break;
+                    case 'ranger_form':
+                        geo = getCachedGeo('ranger_form', () => new THREE.BoxGeometry(1.6, 1.6, 1.6));
+                        col = 0xff00ff;
+                        this.speed *= 0.75;
+                        break;
+                    case 'phase_stalker':
+                        geo = getCachedGeo('phase_stalker', () => new THREE.OctahedronGeometry(1.5, 0));
+                        col = 0x00ff66;
+                        this.speed *= 1.2;
+                        break;
+                    case 'vector_weaver':
+                        geo = getCachedGeo('vector_weaver', () => new THREE.CylinderGeometry(0.8, 0.8, 2.2, 5));
+                        col = 0xff00aa;
+                        this.speed *= 1.0;
+                        break;
+                    case 'shield_bulwark':
+                        geo = getCachedGeo('shield_bulwark', () => new THREE.BoxGeometry(2.2, 2.2, 2.2));
+                        col = 0x3366ff;
+                        this.speed *= 0.45;
+                        this.hp *= 2.2;
+                        break;
+                    case 'omega_cruiser':
+                        geo = getCachedGeo('omega_cruiser', () => new THREE.DodecahedronGeometry(1.7, 0));
+                        col = 0xff3300;
+                        this.speed *= 1.3;
+                        break;
+                    case 'minion':
+                        geo = getCachedGeo('minion', () => new THREE.CylinderGeometry(0, 0.8, 1.6, 4));
+                        col = 0xccff00;
+                        this.speed *= 1.8;
+                        break;
+                    default:
+                        geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+                        col = 0xffffff;
+                }
+                
+                this.fireTimer = Math.random() * 60;
+                this.t = 0;
+                this.hitByBomb = false;
+                this.knockbackVel = new THREE.Vector3(0, 0, 0);
+                this.mesh = createRetroMesh(geo, col, col, 0.25);
+                this.mesh.position.copy(pos);
+                this.radius = 1.3;
+                scene.add(this.mesh);
+                this.moveState = 'approach';
+                this.moveTimer = Math.random() * 60;
+                this.strafeDir = Math.random() < 0.5 ? 1 : -1;
+                this.networkId = null;
+                this.targetPos = null;
+            }
+            update() {
+                if (isMultiplayer && !isHost) {
+                    if (this.targetPos) this.mesh.position.lerp(this.targetPos, 0.2);
+                    return this.hp > 0;
+                }
+
+                if (this.knockbackVel.lengthSq() > 0.1) { 
+                    this.mesh.position.add(this.knockbackVel);
+                    this.knockbackVel.multiplyScalar(0.82); 
+                }
+                this.t++;
+                
+                const pTarget = getClosestAlivePlayerPos(this.mesh.position);
+                if (!pTarget) return false;
+                
+                const toPlayer = pTarget.clone().sub(this.mesh.position);
+                const dist = toPlayer.length();
+                if (dist > 150) return false;
+                
+                toPlayer.normalize();
+                let lateralAxis = new THREE.Vector3(-toPlayer.z, 0, toPlayer.x);
+                this.moveTimer--;
+                if (this.moveTimer <= 0) { 
+                    let r = Math.random(); 
+                    if (r < 0.4) this.moveState = 'strafe'; 
+                    else if (r < 0.8) this.moveState = 'approach';
+                    else this.moveState = 'retreat';
+                    this.moveTimer = 40 + Math.random() * 50;
+                    this.strafeDir = Math.random() < 0.5 ? 1 : -1; 
+                }
+                let moveDir = new THREE.Vector3();
+                
+                if (this.type === 'scout_lane' || this.type === 'minion') { 
+                    let waveOffset = lateralAxis.clone().multiplyScalar(Math.sin(this.t * 0.08 + this.groupOffset) * 1.2);
+                    moveDir.copy(toPlayer).add(waveOffset).normalize();
+                    this.mesh.rotation.x += 0.05; 
+                } else if (this.type === 'ranger_form') { 
+                    if (this.moveState === 'strafe') moveDir.copy(lateralAxis).multiplyScalar(this.strafeDir);
+                    else if (this.moveState === 'retreat' && dist < 40) moveDir.copy(toPlayer).multiplyScalar(-1);
+                    else moveDir.copy(toPlayer);
+                    this.mesh.rotation.y = Math.atan2(toPlayer.x, toPlayer.z); 
+                    if (--this.fireTimer <= 0) { 
+                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), toPlayer, 0xff00ff, 0.85, true));
+                        this.fireTimer = 70 + Math.random() * 30; 
+                    } 
+                } else if (this.type === 'phase_stalker') { 
+                    moveDir.copy(toPlayer);
+                    this.mesh.visible = (Math.floor(this.t / 20) % 2 === 0); 
+                    if (--this.fireTimer <= 0 && this.mesh.visible) {
+                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), toPlayer, 0x00ff66, 1.2, true));
+                        this.fireTimer = 60; 
+                    } 
+                } else if (this.type === 'vector_weaver') { 
+                    moveDir.copy(toPlayer).multiplyScalar(0.6).add(lateralAxis.multiplyScalar(0.8 * this.strafeDir)).normalize(); 
+                    if (--this.fireTimer <= 0) {
+                        let bA = Math.atan2(toPlayer.x, toPlayer.z);
+                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(bA - 0.2), 0, Math.cos(bA - 0.2)), 0xff00aa, 1.0, true));
+                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(bA + 0.2), 0, Math.cos(bA + 0.2)), 0xff00aa, 1.0, true));
+                        this.fireTimer = 80; 
+                    } 
+                } else if (this.type === 'shield_bulwark') { 
+                    moveDir.copy(toPlayer);
+                    this.mesh.rotation.y += 0.01; 
+                    if (--this.fireTimer <= 0) { 
+                        for (let i = 0; i < 3; i++) { 
+                            let a = Math.atan2(toPlayer.x, toPlayer.z) + (i - 1) * 0.3;
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), 0x3366ff, 0.75, true)); 
+                        }
+                        this.fireTimer = 90; 
+                    } 
+                } else if (this.type === 'omega_cruiser') { 
+                    moveDir.copy(toPlayer); 
+                    if (--this.fireTimer <= 0) { 
+                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), toPlayer, 0xff3300, 1.5, true));
+                        this.fireTimer = 45; 
+                    } 
+                }
+                
+                this.mesh.position.add(moveDir.multiplyScalar(this.speed));
+                return true;
+            }
+            takeDamage(amt) { this.hp -= amt; return this.hp <= 0; }
+            destroy() { safeDestroy(this.mesh); }
+        }
+
+        class Meteorite {
+            constructor(spawnPos) {
+                this.mesh = createRetroMesh(new THREE.DodecahedronGeometry(2.4, 0), 0xff5500, 0x441100, 0.5);
+                let pPos = spawnPos;
+                if (!pPos) {
+                    const pTarget = getClosestAlivePlayerPos(new THREE.Vector3(0,0,0));
+                    pPos = pTarget ? pTarget : new THREE.Vector3();
+                    const angle = Math.random() * Math.PI * 2;
+                    this.mesh.position.set(pPos.x + Math.sin(angle) * 75, 0, pPos.z + Math.cos(angle) * 75);
+                } else {
+                    this.mesh.position.copy(pPos);
+                }
+                this.vel = new THREE.Vector3(pPos.x + (Math.random() - 0.5) * 25, 0, pPos.z + (Math.random() - 0.5) * 25).sub(
+                    this.mesh.position).normalize().multiplyScalar(0.35);
+                this.hp = 50;
+                this.radius = 2.4;
+                this.fireTimer = Math.random() * 45;
+                this.networkId = null;
+                scene.add(this.mesh);
+            }
+            update() {
+                if (isMultiplayer && !isHost) return this.hp > 0;
+                this.mesh.position.add(this.vel);
+                this.mesh.rotation.x += 0.02;
+                this.mesh.rotation.y += 0.02;
+
+                const pTarget = getClosestAlivePlayerPos(this.mesh.position);
+                if (++this.fireTimer % 80 === 0 && pTarget) { 
+                    entities.projectiles.push(new Projectile(this.mesh.position.clone(), pTarget.clone().sub(this.mesh.position).normalize(), 0xff5500, 0.9, true)); 
+                }
+                return pTarget ? this.mesh.position.distanceTo(pTarget) <= 130 : false;
+            }
+            takeDamage(amt) { this.hp -= amt; return this.hp <= 0; }
+            destroy() { safeDestroy(this.mesh); }
+        }
+
+        class Boss {
+            constructor(pos, variantOverride = null) {
+                let targetBossIdx = GAME.isBossRush ? (GAME.stage - 1) % BOSS_DATABASE.length : Math.floor((GAME.stage - 1) / 5) % BOSS_DATABASE.length;
+                let profile = variantOverride ? BOSS_DATABASE.find(b => b.id === variantOverride) : BOSS_DATABASE[targetBossIdx];
+                this.archetype = profile.id;
+                this.colorHex = parseInt(profile.color.replace('#', '0x'), 16);
+                
+                if (this.archetype === 'Glitcher') this.hp = 2500;
+                else this.hp = 8500 + (GAME.stage * 6500);
+                
+                if (isMultiplayer) this.hp *= 2.0;
+
+                this.maxHp = this.hp;
+                
+                this.timer = 0;
+                this.baseRadius = DEFAULT_BOSS_BASE_RADIUS;
+                this.radius = this.baseRadius;
+                this.hitByBomb = false;
+                this.currentPhase = 1;
+                this.internalRot = 0;
+                this.baseSpeed = 0.45 + (GAME.stage * 0.02);
+                this.knockbackVel = new THREE.Vector3(0, 0, 0);
+                this.nameDisplay = `SECTOR ARCHETYPE // ${profile.name}`;
+                this.actionState = 0;
+                this.actionCooldown = 40;
+                this.prevDist = 0;
+                this.chaseBoost = 0;
+                this.networkId = null;
+                this.targetPos = null;
+                
+                this.mesh = createRetroMesh(getBossGeo(this.archetype), this.colorHex, this.colorHex, 0.45);
+                
+                if (['Core', 'Devourer', 'SwarmQueen', 'Pulsar', 'Singularity', 'Dominator', 'Infinity'].includes(this.archetype)) {
+                    this.subMesh = createRetroMesh(new THREE.TorusGeometry(7.0, 0.2, 4, 24), 0xffffff, 0xffffff, 0.35);
+                    this.subMesh.rotation.x = Math.PI / 2;
+                    this.mesh.add(this.subMesh);
+                }
+                
+                this.mesh.position.copy(pos);
+                scene.add(this.mesh);
+                document.getElementById('boss-name').innerText = this.nameDisplay;
+                document.getElementById('boss-ui').style.display = 'flex';
+                this.updateUI();
+            }
+            
+            update() {
+                if (isMultiplayer && !isHost) {
+                    if (this.targetPos) this.mesh.position.lerp(this.targetPos, 0.2);
+                    return this.hp > 0;
+                }
+
+                if (this.knockbackVel.lengthSq() > 0.1) { 
+                    this.mesh.position.add(this.knockbackVel);
+                    this.knockbackVel.multiplyScalar(0.85); 
+                }
+                
+                this.timer++;
+                this.internalRot += 0.035;
+                let hpRatio = this.hp / this.maxHp;
+                
+                if (this.currentPhase === 1 && hpRatio <= 0.55) { 
+                    this.currentPhase = 2;
+                    applyScreenShake(4.5);
+                    playSynthSound('die');
+                    this.mesh.scale.setScalar(getBossPhaseScale(this.currentPhase));
+                    syncBossCollisionRadius(this);
+                    document.getElementById('boss-name').innerText = `⚠️ ENHANCED MODULATION // ` + this.nameDisplay.split('//')[1]; 
+                }
+                
+                syncBossCollisionRadius(this);
+                this.actionCooldown--;
+                if (this.actionCooldown <= 0) { 
+                    this.actionState = Math.floor(Math.random() * 3);
+                    this.actionCooldown = (this.currentPhase === 2 ? 25 : 45) + Math.random() * 30; 
+                }
+                
+                const pTarget = getClosestAlivePlayerPos(this.mesh.position);
+                if (!pTarget) return false;
+                
+                const pPos = pTarget;
+                const toPlayer = pPos.clone().sub(this.mesh.position);
+                const dist = toPlayer.length();
+                toPlayer.normalize();
+                
+                let idealDist = 40;
+                if (['Sniper', 'Chronos', 'Dominator'].includes(this.archetype)) idealDist = 65;
+                if (['Phantom', 'Vortex', 'Goliath'].includes(this.archetype)) idealDist = 15;
+                
+                const isRunning = dist > idealDist + 20 && dist > this.prevDist;
+                if (isRunning) { 
+                    this.chaseBoost = Math.min(this.chaseBoost + 0.18, 3.2); 
+                } else { 
+                    this.chaseBoost = Math.max(this.chaseBoost - 0.12, 0); 
+                }
+                
+                this.prevDist = dist;
+                let pace = this.baseSpeed * (this.currentPhase === 2 ? 1.45 : 1.0) * (1 + this.chaseBoost);
+                if (this.archetype === 'Fortress' || this.archetype === 'Goliath') pace *= 0.55;
+                
+                if (dist > idealDist + 3) { 
+                    this.mesh.position.add(toPlayer.clone().multiplyScalar(pace)); 
+                } else if (dist < idealDist - 10 && this.archetype !== 'Phantom') { 
+                    this.mesh.position.sub(toPlayer.clone().multiplyScalar(pace * 0.8)); 
+                }
+                
+                this.mesh.position.y = Math.sin(this.timer * 0.06) * 1.2;
+                if (this.subMesh) this.subMesh.rotation.z += 0.05;
+                this.mesh.rotation.y += 0.02;
+                
+                const allTargets = getAllAlivePlayerTargets();
+                const fireAtAll = (fireFn) => { 
+                    allTargets.forEach(tMesh => { 
+                        const tDir = tMesh.position.clone().sub(this.mesh.position); 
+                        if (tDir.lengthSq() > 0) { 
+                            tDir.normalize(); 
+                            fireFn(tDir, tMesh.position); 
+                        } 
+                    }); 
+                };
+                
+                switch (this.archetype) {
+                    case 'Core':
+                        if (this.actionState === 0 && this.timer % 15 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this
+                                .mesh.position.clone(), dir, 0xffffff, 1.8, true, true)); }); } else if (this.actionState ===
+                            1 && this.timer % 30 === 0) { for (let i = 0; i < 16; i++) { let a = (Math.PI * 2 / 16) * i + this
+                                    .internalRot;
+                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math
+                                    .sin(a), 0, Math.cos(a)), this.colorHex, 1.1, true)); } }
+                        break;
+                    case 'Glitcher':
+                        if (this.actionState === 0 && this.timer % 35 === 0) { spawnExplosion(this.mesh.position, this
+                            .colorHex, 8);
+                            let rA = Math.random() * Math.PI * 2;
+                            this.mesh.position.copy(pPos).add(new THREE.Vector3(Math.sin(rA) * 24, 0, Math.cos(rA) * 24)); } else if (
+                            this.actionState === 1 && this.timer % 18 === 0) { fireAtAll((dir) => { for (let i = -1; i <= 1; i++) entities.projectiles
+                                .push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(Math.atan2(dir
+                                    .x, dir.z) + i * 0.2), 0, Math.cos(Math.atan2(dir.x, dir.z) + i *
+                                    0.2)), this.colorHex, 1.3, true)); }); }
+                        break;
+                    case 'Devourer':
+                        if (this.actionState === 0 && this.timer % 15 === 0) { fireAtAll((dir) => { let baseAngle = Math.atan2(dir.x, dir
+                                .z); for (let off = -0.5; off <= 0.5; off += 0.15) { let swA = baseAngle + off + Math.sin(this
+                                    .timer * 0.15) * 0.25;
+                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(
+                                    swA), 0, Math.cos(swA)), this.colorHex, 1.1, true)); } }); }
+                        break;
+                    case 'Phantom':
+                        if (this.actionState === 0 && this.timer % 20 === 0) { this.mesh.position.add(toPlayer.clone()
+                                .multiplyScalar(16));
+                            spawnExplosion(this.mesh.position, this.colorHex, 12); } else if (this.actionState === 1 && this.timer %
+                            15 === 0) { for (let i = 0; i < 8; i++) { let a = (Math.PI * 2 / 8) * i;
+                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(
+                                    a), 0, Math.cos(a)), 0xffffff, 1.6, true)); } }
+                        break;
+                    case 'Fortress':
+                        if (this.actionState === 0 && this.timer % 25 === 0) { fireAtAll((dir) => { let bA = Math.atan2(dir.x, dir.z); for (
+                                let i = -2; i <= 2; i++) entities.projectiles.push(new Projectile(this.mesh.position.clone(),
+                                new THREE.Vector3(Math.sin(bA + (i * 0.2)), 0, Math.cos(bA + (i * 0.2))), this.colorHex, 0.7,
+                                true)); }); } else if (this.actionState === 1 && this.timer % 35 === 0) { for (let i = 0; i < 12; i++)
+                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin((
+                                    Math.PI * 2 / 12) * i), 0, Math.cos((Math.PI * 2 / 12) * i)), this.colorHex, 0.5,
+                                true)); }
+                        break;
+                    case 'SwarmQueen':
+                        if (this.actionState === 0 && this.timer % 60 === 0 && entities.enemies.length < GAME.maxEnemies) { 
+                                let newMinion = new Enemy(this.mesh.position.clone().add(new THREE.Vector3((Math.random() - 0.5) * 10, 0, (Math.random() - 0.5) * 10)), 'minion');
+                                if (isMultiplayer) { newMinion.networkId = Math.random().toString(36).substr(2,9); mpChannel.send({type:'broadcast', event:'spawn_entity', payload:{id:newMinion.networkId, type:'enemy', variant:'minion', x:newMinion.mesh.position.x, z:newMinion.mesh.position.z}});}
+                                entities.enemies.push(newMinion); 
+                            } else if (this.actionState === 1 && this.timer %
+                            12 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir,
+                                0x00ffff, 1.3, true)); }); }
+                        break;
+                    case 'Sniper':
+                        if (this.actionState === 0 && this.timer % 35 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this
+                                .mesh.position.clone(), dir, 0xffffff, 4.5, true, true)); }); } else if (this.actionState ===
+                            1 && this.timer % 15 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(),
+                                dir, this.colorHex, 1.5, true)); }); }
+                        break;
+                    case 'Pulsar':
+                        if (this.actionState === 0 && this.timer % 15 === 0) { let shift = Math.sin(this.timer * 0.05); for (let i =
+                                0; i < 10; i++) entities.projectiles.push(new Projectile(this.mesh.position.clone(),
+                                new THREE.Vector3(Math.sin((Math.PI * 2 / 10) * i + shift), 0, Math.cos((Math.PI * 2 / 10) *
+                                    i + shift)), this.colorHex, 1.0, true)); }
+                        break;
+                    case 'Weaver':
+                        if (this.timer % 4 === 0) { fireAtAll((dir) => { let bA = Math.atan2(dir.x, dir.z) + Math.sin(this.timer * 0.12) *
+                                0.7;
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(bA), 0,
+                                Math.cos(bA)), this.colorHex, 1.4, true)); }); }
+                        break;
+                    case 'Chaos':
+                        if (this.timer % 8 === 0) { let rD = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5)
+                                .normalize();
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), rD, this.colorHex, 1.4,
+                            true)); } if (this.actionState === 1 && this.timer % 12 === 0) fireAtAll((dir) => { entities.projectiles.push(new
+                            Projectile(this.mesh.position.clone(), dir, 0xffffff, 1.6, true)); });
+                        break;
+                    case 'Ragnarok':
+                        if (this.actionState === 0 && this.timer % 12 === 0) { fireAtAll((dir) => { let bA = Math.atan2(dir.x, dir.z); for (
+                                let i = -1; i <= 1; i += 2) entities.projectiles.push(new Projectile(this.mesh.position.clone(),
+                                new THREE.Vector3(Math.sin(bA + (i * 0.25)), 0, Math.cos(bA + (i * 0.25))), this.colorHex,
+                                1.5, true)); }); } else if (this.actionState === 1 && this.timer % 30 === 0) { for (let a = 0; a < Math
+                                .PI * 2; a += 0.4) entities.projectiles.push(new Projectile(this.mesh.position.clone(),
+                                new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), 0xffffff, 1.2, true)); }
+                        break;
+                    case 'Aether':
+                        if (this.timer % 20 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir,
+                            0x00ffcc, 1.8, true, true)); });
+                        break;
+                    case 'Oblivion':
+                        if (this.timer % 15 === 0) { fireAtAll((dir) => { let cross = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, this.colorHex, 1.2,
+                                true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone().add(cross.clone().multiplyScalar(
+                                5)), dir, this.colorHex, 1.2, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone().add(cross.clone().multiplyScalar(-
+                                5)), dir, this.colorHex, 1.2, true)); }); }
+                        break;
+                    case 'Singularity':
+                        if (this.actionState === 0 && this.timer % 60 === 0) { const pLoc = this.mesh.position.clone();
+                            const sp = createRetroMesh(new THREE.SphereGeometry(4.5, 8, 8), 0xff00ff, 0x220033, 0.65);
+                            sp.position.copy(pLoc);
+                            scene.add(sp);
+                            entities.visualFX.push({ mesh: sp, life: 90, update: function() {
+                                    allTargets.forEach(t => {
+                                        if (t.position.distanceTo(this.mesh.position) < 30) {
+                                            t.position.add(this.mesh.position.clone().sub(t.position).normalize().multiplyScalar(0.25));
+                                        }
+                                    });
+                                    this.life--; return this.life > 0; }, destroy: function() { safeDestroy(this.mesh); } }); } else if (
+                                this.actionState === 1 && this.timer % 15 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this
+                                .mesh.position.clone(), dir, this.colorHex, 1.5, true)); });
+                        break;
+                    case 'Vortex':
+                        let rotValue = this.timer * 0.18; if (this.timer % 3 === 0) { entities.projectiles.push(new Projectile(
+                                this.mesh.position.clone(), new THREE.Vector3(Math.sin(rotValue), 0, Math.cos(rotValue)),
+                                this.colorHex, 1.4, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(-Math.sin(
+                                rotValue), 0, -Math.cos(rotValue)), this.colorHex, 1.4, true)); }
+                        break;
+                    case 'Goliath':
+                        if (this.actionState === 0 && this.timer % 60 === 0) { applyScreenShake(2.5); for (let i = 1; i <= 3; i++) {
+                                let rMesh = createRetroMesh(new THREE.TorusGeometry(i * 5.5, 0.25, 4, 24), this.colorHex,
+                                    0x000000, 0.75);
+                                rMesh.position.copy(this.mesh.position);
+                                rMesh.rotation.x = Math.PI / 2;
+                                scene.add(rMesh);
+                                entities.visualFX.push({ mesh: rMesh, frameCount: 0, targetRadius: i * 5.5, update: function() {
+                                        this.frameCount++;
+                                        if (entities.player && !entities.player.isSpectator && entities.player.mesh) {
+                                            if (entities.player.mesh.position.distanceTo(this.mesh.position) < this.targetRadius + 1.2 && entities.player.mesh.position.distanceTo(this.mesh.position) > this.targetRadius - 1.2) { 
+                                                if (typeof entities.player.takeDamage === 'function') entities.player.takeDamage(12); 
+                                            }
+                                        }
+                                        return this.frameCount < 25; }, destroy: function() { safeDestroy(this.mesh); } }); } } else if (
+                            this.actionState === 1 && this.timer % 25 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this
+                            .mesh.position.clone(), dir, this.colorHex, 1.2, true)); });
+                        break;
+                    case 'Chronos':
+                        if (this.timer % 50 === 0) { fireAtAll((dir) => { let delayedProj = new Projectile(this.mesh.position.clone(), dir, this
+                                .colorHex, 0.15, true, true);
+                            entities.projectiles.push(delayedProj);
+                            setTimeout(() => { if (delayedProj && delayedProj.mesh) delayedProj.vel.multiplyScalar(14); },
+                            750); }); }
+                        break;
+                    case 'Nebula':
+                        if (this.timer % 25 === 0) { let randBase = Math.random() * Math.PI * 2; for (let i = 0; i < 6; i++)
+                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(
+                                    randBase + (i * 0.4)), 0, Math.cos(randBase + (i * 0.4))), this.colorHex, 1.2,
+                                true)); }
+                        break;
+                    case 'Dominator':
+                        if (this.timer % 15 === 0) { fireAtAll((dir) => {
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(),
+                            dir, this.colorHex, 1.5, true));
+                            let aL = Math.atan2(dir.x, dir.z) - 0.4;
+                            let aR = Math.atan2(dir.x, dir.z) + 0.4;
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(aL), 0,
+                                Math.cos(aL)), 0xffffff, 1.3, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(aR), 0,
+                                Math.cos(aR)), 0xffffff, 1.3, true)); }); }
+                        break;
+                    case 'Infinity':
+                        if (this.timer % 8 === 0) { let idx = Math.floor(this.timer / 10) % 10;
+                            let a = (Math.PI * 2 / 10) * idx + this.internalRot;
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a), 0,
+                                Math.cos(a)), 0xffffff, 1.6, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a + Math
+                                .PI), 0, Math.cos(a + Math.PI)), 0x00ffff, 1.6, true)); }
+                        break;
+                }
+                return true;
+            }
+            takeDamage(amt) { this.hp -= amt;
+                this.updateUI(); return this.hp <= 0; }
+            updateUI() { const pct = Math.max(0, (this.hp / this.maxHp) * 100);
+                document.getElementById('boss-health').style.width = pct + '%';
+                document.getElementById('boss-hp-text').innerText = Math.max(0, Math.ceil(this.hp)) + ' / ' + this.maxHp; }
+            destroy() { safeDestroy(this.mesh); }
+        }
+
+        // --- CORE GAMEPLAY LOGIC (Spawning, Collisions, Stage Transitions) ---
+        function spawnPlayerProjectiles(origin, fireDir, skinId, projColor, powerWeaponTime, isLocal) {
+            let projSpeed = skinId === 'Sniper' ? 3.2 : 1.6;
+            let pierce = (skinId === 'Sniper');
+            let bonusLevel = GAME.isBossRush ? Math.floor(bestScore / 25000) : 0;
+
+            if (powerWeaponTime > 0) {
+                let proj = new Projectile(origin.clone().add(fireDir.clone().multiplyScalar(1.2)), fireDir, 0xffff00, projSpeed * 1.2, false, false, pierce);
+                entities.projectiles.push(proj);
+            } else {
+                let numProj = 1 + Math.floor((GAME.stage - 1) / 15);
+                if (GAME.isBossRush) numProj = Math.min(4, 1 + bonusLevel);
+
+                if (numProj === 1) {
+                    let proj = new Projectile(origin.clone().add(fireDir.clone().multiplyScalar(1.2)), fireDir, projColor, projSpeed, false, false, pierce);
+                    entities.projectiles.push(proj);
+                } else {
+                    let baseAngle = Math.atan2(fireDir.x, fireDir.z);
+                    for (let k = 0; k < numProj; k++) {
+                        let spreadDir = new THREE.Vector3(Math.sin(baseAngle + (k - (numProj - 1) / 2) * 0.12), 0, Math.cos(baseAngle + (k - (numProj - 1) / 2) * 0.12));
+                        let proj = new Projectile(origin.clone().add(spreadDir.clone().multiplyScalar(1.2)), spreadDir, projColor, projSpeed, false, false, pierce);
+                        entities.projectiles.push(proj);
+                    }
+                }
+            }
+
+            if (['SwarmQueen', 'Dominator', 'Devourer'].includes(skinId)) {
+                let baseAngle = Math.atan2(fireDir.x, fireDir.z);
+                let p1 = new Projectile(origin.clone().add(new THREE.Vector3(Math.sin(baseAngle - 0.5), 0, Math.cos(baseAngle - 0.5)).multiplyScalar(1.5)), fireDir, projColor, 1.1, false, false, pierce);
+                let p2 = new Projectile(origin.clone().add(new THREE.Vector3(Math.sin(baseAngle + 0.5), 0, Math.cos(baseAngle + 0.5)).multiplyScalar(1.5)), fireDir, projColor, 1.1, false, false, pierce);
+                entities.projectiles.push(p1, p2);
+            }
+
+            if (['Core', 'Infinity', 'Ragnarok'].includes(skinId)) {
+                let baseAngle = Math.atan2(fireDir.x, fireDir.z);
+                let p1 = new Projectile(origin.clone(), new THREE.Vector3(Math.sin(baseAngle + Math.PI / 2), 0, Math.cos(baseAngle + Math.PI / 2)), projColor, projSpeed, false, false, pierce);
+                let p2 = new Projectile(origin.clone(), new THREE.Vector3(Math.sin(baseAngle - Math.PI / 2), 0, Math.cos(baseAngle - Math.PI / 2)), projColor, projSpeed, false, false, pierce);
+                let p3 = new Projectile(origin.clone(), new THREE.Vector3(Math.sin(baseAngle + Math.PI), 0, Math.cos(baseAngle + Math.PI)), projColor, projSpeed, false, false, pierce);
+                entities.projectiles.push(p1, p2, p3);
+            }
+
+            if (isLocal && isMultiplayer && mpChannel) {
+                mpChannel.send({ type: 'broadcast', event: 'p_shoot', payload: {
+                    uuid: localUserId, ox: origin.x, oz: origin.z, dx: fireDir.x, dz: fireDir.z,
+                    skin: skinId, col: projColor, pw: powerWeaponTime
+                }});
+            }
+        }
+
+        function executeSuper(origin, skinId, shellColor, ownerEntity, isLocal) {
+            applyScreenShake(4.2);
+            playSynthSound('boss_die');
+            const superRing = createRetroMesh(new THREE.TorusGeometry(1, 0.35, 4, 32), 0x0066ff, 0x001166, 0.85);
+            superRing.position.copy(origin);
+            superRing.position.y = 0;
+            superRing.rotation.x = Math.PI / 2;
+            scene.add(superRing);
+
+            entities.visualFX.push({
+                mesh: superRing, currentScale: 1, maxScale: 60,
+                update: function() {
+                    this.currentScale += 2.6;
+                    this.mesh.scale.setScalar(this.currentScale);
+                    for (let i = entities.projectiles.length - 1; i >= 0; i--) { 
+                        if (entities.projectiles[i].isEnemy && entities.projectiles[i].mesh.position.distanceTo(this.mesh.position) < this.currentScale) { 
+                            entities.projectiles[i].destroy(); entities.projectiles.splice(i, 1); 
+                        } 
+                    }
+                    if (isLocal) { // Only local initiates damage for super
+                        for (let j = entities.enemies.length - 1; j >= 0; j--) { 
+                            let enemy = entities.enemies[j]; 
+                            if (enemy.mesh.position.distanceTo(this.mesh.position) < this.currentScale && !enemy.hitByBomb) {
+                                enemy.hitByBomb = true;
+                                enemy.knockbackVel = enemy.mesh.position.clone().sub(this.mesh.position).normalize().multiplyScalar(7.0);
+                                if (isMultiplayer) {
+                                    if (enemy.networkId) mpChannel.send({ type: 'broadcast', event: 'hit_enemy', payload: { id: enemy.networkId, dmg: 50 } });
+                                } else {
+                                    let wasKilled = typeof enemy.takeDamage === 'function' && enemy.takeDamage(50);
+                                    spawnExplosion(enemy.mesh.position, shellColor, 6); 
+                                    if (wasKilled) {
+                                        addScore(enemy instanceof Boss ? 500 : 15);
+                                        if (typeof enemy.destroy === 'function') enemy.destroy();
+                                        entities.enemies.splice(j, 1); 
+                                        handleKill(enemy instanceof Boss, enemy);
+                                    }
+                                }
+                            } 
+                        }
+                    }
+                    return this.currentScale < this.maxScale;
+                },
+                destroy: function() { safeDestroy(this.mesh); entities.enemies.forEach(e => { if (e) e.hitByBomb = false; }); }
+            });
+
+            if (['Core', 'Infinity'].includes(skinId)) { 
+                for (let i = 0; i < 32; i++) { 
+                    let a = (Math.PI * 2 / 32) * i;
+                    let p = new Projectile(origin, new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), shellColor, 2.2, false, true, true);
+                    entities.projectiles.push(p); 
+                } 
+            } else if (['Glitcher', 'Chronos'].includes(skinId)) { 
+                GAME.glitchEffectTimer = 35;
+                if (isLocal) {
+                    for (let j = entities.enemies.length - 1; j >= 0; j--) {
+                        let e = entities.enemies[j];
+                        e.knockbackVel.set(0, 0, 0);
+                        if (isMultiplayer) {
+                            if (e.networkId) mpChannel.send({ type: 'broadcast', event: 'hit_enemy', payload: { id: e.networkId, dmg: 120 } });
+                        } else {
+                            let wasKilled = typeof e.takeDamage === 'function' && e.takeDamage(120);
+                            spawnExplosion(e.mesh.position, 0xffffff, 8); 
+                            if (wasKilled) {
+                                addScore(e instanceof Boss ? 500 : 15);
+                                if (typeof e.destroy === 'function') e.destroy();
+                                entities.enemies.splice(j, 1); 
+                                handleKill(e instanceof Boss, e);
+                            }
+                        }
+                    }
+                }
+            } else if (['Devourer', 'Singularity', 'Oblivion'].includes(skinId)) { 
+                const gravityWell = createRetroMesh(new THREE.SphereGeometry(5, 12, 12), 0xff00ff, 0x110022, 0.7);
+                gravityWell.position.copy(origin).add(new THREE.Vector3(0, 0, -12));
+                scene.add(gravityWell);
+                entities.visualFX.push({ 
+                    mesh: gravityWell, timer: 0, 
+                    update: function() { 
+                        this.timer++;
+                        entities.enemies.forEach(e => { 
+                            if (e.mesh.position.distanceTo(this.mesh.position) < 35) { 
+                                e.mesh.position.add(this.mesh.position.clone().sub(e.mesh.position).normalize().multiplyScalar(0.7));
+                                if (isLocal) {
+                                    if (isMultiplayer && e.networkId && this.timer % 10 === 0) mpChannel.send({ type: 'broadcast', event: 'hit_enemy', payload: { id: e.networkId, dmg: 3 } });
+                                    else if (!isMultiplayer) e.takeDamage(3); 
+                                }
+                            } 
+                        }); 
+                        return this.timer < 100; 
+                    }, 
+                    destroy: function() { safeDestroy(this.mesh); } 
+                }); 
+            } else if (skinId === 'Dominator') { 
+                for (let side of [-8, 8]) { 
+                    let sPos = origin.clone().add(new THREE.Vector3(side, 0, -4));
+                    let satellite = createRetroMesh(new THREE.IcosahedronGeometry(1.2, 0), shellColor, 0xffffff, 0.6);
+                    satellite.position.copy(sPos);
+                    scene.add(satellite);
+                    entities.visualFX.push({ 
+                        mesh: satellite, frame: 0, 
+                        update: function() { 
+                            this.frame++; 
+                            if (this.frame % 6 === 0) { 
+                                let targetPos = null;
+                                let bestDist = Infinity;
+                                entities.enemies.forEach(e => {
+                                    let d = e.mesh.position.distanceTo(this.mesh.position);
+                                    if (d < bestDist) { bestDist = d; targetPos = e.mesh.position; }
+                                });
+                                if (targetPos) {
+                                    let dir = targetPos.clone().sub(this.mesh.position).normalize();
+                                    let p = new Projectile(this.mesh.position.clone(), dir, shellColor, 2.5, false, true, false);
+                                    entities.projectiles.push(p); 
+                                }
+                            } 
+                            return this.frame < 180; 
+                        }, 
+                        destroy: function() { safeDestroy(this.mesh); } 
+                    }); 
+                } 
+            } else if (['Phantom', 'Vortex'].includes(skinId)) {
+                let rotY = 0;
+                if (ownerEntity && ownerEntity.mesh) rotY = ownerEntity.mesh.rotation.y;
+
+                for (let i = 0; i < 3; i++) { 
+                    let angleOffset = (i - 1) * 0.4;
+                    let fwd = new THREE.Vector3(Math.sin(rotY + angleOffset), 0, Math.cos(rotY + angleOffset));
+                    let wave = new Projectile(origin, fwd, shellColor, 2.0, false, true, true);
+                    wave.mesh.scale.set(4, 1, 1);
+                    entities.projectiles.push(wave); 
+                } 
+            } else if (['Fortress', 'Goliath'].includes(skinId)) {
+                if (ownerEntity) ownerEntity.invulnerable = true;
+                let shieldMesh = createRetroMesh(new THREE.TorusGeometry(3.5, 0.2, 4, 16), shellColor, shellColor, 0.3);
+                shieldMesh.position.copy(origin);
+                shieldMesh.rotation.x = Math.PI / 2;
+                scene.add(shieldMesh);
+                entities.visualFX.push({ 
+                    mesh: shieldMesh, tick: 0, 
+                    update: function() { 
+                        this.tick++; 
+                        let targetPos = ownerEntity && ownerEntity.mesh ? ownerEntity.mesh.position : null;
+                        if (targetPos) this.mesh.position.copy(targetPos); 
+                        return this.tick < 150; 
+                    },
+                    destroy: function() { 
+                        safeDestroy(this.mesh); 
+                        if (ownerEntity) ownerEntity.invulnerable = false; 
+                    } 
+                }); 
+            } else if (['SwarmQueen', 'Nebula'].includes(skinId)) { 
+                for (let i = 0; i < 25; i++) { 
+                    let randAngle = Math.random() * Math.PI * 2;
+                    let launchDir = new THREE.Vector3(Math.sin(randAngle), 0, Math.cos(randAngle));
+                    let p = new Projectile(origin, launchDir, shellColor, 1.3 + Math.random(), false, false, true);
+                    entities.projectiles.push(p); 
+                } 
+            } else if (['Sniper', 'Ragnarok'].includes(skinId)) { 
+                let rotY = 0;
+                if (ownerEntity && ownerEntity.mesh) rotY = ownerEntity.mesh.rotation.y;
+                let targetDir = new THREE.Vector3(Math.sin(rotY), 0, Math.cos(rotY));
+                let megaProj = new Projectile(origin, targetDir, 0xffffff, 4.5, false, true, true);
+                megaProj.mesh.scale.set(2.5, 2.5, 5);
+                megaProj.radius = 3.5;
+                entities.projectiles.push(megaProj); 
+            } else { 
+                for (let i = 0; i < 12; i++) { 
+                    let a = (Math.PI * 2 / 12) * i;
+                    let p = new Projectile(origin, new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), 0x0077ff, 1.8, false, true, false);
+                    entities.projectiles.push(p); 
+                } 
+            }
+            spawnExplosion(origin, 0x00aaff, 25);
+            
+            if (isLocal && isMultiplayer && mpChannel) {
+                mpChannel.send({ type: 'broadcast', event: 'p_bomb', payload: {
+                    uuid: localUserId, ox: origin.x, oz: origin.z, skin: skinId
+                }});
+            }
+        }
+
+        window.triggerBomb = function() {
+            if (!GAME.active || !entities.player || entities.player.isSpectator || GAME.bombCooldown > 0) return;
+            GAME.bombCooldown = 380;
+            executeSuper(entities.player.mesh.position.clone(), equippedSkin, entities.player.projColor, entities.player, true);
+        };
+
+        function addScore(amount) { 
+            GAME.score += amount;
+            document.getElementById('score').innerText = `SCORE: ${String(GAME.score).padStart(6, '0')}`; 
+        }
+
+        function handleWorldGeneration() {
+            if (!entities.player) return;
+            
+            // Only host or single player handles AI generation
+            if (!isMultiplayer || isHost) {
+                const pTarget = getClosestAlivePlayerPos(new THREE.Vector3(0,0,0));
+                if (!pTarget) return; // Wait for players
+
+                if (GAME.started && !GAME.hyperdriveMode && Math.random() < 0.005 && entities.hazards.length < 3) {
+                    let haz = new Meteorite();
+                    if (isMultiplayer) {
+                        haz.networkId = Math.random().toString(36).substr(2, 9);
+                        mpChannel.send({ type: 'broadcast', event: 'spawn_entity', payload: { id: haz.networkId, type: 'hazard', x: haz.mesh.position.x, z: haz.mesh.position.z } });
+                    }
+                    entities.hazards.push(haz);
+                }
+                if (GAME.started && Math.random() < 0.0022 && entities.healthDrops.length < 3) { 
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = 35 + Math.random() * 35;
+                    let drop = new HealthDrop(new THREE.Vector3(pTarget.x + Math.sin(angle) * dist, 0, pTarget.z + Math.cos(angle) * dist));
+                    if (isMultiplayer) {
+                        drop.networkId = Math.random().toString(36).substr(2, 9);
+                        mpChannel.send({ type: 'broadcast', event: 'spawn_entity', payload: { id: drop.networkId, type: 'healthdrop', x: drop.mesh.position.x, z: drop.mesh.position.z } });
+                    }
+                    entities.healthDrops.push(drop); 
+                }
+                if (!GAME.isBossStage && !GAME.isBossRush && entities.enemies.length < GAME.maxEnemies && !GAME.hyperdriveMode) { 
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = 50 + Math.random() * 30;
+                    let e = new Enemy(new THREE.Vector3(pTarget.x + Math.sin(angle) * dist, 0, pTarget.z + Math.cos(angle) * dist));
+                    if (isMultiplayer) {
+                        e.networkId = Math.random().toString(36).substr(2, 9);
+                        mpChannel.send({ type: 'broadcast', event: 'spawn_entity', payload: { id: e.networkId, type: 'enemy', variant: e.type, x: e.mesh.position.x, z: e.mesh.position.z } });
+                    }
+                    entities.enemies.push(e); 
+                }
+            }
+        }
+
+        function resolveCollisions() {
+            if (!entities.player) return;
+            const pPos = entities.player.mesh.position;
+            const pRad = entities.player.radius;
+            const isAlive = !entities.player.isSpectator;
+            const damagePlayer = (amt) => (typeof entities.player.takeDamage === 'function') && entities.player.takeDamage(amt);
+
+            if (isAlive) {
+                for (let h = entities.healthDrops.length - 1; h >= 0; h--) {
+                    let hd = entities.healthDrops[h];
+                    if (pPos.distanceTo(hd.mesh.position) < pRad + hd.radius) {
+                        playSynthSound('powerup');
+                        entities.player.hp = Math.min(entities.player.maxHp, entities.player.hp + 50);
+                        entities.player.updateUI();
+                        spawnExplosion(hd.mesh.position, 0x00ff66, 8);
+                        if (isMultiplayer && hd.networkId) mpChannel.send({ type: 'broadcast', event: 'remove_entity', payload: { id: hd.networkId, type: 'healthdrop' } });
+                        hd.destroy();
+                        entities.healthDrops.splice(h, 1);
+                    }
+                }
+                for (let h = entities.hazards.length - 1; h >= 0; h--) { 
+                    let haz = entities.hazards[h]; 
+                    if (pPos.distanceTo(haz.mesh.position) < pRad + haz.radius) { 
+                        if (damagePlayer(120)) gameOver();
+                        spawnExplosion(haz.mesh.position, 0xff5500, 8);
+                        if (isMultiplayer && haz.networkId) mpChannel.send({ type: 'broadcast', event: 'remove_entity', payload: { id: haz.networkId, type: 'hazard' } });
+                        haz.destroy();
+                        entities.hazards.splice(h, 1); 
+                    } 
+                }
+                for (let p = entities.powerups.length - 1; p >= 0; p--) { 
+                    let pu = entities.powerups[p]; 
+                    if (pPos.distanceTo(pu.mesh.position) < pRad + pu.radius) { 
+                        playSynthSound('powerup');
+                        entities.player.powerWeaponTime = 380;
+                        document.getElementById('weapon-status').style.display = 'block';
+                        spawnExplosion(pu.mesh.position, 0xffff00, 10);
+                        if (isMultiplayer && pu.networkId) mpChannel.send({ type: 'broadcast', event: 'remove_entity', payload: { id: pu.networkId, type: 'powerup' } });
+                        pu.destroy();
+                        entities.powerups.splice(p, 1); 
+                    } 
+                }
+            }
+
+            for (let i = entities.projectiles.length - 1; i >= 0; i--) {
+                const p = entities.projectiles[i];
+                let hit = false;
+
+                if (p.isEnemy) {
+                    if (isAlive && p.mesh.position.distanceTo(pPos) < pRad + p.radius) {
+                        if (entities.player.takeDamage(15)) gameOver();
+                        hit = true;
+                    }
+                } else {
+                    for (let h = entities.hazards.length - 1; h >= 0; h--) {
+                        let haz = entities.hazards[h];
+                        if (p.mesh.position.distanceTo(haz.mesh.position) < haz.radius + p.radius) {
+                            hit = true;
+                            if (isMultiplayer && haz.networkId) mpChannel.send({ type: 'broadcast', event: 'hit_enemy', payload: { id: haz.networkId, dmg: 35 } });
+                            else if (haz.takeDamage(35)) {
+                                spawnExplosion(haz.mesh.position, 0xff5500, 10);
+                                haz.destroy();
+                                entities.hazards.splice(h, 1);
+                            }
+                            break;
+                        }
+                    }
+
+                    if (hit && !p.pierce) {
+                        p.destroy();
+                        entities.projectiles.splice(i, 1);
+                        continue;
+                    }
+
+                    for (let j = entities.enemies.length - 1; j >= 0; j--) {
+                        const e = entities.enemies[j];
+                        if (p.mesh.position.distanceTo(e.mesh.position) < e.radius + p.radius) {
+                            if (isMultiplayer && e.networkId) {
+                                mpChannel.send({ type: 'broadcast', event: 'hit_enemy', payload: { id: e.networkId, dmg: 35 } });
+                            } else {
+                                if (e.takeDamage(35)) {
+                                    spawnExplosion(e.mesh.position, e.mesh.children[1] ? e.mesh.children[1].material.color.getHex() : 0xffffff, e instanceof Boss ? 30 : 6);
+                                    addScore(e instanceof Boss ? 500 : (e.type === 'minion' ? 5 : 15));
+                                    if (!(e instanceof Boss) && Math.random() < 0.12) entities.powerups.push(new PowerUp(e.mesh.position.clone()));
+                                    e.destroy();
+                                    entities.enemies.splice(j, 1);
+                                    handleKill(e instanceof Boss, e);
+                                }
+                            }
+                            if (!p.powerWeapon) {
+                                if (p.pierce && !p.hasPierced) {
+                                    p.hasPierced = true;
+                                } else {
+                                    hit = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (hit) {
+                    p.destroy();
+                    entities.projectiles.splice(i, 1);
+                }
+            }
+
+            if (isAlive) {
+                for (let j = entities.enemies.length - 1; j >= 0; j--) { 
+                    const e = entities.enemies[j]; 
+                    if (pPos.distanceTo(e.mesh.position) < pRad + e.radius) { 
+                        spawnExplosion(pPos, 0x00ffff, 6); 
+                        if (damagePlayer(20)) gameOver(); 
+                        if (!(e instanceof Boss)) { 
+                            if (isMultiplayer && e.networkId) mpChannel.send({ type: 'broadcast', event: 'remove_entity', payload: { id: e.networkId, type: 'enemy' } });
+                            else {
+                                e.destroy();
+                                entities.enemies.splice(j, 1);
+                            }
+                        } 
+                    } 
+                }
+            }
+        }
+
+        function handleKill(isBoss = false, enemyObj = null) {
+            if (equippedSkin === 'Devourer' && entities.player && !entities.player.isSpectator) { 
+                entities.player.hp = Math.min(entities.player.maxHp, entities.player.hp + 20);
+                entities.player.updateUI(); 
+            }
+            if (isBoss) { 
+                playSynthSound('boss_die');
+                document.getElementById('boss-ui').style.display = 'none'; 
+                if (enemyObj && enemyObj.archetype && !unlockedSkins.includes(enemyObj.archetype)) { 
+                    unlockedSkins.push(enemyObj.archetype);
+                    localStorage.setItem('dimWarfareSkins_v6.1', JSON.stringify(unlockedSkins)); 
+                }
+                GAME.isBossStage = false;
+                if (!isMultiplayer || isHost) requestStageAdvance(GAME.stage + 1); 
+            } else { 
+                playSynthSound('kill'); 
+                if (!GAME.isBossStage && !GAME.isBossRush) { 
+                    GAME.kills++; 
+                    if (GAME.kills >= GAME.killsToAdvance && (!isMultiplayer || isHost)) requestStageAdvance(GAME.stage + 1); 
+                } 
+            }
+        }
+
+        function requestStageAdvance(targetStage = GAME.stage + 1) {
+            if (stageTransitionLock || window.__stageTransitionActive) return;
+            if (isMultiplayer && isHost) {
+                mpChannel.send({ type: 'broadcast', event: 'stage_advance', payload: { stage: targetStage } });
+            }
+            stageTransitionLock = true;
+            window.__stageTransitionActive = true;
+            advanceStage(targetStage);
+            setTimeout(() => {
+                stageTransitionLock = false;
+                window.__stageTransitionActive = false;
+            }, 2000);
+        }
+
+        function advanceStage(targetStage = GAME.stage + 1) {
+            if (targetStage <= GAME.stage) return;
+
+            GAME.active = false;
+            GAME.stage = targetStage;
+            GAME.kills = 0;
+            GAME.killsToAdvance = 12 + Math.floor(GAME.stage * 3);
+            GAME.maxEnemies = Math.min(20, 8 + Math.floor(GAME.stage * 0.8));
+            GAME.hyperdriveMode = true;
+            GAME.hyperdriveTimer = 35;
+            GAME.bombCooldown = 0;
+            window.__clientStageStartSignal = 0;
+
+            if (entities.player && !GAME.isBossRush) {
+                if (entities.player.hp <= 0 || entities.player.isSpectator) {
+                    entities.player.isSpectator = false;
+                    document.getElementById('spectator-label').style.display = 'none';
+                    if (isMultiplayer) mpChannel.track({ username: myUsername, skin: equippedSkin, isHost: isHost, isSpectator: false });
+                    entities.player.hp = Math.max(1, Math.floor(entities.player.maxHp * 0.5));
+                    entities.player.updateUI();
+                } else {
+                    let reward = 80;
+                    if (GAME.stage % 5 === 1) reward += 150;
+                    entities.player.hp = Math.min(entities.player.maxHp, entities.player.hp + reward);
+                    entities.player.updateUI();
+                }
+            }
+
+            if (entities.player) {
+                entities.player.invulnerable = true;
+                setTimeout(() => { if (entities.player) entities.player.invulnerable = false; }, 3000);
+            }
+
+            entities.enemies.forEach(e => { if (e) e.destroy(); });
+            entities.enemies = [];
+            entities.projectiles.forEach(p => { if (p) p.destroy(); });
+            entities.projectiles = [];
+            entities.hazards.forEach(h => { if (h) h.destroy(); });
+            entities.hazards = [];
+            entities.powerups.forEach(pu => { if (pu) pu.destroy(); });
+            entities.powerups = [];
+            entities.healthDrops.forEach(hd => { if (hd) hd.destroy(); });
+            entities.healthDrops = [];
+            window.__stageTransitionProjectileBufferFrames = 1;
+
+            const screen = document.getElementById('stage-clear-screen');
+            screen.style.display = 'flex';
+            if (GAME.isBossRush) {
+                document.getElementById('stage-clear-text').innerHTML = `<span class='alert-text'>BOSS RUSH ENGAGED<br>LOADING TIER COUPLING ${GAME.stage}</span>`;
+            } else if (GAME.stage % 5 === 0) {
+                document.getElementById('stage-clear-text').innerHTML = "<span class='alert-text'>CRITICAL DISTORTION BOUNDARY<br>GUARDIAN MATRIX IMMINENT</span>";
+                GAME.isBossStage = true;
+            } else {
+                document.getElementById('stage-clear-text').innerHTML = `SECTOR ${GAME.stage-1} CLEAR<br><span style='font-size:15px;color:#0ff;'>SYNCHRONIZING VECTOR CHANNELS</span>`;
+            }
+
+            setTimeout(() => {
+                screen.style.display = 'none';
+                document.getElementById('stage-display').innerText = GAME.isBossRush ? `ELITE TIER ${GAME.stage}` : `SECTOR ${GAME.stage}`;
+
+                if (GAME.isBossStage || GAME.isBossRush) {
+                    if (!isMultiplayer || isHost) {
+                        const pTarget = getClosestAlivePlayerPos(new THREE.Vector3(0,0,0));
+                        let boss = new Boss(pTarget ? pTarget.clone().add(new THREE.Vector3(0, 0, -50)) : new THREE.Vector3(0, 0, -50));
+                        if (isMultiplayer) {
+                            boss.networkId = Math.random().toString(36).substr(2,9);
+                            mpChannel.send({ type: 'broadcast', event: 'spawn_entity', payload: { id: boss.networkId, type: 'boss', variant: boss.archetype, x: boss.mesh.position.x, z: boss.mesh.position.z } });
+                        }
+                        entities.enemies.push(boss);
+                    }
+                }
+
+                if (!GAME.paused) GAME.active = true;
+            }, 2200);
+        }
+
+        function getFinalStatsText() {
+            return GAME.isBossRush ?
+                `TIERS PURGED: ${GAME.stage - 1} | SCORE: ${GAME.score}` :
+                `SECTORS SECURED: ${GAME.stage - 1} | SCORE: ${GAME.score}`;
+        }
+
+        function showGameOverOverlay(finalStatsText, isNewRecord = false) {
+            if (GAME.gameOverShown) return;
+            GAME.gameOverShown = true;
+            GAME.active = false;
+            GAME.paused = false;
+            document.getElementById('ui-layer').style.display = 'none';
+            document.getElementById('game-over-screen').style.display = 'flex';
+            document.getElementById('final-stats').innerText = finalStatsText;
+            document.getElementById('new-record-msg').style.display = isNewRecord ? 'block' : 'none';
+            if (isMultiplayer && mpChannel) {
+                supabase.removeChannel(mpChannel);
+                mpChannel = null;
+            }
+        }
+
+        function gameOver(forceGameOver = false) {
+            if (GAME.gameOverShown) return;
+            if (isMultiplayer && !forceGameOver) {
+                // Return since death in MP turns into spectator (handled in takeDamage) unless forced
+                return;
+            }
+            GAME.active = false;
+            playSynthSound('die');
+            if (entities.player && entities.player.mesh) {
+                spawnExplosion(entities.player.mesh.position, 0x00ffff, 30);
+                applyScreenShake(4.0);
+            }
+            if (entities.player) entities.player.destroy();
+            entities.player = null;
+            let isNew = false;
+            if (GAME.score > bestScore) { 
+                bestScore = GAME.score;
+                localStorage.setItem('dimWarfareBest_v6.1', bestScore);
+                isNew = true; 
+            }
+            setTimeout(() => { showGameOverOverlay(getFinalStatsText(), isNew); }, 1600);
+        }
+
+        function drawMultiplayerUI() {
+            const container = document.getElementById('multiplayer-ui');
+            container.innerHTML = ''; // Rebuild DOM for simplicity
+            
+            if (!isMultiplayer || !GAME.active || !camera) return;
+
+            Object.values(entities.remotePlayers).forEach(rp => {
+                if (rp.isSpectator || !rp.mesh) return;
+                
+                const vec = new THREE.Vector3();
+                vec.copy(rp.mesh.position).add(new THREE.Vector3(0, 3, 0)); // Top of head
+                vec.project(camera);
+                
+                const x = (vec.x * .5 + .5) * window.innerWidth;
+                const y = (vec.y * -.5 + .5) * window.innerHeight;
+                
+                if (vec.z > 1 || x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) {
+                    // Offscreen
+                    const indicator = document.createElement('div');
+                    indicator.className = 'offscreen-indicator';
+                    // Calculate angle to player relative to screen center
+                    const cx = window.innerWidth / 2;
+                    const cy = window.innerHeight / 2;
+                    let angle = Math.atan2(y - cy, x - cx);
+                    indicator.style.transform = `rotate(${angle + Math.PI/2}rad)`;
+                    
+                    // Clamp to borders
+                    const pad = 20;
+                    let ix = x, iy = y;
+                    if (ix < pad) ix = pad;
+                    if (ix > window.innerWidth - pad) ix = window.innerWidth - pad;
+                    if (iy < pad) iy = pad;
+                    if (iy > window.innerHeight - pad) iy = window.innerHeight - pad;
+                    
+                    indicator.style.left = ix + 'px';
+                    indicator.style.top = iy + 'px';
+                    container.appendChild(indicator);
+                } else {
+                    // Onscreen nametag
+                    const nametag = document.createElement('div');
+                    nametag.className = 'player-nametag';
+                    nametag.innerText = rp.username;
+                    nametag.style.left = x + 'px';
+                    nametag.style.top = y + 'px';
+                    container.appendChild(nametag);
+                }
+            });
+        }
+
+        // --- INPUT HANDLING ---
+        const moveZone = document.getElementById('joystick-base');
+        const moveKnob = document.getElementById('joystick-knob');
+        const fireZone = document.getElementById('fire-joystick-base');
+        const fireKnob = document.getElementById('fire-joystick-knob');
+        let moveTouchId = null;
+        let moveCenter = { x: 0, y: 0 };
+        let fireTouchId = null;
+        let fireCenter = { x: 0, y: 0 };
+        const maxJoyDist = 40;
+
+        function resetMove() { 
+            moveTouchId = null;
+            input.x = 0;
+            input.y = 0;
+            moveKnob.style.transform = `translate(0px, 0px)`; 
+        }
+
+        function resetFire() { 
+            fireTouchId = null;
+            input.fireX = 0;
+            input.fireY = 0;
+            input.isFiring = false;
+            fireKnob.style.transform = `translate(0px, 0px)`; 
+        }
+
+        function handleMoveTouch(touch) { 
+            if (GAME.paused || (entities.player && entities.player.isSpectator)) return;
+            let dx = touch.clientX - moveCenter.x;
+            let dy = touch.clientY - moveCenter.y;
+            const dist = Math.sqrt(dx * dx + dy * dy); 
+            if (dist > maxJoyDist) { 
+                dx = (dx / dist) * maxJoyDist;
+                dy = (dy / dist) * maxJoyDist; 
+            }
+            moveKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+            input.x = dx / maxJoyDist;
+            input.y = dy / maxJoyDist; 
+        }
+
+        moveZone.addEventListener('touchstart', e => { 
+            if (GAME.paused) return;
+            GAME.started = true;
+            e.preventDefault(); 
+            if (moveTouchId !== null) return;
+            const t = e.changedTouches[0];
+            moveTouchId = t.identifier;
+            const rect = moveZone.getBoundingClientRect();
+            moveCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            handleMoveTouch(t); 
+        }, { passive: false });
+
+        moveZone.addEventListener('touchmove', e => { 
+            e.preventDefault(); 
+            for (let t of e.changedTouches) if (t.identifier === moveTouchId) handleMoveTouch(t); 
+        }, { passive: false });
+
+        moveZone.addEventListener('touchend', e => { 
+            e.preventDefault(); 
+            for (let t of e.changedTouches) if (t.identifier === moveTouchId) resetMove(); 
+        }, { passive: false });
+
+        moveZone.addEventListener('touchcancel', e => { 
+            e.preventDefault();
+            resetMove(); 
+        }, { passive: false });
+
+        function handleFireTouch(touch) { 
+            if (GAME.paused || (entities.player && entities.player.isSpectator)) return;
+            let dx = touch.clientX - fireCenter.x;
+            let dy = touch.clientY - fireCenter.y;
+            const dist = Math.sqrt(dx * dx + dy * dy); 
+            if (dist > maxJoyDist) { 
+                dx = (dx / dist) * maxJoyDist;
+                dy = (dy / dist) * maxJoyDist; 
+            }
+            fireKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+            input.fireX = dx / maxJoyDist;
+            input.fireY = dy / maxJoyDist;
+            input.isFiring = (dist > 5); 
+        }
+
+        fireZone.addEventListener('touchstart', e => { 
+            if (GAME.paused || (entities.player && entities.player.isSpectator)) return;
+            GAME.started = true;
+            e.preventDefault(); 
+            if (fireTouchId !== null) return;
+            const t = e.changedTouches[0];
+            fireTouchId = t.identifier;
+            const rect = fireZone.getBoundingClientRect();
+            fireCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            handleFireTouch(t); 
+        }, { passive: false });
+
+        fireZone.addEventListener('touchmove', e => { 
+            e.preventDefault(); 
+            for (let t of e.changedTouches) if (t.identifier === fireTouchId) handleFireTouch(t); 
+        }, { passive: false });
+
+        fireZone.addEventListener('touchend', e => { 
+            e.preventDefault(); 
+            for (let t of e.changedTouches) if (t.identifier === fireTouchId) resetFire(); 
+        }, { passive: false });
+
+        fireZone.addEventListener('touchcancel', e => { 
+            e.preventDefault();
+            resetFire(); 
+        }, { passive: false });
+
+        let isMouseMoveJoy = false;
+        let isMouseFireJoy = false;
+
+        moveZone.addEventListener('mousedown', e => { 
+            if (GAME.paused || (entities.player && entities.player.isSpectator)) return;
+            GAME.started = true;
+            isMouseMoveJoy = true;
+            const rect = moveZone.getBoundingClientRect();
+            moveCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            handleMoveTouch(e); 
+        });
+
+        fireZone.addEventListener('mousedown', e => { 
+            if (GAME.paused || (entities.player && entities.player.isSpectator)) return;
+            GAME.started = true;
+            isMouseFireJoy = true;
+            const rect = fireZone.getBoundingClientRect();
+            fireCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            handleFireTouch(e); 
+        });
+
+        window.addEventListener('mousemove', e => { 
+            if (isMouseMoveJoy) handleMoveTouch(e); 
+            if (isMouseFireJoy) handleFireTouch(e); 
+        });
+
+        window.addEventListener('mouseup', () => { 
+            if (isMouseMoveJoy) resetMove(); 
+            if (isMouseFireJoy) resetFire();
+            isMouseMoveJoy = false;
+            isMouseFireJoy = false; 
+        });
+
+        // --- MAIN ANIMATION LOOP ---
+        let accumulator = 0;
+        const FIXED_TICK = 1000 / 60;
+        let lastFrameTime = performance.now();
+
+        function animate(now) {
+            requestAnimationFrame(animate);
+            if (!now) now = performance.now();
+            
+            if (!GAME.active && !GAME.paused) {
+                const starArr = stars.geometry.attributes.position.array;
+                for (let i = 0; i < starCount * 3; i += 3) {
+                    starArr[i + 2] += 0.12;
+                    if (starArr[i + 2] > 100) starArr[i + 2] -= 200;
+                }
+                stars.geometry.attributes.position.needsUpdate = true;
+            }
+
+            if (GAME.bombCooldown > 0) { 
+                GAME.bombCooldown--;
+                if (GAME.bombCooldown % 3 === 0) {
+                    document.getElementById('bomb-cooldown').style.height = (GAME.bombCooldown / 380) * 100 + '%';
+                }
+            } else { 
+                document.getElementById('bomb-cooldown').style.height = '0%'; 
+            }
+
+            let isSkinScreen = document.getElementById('skins-screen').style.display === 'flex';
+            let isBossScreen = document.getElementById('boss-info-screen').style.display === 'flex';
+            
+            if ((isSkinScreen || isBossScreen) && previewRenderer) { 
+                if (currentPreviewMesh) { 
+                    if (isBossScreen) { 
+                        if (!isDraggingPreview) { 
+                            currentPreviewMesh.rotation.y += 0.006;
+                            currentPreviewMesh.rotation.x += 0.002; 
+                        } else { 
+                            currentPreviewMesh.rotation.y = previewRotationTarget.y;
+                            currentPreviewMesh.rotation.x = previewRotationTarget.x; 
+                        } 
+                        if (currentPreviewMesh.subMeshObj) currentPreviewMesh.subMeshObj.rotation.z += 0.012; 
+                    } else if (isSkinScreen && currentPreviewMesh.wrapper) { 
+                        if (!isDraggingPreview) { 
+                            currentPreviewMesh.wrapper.rotation.y = Math.sin(previewTimer * 0.015) * 0.2;
+                            currentPreviewMesh.wrapper.position.y = Math.sin(previewTimer * 0.03) * 0.25; 
+                        } else {
+                            currentPreviewMesh.wrapper.rotation.y = previewRotationTarget.y;
+                            currentPreviewMesh.wrapper.rotation.x = previewRotationTarget.x;
+                            currentPreviewMesh.wrapper.position.y = 0; 
+                        }
+                        previewTimer++;
+                        handleSkinPreviewEffects(); 
+                    } 
+                }
+                for (let i = previewEntities.length - 1; i >= 0; i--) {
+                    if (!previewEntities[i].update()) { 
+                        previewEntities[i].destroy();
+                        previewEntities.splice(i, 1); 
+                    }
+                }
+                previewComposer.render(); 
+            }
+
+            if (GAME.glitchEffectTimer > 0) { 
+                GAME.glitchEffectTimer--;
+                camera.fov = 52 + (Math.random() - 0.5) * 12;
+                camera.updateProjectionMatrix(); 
+                if (GAME.glitchEffectTimer === 0) { 
+                    camera.fov = 52;
+                    camera.updateProjectionMatrix(); 
+                } 
+            }
+
+            if (GAME.hyperdriveMode) {
+                GAME.hyperdriveTimer--;
+                if (GAME.hyperdriveTimer <= 0) GAME.hyperdriveMode = false;
+            }
+
+            // Smooth orbit camera calculation
+            cameraOrbitAngle = THREE.MathUtils.lerp(cameraOrbitAngle, targetOrbitAngle, 0.08);
+            cameraOrbitPitch = THREE.MathUtils.lerp(cameraOrbitPitch, targetOrbitPitch, 0.08);
+            cameraOrbitDistance = THREE.MathUtils.lerp(cameraOrbitDistance, targetOrbitDistance, 0.08);
+            
+            if (!GAME.active && !GAME.paused && document.getElementById('main-menu').style.display === 'flex') {
+                targetOrbitAngle += 0.002;
+                cameraOrbitAngle = THREE.MathUtils.lerp(cameraOrbitAngle, targetOrbitAngle, 0.04);
+                cameraOrbitPitch = THREE.MathUtils.lerp(cameraOrbitPitch, 0.55, 0.04);
+                cameraOrbitDistance = THREE.MathUtils.lerp(cameraOrbitDistance, 38, 0.04);
+            }
+
+            if (GAME.active && entities.player && GAME.started) {
+                entities.player.update();
+                cameraRig.position.lerp(entities.player.mesh.position, 0.2);
+                updateCameraOrbitalPosition();
+                const lookTarget = cameraRig.position.clone().add(new THREE.Vector3(0, -2, 0));
+                camera.lookAt(lookTarget);
+                
+                // Network Sync for Player
+                if (isMultiplayer && mpChannel && now > nextSyncTime) {
+                    mpChannel.send({ type: 'broadcast', event: 'p_state', payload: {
+                        uuid: localUserId,
+                        x: entities.player.mesh.position.x,
+                        z: entities.player.mesh.position.z,
+                        rot: entities.player.mesh.rotation.y,
+                        skin: equippedSkin,
+                        username: myUsername,
+                        isSpectator: entities.player.isSpectator
+                    }});
+                    
+                    if (isHost) {
+                        let syncData = { score: GAME.score, enemies: [] };
+                        entities.enemies.forEach(e => {
+                            if (e.networkId) syncData.enemies.push({ id: e.networkId, x: e.mesh.position.x, z: e.mesh.position.z, hp: e.hp, phase: e.currentPhase || 1 });
+                        });
+                        mpChannel.send({ type: 'broadcast', event: 'sync_host', payload: syncData });
+                    }
+                    nextSyncTime = now + 100; // 10fps network sync
+                }
+
+            } else if (!GAME.active || !GAME.started) {
+                if (entities.player) {
+                    cameraRig.position.lerp(entities.player.mesh.position, 0.15);
+                    updateCameraOrbitalPosition();
+                    const lookTarget = cameraRig.position.clone().add(new THREE.Vector3(0, -2, 0));
+                    camera.lookAt(lookTarget);
+                } else {
+                    updateCameraOrbitalPosition();
+                    camera.lookAt(0, -2, 0);
+                }
+            }
+
+            if (GAME.active) {
+                drawMultiplayerUI();
+                
+                if (isMultiplayer) {
+                    Object.values(entities.remotePlayers).forEach(rp => rp.update());
+                }
+
+                if (GAME.started) {
+                    const skipTransientMotion = window.__stageTransitionProjectileBufferFrames > 0;
+                    if (skipTransientMotion) window.__stageTransitionProjectileBufferFrames--;
+
+                    handleWorldGeneration();
+
+                    accumulator += Math.min(now - lastFrameTime, 100);
+                    lastFrameTime = now;
+                    while (accumulator >= FIXED_TICK) {
+                        resolveCollisions();
+                        accumulator -= FIXED_TICK;
+                    }
+
+                    if (!skipTransientMotion) {
+                        for (let i = entities.projectiles.length - 1; i >= 0; i--) 
+                            if (!entities.projectiles[i].update()) { entities.projectiles[i].destroy(); entities.projectiles.splice(i, 1); }
+                        for (let i = entities.hazards.length - 1; i >= 0; i--) 
+                            if (!entities.hazards[i].update()) { entities.hazards[i].destroy(); entities.hazards.splice(i, 1); }
+                        for (let i = entities.powerups.length - 1; i >= 0; i--) 
+                            if (!entities.powerups[i].update()) { entities.powerups[i].destroy(); entities.powerups.splice(i, 1); }
+                        for (let i = entities.healthDrops.length - 1; i >= 0; i--) 
+                            if (!entities.healthDrops[i].update()) { entities.healthDrops[i].destroy(); entities.healthDrops.splice(i, 1); }
+                        for (let i = entities.visualFX.length - 1; i >= 0; i--) 
+                            if (!entities.visualFX[i].update()) { 
+                                if (entities.visualFX[i].mesh) disposeRetroMesh(entities.visualFX[i].mesh);
+                                entities.visualFX[i].destroy();
+                                entities.visualFX.splice(i, 1); 
+                            }
+                    }
+                }
+                for (let i = entities.enemies.length - 1; i >= 0; i--) 
+                    if (GAME.started) 
+                        if (!entities.enemies[i].update()) {
+                            entities.enemies[i].destroy();
+                            entities.enemies.splice(i, 1); 
+                        }
+            }
+            if (!GAME.paused) 
+                for (let i = entities.particles.length - 1; i >= 0; i--) 
+                    if (!entities.particles[i].update()) {
+                        entities.particles[i].destroy();
+                        entities.particles.splice(i, 1); 
+                    }
+            
+            composer.render();
+        }
+
+        // --- UI & MENUS ---
+        window.startGame = function(bossRushActivation = false, fromMultiplayer = false) {
+            initAudio();
+            isMultiplayer = fromMultiplayer;
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('lobby-screen').style.display = 'none';
+            document.getElementById('ui-layer').style.display = 'flex';
+            stageTransitionLock = false;
+            window.__stageTransitionActive = false;
+            window.__stageTransitionProjectileBufferFrames = 0;
+            accumulator = 0;
+            lastFrameTime = performance.now();
+            GAME.gameOverShown = false;
+            document.getElementById('game-over-screen').style.display = 'none';
+            document.getElementById('new-record-msg').style.display = 'none';
+            
+            entities.player = new Player();
+            
+            GAME.active = true;
+            GAME.started = false;
+            GAME.paused = false;
+            GAME.stage = 1;
+            GAME.score = 0;
+            GAME.kills = 0;
+            GAME.isBossRush = bossRushActivation;
+            GAME.bombCooldown = 0;
+            
+            targetOrbitAngle = 0;
+            targetOrbitPitch = 0.55;
+            targetOrbitDistance = 38;
+            cameraOrbitAngle = 0;
+            cameraOrbitPitch = 0.55;
+            cameraOrbitDistance = 38;
+            
+            document.getElementById('cam-rotate-indicator').style.display = 'none';
+            document.getElementById('score').innerText = "SCORE: 000000";
+            document.getElementById('stage-display').innerText = GAME.isBossRush ? "ELITE TIER 1" : "SECTOR 1";
+            document.getElementById('weapon-status').style.display = 'none';
+            
+            if (GAME.isBossRush) {
+                if (!isMultiplayer || isHost) {
+                    let b = new Boss(entities.player.mesh.position.clone().add(new THREE.Vector3(0, 0, -50)));
+                    if (isMultiplayer) {
+                        b.networkId = Math.random().toString(36).substr(2, 9);
+                        mpChannel.send({ type: 'broadcast', event: 'spawn_entity', payload: { id: b.networkId, type: 'boss', variant: b.archetype, x: b.mesh.position.x, z: b.mesh.position.z } });
+                    }
+                    entities.enemies.push(b);
+                }
+            }
+            
+            gsap.fromTo(cameraRig.position, { y: 200, z: 100 }, { y: 0, z: 0, duration: 1.5, ease: "power3.out" });
+        };
+
+        window.togglePause = function() {
+            if (isMultiplayer) return; // Disable pause in multiplayer
+            if (!GAME.active && !GAME.paused) return;
+            GAME.paused = !GAME.paused;
+            if (GAME.paused) { 
+                GAME.active = false;
+                document.getElementById('pause-screen').style.display = 'flex';
+                input.x = 0;
+                input.y = 0;
+                input.isFiring = false;
+                moveKnob.style.transform = `translate(0px, 0px)`;
+                fireKnob.style.transform = `translate(0px, 0px)`;
+            } else { 
+                GAME.started = false;
+                GAME.active = true;
+                document.getElementById('pause-screen').style.display = 'none'; 
+            }
+        };
+
+        window.showScore = function() { 
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('best-score-display').innerText = bestScore;
+            document.getElementById('score-screen').style.display = 'flex'; 
+        };
+
+        window.showSoundMenu = function() { 
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('sound-screen').style.display = 'flex'; 
+        };
+
+        window.showBossInfo = function() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('boss-info-screen').style.display = 'flex';
+            initPreviewEngine('boss-canvas-container');
+            setupDragHandlers('boss-mouse-area');
+            const listPanel = document.getElementById('boss-list-panel');
+            listPanel.innerHTML = '';
+            BOSS_DATABASE.forEach((boss, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'list-btn retro-btn';
+                btn.innerHTML = `<span style="color:${boss.color}; font-weight:bold;">${boss.symbol} ${boss.name}</span>`;
+                btn.onclick = () => { 
+                    document.querySelectorAll('#boss-list-panel .list-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadBossPreview(boss.id); 
+                };
+                listPanel.appendChild(btn);
+                if (idx === 0) btn.click();
+            });
+        };
+
+        function loadBossPreview(bossId) {
+            clearPreviewScene();
+            const boss = BOSS_DATABASE.find(b => b.id === bossId);
+            if (!boss) return;
+            let col = parseInt(boss.color.replace('#', '0x'), 16);
+            currentPreviewMesh = createRetroMesh(getBossGeo(boss.id), col, col, 0.45);
+            if (['Core', 'Devourer', 'SwarmQueen', 'Pulsar', 'Singularity', 'Dominator'].includes(boss.id)) {
+                let subMesh = createRetroMesh(new THREE.TorusGeometry(4.8, 0.12, 4, 24), 0xffffff, 0xffffff, 0.35);
+                subMesh.rotation.x = Math.PI / 2;
+                currentPreviewMesh.add(subMesh);
+                currentPreviewMesh.subMeshObj = subMesh;
+            }
+            previewScene.add(currentPreviewMesh);
+            document.getElementById('boss-preview-name').innerText = boss.name;
+            document.getElementById('boss-preview-name').style.color = boss.color;
+            document.getElementById('boss-preview-desc').innerText = boss.desc;
+        }
+
+        window.showSkins = function() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('skins-screen').style.display = 'flex';
+            initPreviewEngine('skin-canvas-container');
+            setupDragHandlers('skin-mouse-area');
+            const listPanel = document.getElementById('skin-list-panel');
+            listPanel.innerHTML = '';
+            const defBtn = document.createElement('button');
+            defBtn.className = 'list-btn retro-btn ' + (equippedSkin === 'Default' ? 'active' : '');
+            defBtn.innerHTML = `<span style="color:#0ff; font-weight:bold;">⛛ STANDARD SHELL</span>`;
+            defBtn.onclick = () => { 
+                document.querySelectorAll('#skin-list-panel .list-btn').forEach(b => b.classList.remove('active'));
+                defBtn.classList.add('active');
+                loadSkinPreview('Default', true); 
+            };
+            listPanel.appendChild(defBtn);
+            BOSS_DATABASE.forEach((boss) => {
+                const unlocked = unlockedSkins.includes(boss.id);
+                const btn = document.createElement('button');
+                btn.className = 'list-btn retro-btn ' + (equippedSkin === boss.id ? 'active' : '');
+                if (unlocked) { 
+                    btn.innerHTML = `<span style="color:${boss.color}; font-weight:bold;">${boss.symbol} ${boss.id.toUpperCase()} CAPTURE</span>`; 
+                } else {
+                    btn.style.borderColor = '#550000';
+                    btn.style.color = '#ff4444';
+                    btn.style.background = 'rgba(255,0,0,0.05)';
+                    btn.innerHTML = `<span>🔒 ${boss.id.toUpperCase()} [LOCKED]</span>`; 
+                }
+                btn.onclick = () => { 
+                    document.querySelectorAll('#skin-list-panel .list-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadSkinPreview(boss.id, unlocked); 
+                };
+                listPanel.appendChild(btn);
+            });
+            loadSkinPreview(equippedSkin, true);
+        };
+
+        function loadSkinPreview(skinId, isUnlocked = true) {
+            clearPreviewScene();
+            selectedSkinId = skinId;
+            currentPreviewSkin = skinId;
+            let colHex, colorStr, name, desc, superName, skinWpn;
+            if (skinId === 'Default') {
+                colHex = 0x00ffff;
+                colorStr = '#00ffff';
+                name = 'STANDARD SHELL EX';
+                desc = 'Balanced matrix vector paths. No special modifiers.';
+                superName = 'VOID REVERSE BURST: Omnidirectional pulse that clears immediate projectiles and damages foes.';
+                skinWpn = 'Standard continuous linear pulse fire. Upgrades to spread fire over time.';
+            } else {
+                const boss = BOSS_DATABASE.find(b => b.id === skinId);
+                colHex = parseInt(boss.color.replace('#', '0x'), 16);
+                colorStr = boss.color;
+                name = boss.name;
+                desc = boss.buff;
+                superName = boss.super;
+                skinWpn = boss.skinWpn;
+            }
+            currentPreviewMesh = createRetroMesh(getSkinGeo(skinId), colHex, colHex, 0.42);
+            if (['Default', 'Sniper', 'SwarmQueen', 'Chaos', 'Vortex'].includes(skinId)) {
+                currentPreviewMesh.rotation.x = Math.PI / 2;
+            }
+            let wrapper = new THREE.Group();
+            wrapper.add(currentPreviewMesh);
+            previewScene.add(wrapper);
+            currentPreviewMesh.wrapper = wrapper;
+            document.getElementById('skin-preview-name').innerText = name;
+            document.getElementById('skin-preview-name').style.color = isUnlocked ? colorStr : '#ff4444';
+            document.getElementById('skin-preview-weapon').innerText = skinWpn;
+            document.getElementById('skin-preview-desc').innerText = desc;
+            document.getElementById('skin-preview-super').innerText = superName;
+            
+            let equipBtn = document.getElementById('equip-skin-btn');
+            equipBtn.style.display = 'inline-block';
+            if (!isUnlocked) {
+                equipBtn.innerText = 'LOCKED // DEFEAT BOSS TO SYNC';
+                equipBtn.className = 'retro-btn start-btn equip-locked-state';
+            } else if (equippedSkin === skinId) {
+                equipBtn.innerText = 'SYNCHRONIZED';
+                equipBtn.className = 'retro-btn start-btn equip-active-state';
+            } else {
+                equipBtn.innerText = 'LOAD COMPONENT';
+                equipBtn.className = 'retro-btn start-btn';
+            }
+            document.getElementById('skin-details-container').scrollTop = 0;
+        }
+
+        window.equipCurrentSkin = function() {
+            if (!unlockedSkins.includes(selectedSkinId) && selectedSkinId !== 'Default') return;
+            equippedSkin = selectedSkinId;
+            localStorage.setItem('dimWarfareEquip_v6.1', equippedSkin);
+            showSkins();
+        };
+
+        function handleSkinPreviewEffects() {
+            if (!currentPreviewMesh || !currentPreviewMesh.wrapper) return;
+            let id = currentPreviewSkin;
+            let col = id === 'Default' ? 0x00ffff : parseInt(BOSS_DATABASE.find(b => b.id === id).color.replace('#', '0x'), 16);
+            let pPos = currentPreviewMesh.wrapper.position;
+            let fwd = new THREE.Vector3(0, 0, 1);
+            if (previewTimer % 22 === 0) {
+                if (['Default', 'Phantom', 'Glitcher', 'Chaos'].includes(id)) { 
+                    previewEntities.push(new PreviewProj(pPos, fwd, col, 0.45)); 
+                } else if (id === 'Sniper') { 
+                    previewEntities.push(new PreviewProj(pPos, fwd, col, 0.9)); 
+                } else if (id === 'SwarmQueen') {
+                    previewEntities.push(new PreviewProj(pPos.clone().add(new THREE.Vector3(0.6, 0, 0)), fwd, col, 0.4));
+                    previewEntities.push(new PreviewProj(pPos.clone().add(new THREE.Vector3(-0.6, 0, 0)), fwd, col, 0.4));
+                } else if (['Core', 'Ragnarok', 'Infinity'].includes(id)) { 
+                    for (let i = 0; i < 4; i++) { 
+                        let a = (Math.PI * 2 / 4) * i;
+                        previewEntities.push(new PreviewProj(pPos, new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), col, 0.35)); 
+                    } 
+                } else if (['Devourer', 'Vortex', 'Dominator'].includes(id)) { 
+                    for (let off of [-0.2, 0, 0.2]) {
+                        previewEntities.push(new PreviewProj(pPos, new THREE.Vector3(Math.sin(off), 0, Math.cos(off)), col, 0.38)); 
+                    }
+                }
+            }
+        }
+
+        window.backToMenu = function() {
+            clearPreviewScene();
+            document.getElementById('score-screen').style.display = 'none';
+            document.getElementById('sound-screen').style.display = 'none';
+            document.getElementById('boss-info-screen').style.display = 'none';
+            document.getElementById('skins-screen').style.display = 'none';
+            document.getElementById('game-over-screen').style.display = 'none';
+            document.getElementById('multiplayer-screen').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'flex';
+        };
+
+        window.playAgain = function() {
+            setTimeout(() => { window.location.href = window.location.href; }, 150);
+        };
+
+        window.leaveGame = function() {
+            if (mpChannel) {
+                supabase.removeChannel(mpChannel);
+                mpChannel = null;
+            }
+            document.getElementById('game-over-screen').style.display = 'none';
+            backToMenu();
+        };
+
+        // --- ORBIT CONTROLS FOR TOUCH ---
+        function setupOrbitControls() {
+            const canvas = document.getElementById('game-canvas');
+            const indicator = document.getElementById('cam-rotate-indicator');
+
+            const getTouchPos = (e) => {
+                if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                return { x: e.clientX, y: e.clientY };
+            };
+
+            const isInJoystickZone = (pos) => {
+                const moveZone = document.getElementById('joystick-base');
+                const fireZone = document.getElementById('fire-joystick-base');
+                const bombBtn = document.getElementById('bomb-label-btn');
+                const checkEl = (el) => {
+                    if (!el) return false;
+                    const r = el.getBoundingClientRect();
+                    return pos.x >= r.left && pos.x <= r.right && pos.y >= r.top && pos.y <= r.bottom;
+                };
+                return checkEl(moveZone) || checkEl(fireZone) || checkEl(bombBtn);
+            };
+
+            canvas.addEventListener('touchstart', (e) => {
+                if (!GAME.active || GAME.paused) return;
+                for (let t of e.changedTouches) {
+                    const pos = { x: t.clientX, y: t.clientY };
+                    if (!isInJoystickZone(pos) && orbitTouchId === null) {
+                        orbitTouchId = t.identifier;
+                        orbitStartPos = pos;
+                        orbitStartAngle = cameraOrbitAngle;
+                        orbitStartPitch = cameraOrbitPitch;
+                        orbitActive = true;
+                        indicator.style.display = 'block';
+                        break;
+                    }
+                }
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (!orbitActive || orbitTouchId === null) return;
+                e.preventDefault();
+                for (let t of e.changedTouches) {
+                    if (t.identifier === orbitTouchId) {
+                        const dx = t.clientX - orbitStartPos.x;
+                        const dy = t.clientY - orbitStartPos.y;
+                        targetOrbitAngle = orbitStartAngle - dx * 0.008;
+                        targetOrbitPitch = THREE.MathUtils.clamp(orbitStartPitch + dy * 0.006, 0.15, 1.35);
+                        targetOrbitDistance = cameraOrbitDistance;
+                        break;
+                    }
+                }
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', (e) => {
+                for (let t of e.changedTouches) {
+                    if (t.identifier === orbitTouchId) {
+                        orbitTouchId = null;
+                        orbitActive = false;
+                        setTimeout(() => { if (!orbitActive) indicator.style.display = 'none'; }, 1500);
+                        break;
+                    }
+                }
+            });
+
+            canvas.addEventListener('touchcancel', () => {
+                orbitTouchId = null;
+                orbitActive = false;
+                setTimeout(() => { if (!orbitActive) indicator.style.display = 'none'; }, 1500);
+            });
+
+            canvas.addEventListener('mousedown', (e) => {
+                if (!GAME.active || GAME.paused) return;
+                if (e.button === 0 && !isOrbitingCamera) {
+                    const pos = { x: e.clientX, y: e.clientY };
+                    if (!isInJoystickZone(pos)) {
+                        isOrbitingCamera = true;
+                        orbitStartPos = pos;
+                        orbitStartAngle = cameraOrbitAngle;
+                        orbitStartPitch = cameraOrbitPitch;
+                        orbitActive = true;
+                        indicator.style.display = 'block';
+                        canvas.style.cursor = 'grabbing';
+                    }
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isOrbitingCamera) return;
+                const dx = e.clientX - orbitStartPos.x;
+                const dy = e.clientY - orbitStartPos.y;
+                targetOrbitAngle = orbitStartAngle - dx * 0.008;
+                targetOrbitPitch = THREE.MathUtils.clamp(orbitStartPitch + dy * 0.006, 0.15, 1.35);
+                targetOrbitDistance = cameraOrbitDistance;
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isOrbitingCamera) {
+                    isOrbitingCamera = false;
+                    orbitActive = false;
+                    document.getElementById('game-canvas').style.cursor = '';
+                    setTimeout(() => { if (!orbitActive) indicator.style.display = 'none'; }, 1500);
+                }
+            });
+        }
+        
+        setupOrbitControls();
+
+        window.addEventListener('resize', () => { 
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight); 
+        });
+
+        // Initialize Loop
+        animate();
+    </script>
+</body>
+</html>
+
