@@ -720,6 +720,48 @@ footer p{
     .forum-input-area .form-input { width: 100%; }
     .forum-input-area button { width: 100%; }
 }
+
+/* =========================================
+   12. GAME CONTAINER OVERLAY
+========================================= */
+#gameOverlayContainer {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 100000;
+}
+#gameIframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+.return-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 100001;
+    backdrop-filter: blur(5px);
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.return-btn:hover {
+    background: rgba(255, 0, 0, 0.4);
+    border-color: rgba(255, 0, 0, 0.8);
+}
 </style>
 </head>
 
@@ -825,7 +867,7 @@ footer p{
                         <p>An intense 3D space shooter experience. Navigate through hostile dimensions, epic bosses. Do your best to survive waves of high-tech enemies.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
                             <a href="dimensionalwarfare.apk" class="download-btn" download>Download APK</a>
-                            <a href="DWF1.html" class="download-btn">Play Web Version</a>
+                            <button onclick="playDimensionalWarfareWeb()" class="download-btn">Play Web Version</button>
                             <button class="download-btn" onclick="openDWGuide()">About Game</button>
                         </div>
                     </div>
@@ -1121,7 +1163,7 @@ footer p{
 
 
 <!-- =======================================================
-     GLOBAL COMPONENTS (Footer & Modals)
+     GLOBAL COMPONENTS (Footer & Modals & Overlays)
 ======================================================== -->
 <div id="guideModal" class="guide-modal">
     <div class="guide-content">
@@ -1154,11 +1196,70 @@ footer p{
     </div>
 </div>
 
+<!-- Game Container Overlay -->
+<div id="gameOverlayContainer">
+    <button class="return-btn" onclick="closeGameContainer()">
+        <span style="font-size: 1.2rem;">&larr;</span> Return
+    </button>
+    <iframe id="gameIframe" src=""></iframe>
+</div>
+
 <footer>
     <p>© 2026 K210209 Studios — All Rights Reserved</p>
 </footer>
 
 <script>
+// =========================================
+// GAME OVERLAY & LANDSCAPE LOCK LOGIC
+// =========================================
+async function playDimensionalWarfareWeb() {
+    const container = document.getElementById('gameOverlayContainer');
+    const iframe = document.getElementById('gameIframe');
+    container.style.display = 'block';
+    iframe.src = 'DWF1.html'; // Loads game within this container without leaving the page
+    
+    try {
+        // Request Fullscreen
+        if (container.requestFullscreen) {
+            await container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) { /* Safari */
+            await container.webkitRequestFullscreen();
+        } else if (container.msRequestFullscreen) { /* IE11 */
+            await container.msRequestFullscreen();
+        }
+        
+        // Force Landscape mode (Requires secure context and Fullscreen Active)
+        if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape');
+        }
+    } catch (err) {
+        console.warn("Fullscreen or orientation lock could not be enforced:", err);
+    }
+}
+
+async function closeGameContainer() {
+    const container = document.getElementById('gameOverlayContainer');
+    const iframe = document.getElementById('gameIframe');
+    container.style.display = 'none';
+    iframe.src = ''; 
+    
+    try {
+        // Exit Fullscreen
+        if (document.exitFullscreen && document.fullscreenElement) {
+            await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen && document.webkitFullscreenElement) {
+            await document.webkitExitFullscreen();
+        }
+        
+        // Unlock orientation
+        if (screen.orientation && screen.orientation.unlock) {
+            screen.orientation.unlock();
+        }
+    } catch (err) {
+        console.warn("Exit Fullscreen or Orientation unlock failed:", err);
+    }
+}
+
 // =========================================
 // NAVIGATION & VIEW SWITCHING LOGIC
 // =========================================
