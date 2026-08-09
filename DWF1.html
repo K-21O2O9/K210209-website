@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dimensional Warfare - Multiplayer Edition</title>
+    <title>Dimensional Warfare - Retro Multiplayer Edition</title>
     
     <!-- ==========================================
          CORE STYLES
@@ -44,10 +44,10 @@
             left: 0;
             bottom: 0;
             right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%),
-                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05));
             z-index: 50;
-            background-size: 100% 4px, 4px 100%;
+            background-size: 100% 3px, 3px 100%;
             pointer-events: none;
         }
 
@@ -802,7 +802,7 @@
     <!-- MAIN MENU -->
     <div id="main-menu" class="overlay-screen">
         <h1 class="cyber-text">DIMENSIONAL<br>WARFARE</h1>
-        <p style="color:#0ff;font-size:12px;margin-top:-5px;letter-spacing:4px;text-shadow:1px 1px 2px #000;">FULL 3D ORBITAL v6.2 (MP)</p>
+        <p style="color:#0ff;font-size:12px;margin-top:-5px;letter-spacing:4px;text-shadow:1px 1px 2px #000;">FULL 3D ORBITAL v6.3 (MP)</p>
         <div class="menu-buttons">
             <button class="retro-btn start-btn" onclick="startGame(false)">SINGLE PLAYER</button>
             <div class="menu-row">
@@ -896,6 +896,11 @@
 
         // --- GLOBAL STATE & CONFIGURATION ---
         window.scene = null;
+        
+        // TEMPORARY MATH VECTORS TO PREVENT GARBAGE COLLECTION STUTTERS
+        const _v1 = new THREE.Vector3();
+        const _v2 = new THREE.Vector3();
+        const _v3 = new THREE.Vector3();
 
         let bestScore = parseInt(localStorage.getItem('dimWarfareBest_v6.1')) || 0;
         let unlockedSkins = JSON.parse(localStorage.getItem('dimWarfareSkins_v6.1')) || ['Default'];
@@ -1069,7 +1074,7 @@
                 let e = entities.enemies.find(en => en.networkId === payload.id);
                 if (e) {
                     if (e.takeDamage(payload.dmg)) {
-                        spawnExplosion(e.mesh.position, e.mesh.children[1] ? e.mesh.children[1].material.color.getHex() : 0xffffff, e instanceof Boss ? 30 : 6);
+                        spawnExplosion(e.mesh.position, 0xffffff, e instanceof Boss ? 30 : 6);
                         addScore(e instanceof Boss ? 500 : 15);
                         handleKill(e instanceof Boss, e);
                         mpChannel.send({ type: 'broadcast', event: 'remove_entity', payload: { id: payload.id, type: 'enemy' }});
@@ -1321,12 +1326,9 @@
         function initPreviewEngine(containerId) {
             const container = document.getElementById(containerId);
             if (!previewRenderer) {
-                previewRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                previewRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: false }); // Disable AA for retro look
+                previewRenderer.setPixelRatio(1);
                 previewScene = new THREE.Scene();
-                previewScene.add(new THREE.AmbientLight(0xffffff, 0.65));
-                let dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-                dirLight.position.set(5, 12, 12);
-                previewScene.add(dirLight);
                 previewCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
                 previewCamera.position.set(0, 5, 16);
                 previewCamera.lookAt(0, 0, 0);
@@ -1338,8 +1340,14 @@
             }
             previewCamera.aspect = container.clientWidth / container.clientHeight;
             previewCamera.updateProjectionMatrix();
-            previewRenderer.setSize(container.clientWidth, container.clientHeight);
-            previewComposer.setSize(container.clientWidth, container.clientHeight);
+            // Scale rendering down for pixelated preview feel
+            const sf = Math.min(1, 800 / Math.max(container.clientWidth, container.clientHeight));
+            previewRenderer.setSize(container.clientWidth * sf, container.clientHeight * sf, false);
+            previewRenderer.domElement.style.width = '100%';
+            previewRenderer.domElement.style.height = '100%';
+            previewRenderer.domElement.style.imageRendering = 'pixelated';
+            
+            previewComposer.setSize(container.clientWidth * sf, container.clientHeight * sf);
             container.appendChild(previewRenderer.domElement);
             previewRotationTarget = { x: 0, y: 0 };
         }
@@ -1408,49 +1416,49 @@
             }
         }
 
-        // --- UTILITY & CACHE ---
+        // --- GLOBAL ASSET CACHING FOR FPS ---
+        // Crucial for removing GC pauses completely. Geometries and Materials are shared.
         const _enemyGeoCache = {};
         function getCachedGeo(key, factory) {
             if (!_enemyGeoCache[key]) _enemyGeoCache[key] = factory();
             return _enemyGeoCache[key];
         }
 
-        function createRetroMesh(geometry, edgeColor, coreColor, opacity = 0.15) {
+        const _matCache = {};
+        function getRetroMat(colorHex, opacity, type, blending) {
+            const key = `${colorHex}_${opacity}_${type}_${blending}`;
+            if (!_matCache[key]) {
+                if (type === 'hidden') {
+                    _matCache[key] = new THREE.MeshBasicMaterial({ transparent: true, opacity: opacity, depthWrite: false });
+                } else if (type === 'glow') {
+                    _matCache[key] = new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity: opacity, blending: blending || THREE.AdditiveBlending });
+                } else if (type === 'edge') {
+                    _matCache[key] = new THREE.LineBasicMaterial({ color: colorHex });
+                }
+            }
+            return _matCache[key];
+        }
+
+        function createRetroMesh(geometry, edgeColorHex, coreColorHex, opacity = 0.15) {
             const group = new THREE.Group();
-            const hiddenMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
-            group.add(new THREE.Mesh(geometry, hiddenMat));
+            group.add(new THREE.Mesh(geometry, getRetroMat(0x000000, 0, 'hidden')));
             const edgeGeom = getCachedGeo('edges_' + geometry.uuid, () => new THREE.EdgesGeometry(geometry));
-            const glowMat = new THREE.LineBasicMaterial({ color: edgeColor, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending });
-            const glowLines = new THREE.LineSegments(edgeGeom, glowMat);
+            const glowLines = new THREE.LineSegments(edgeGeom, getRetroMat(edgeColorHex, 0.35, 'glow', THREE.AdditiveBlending));
             glowLines.scale.setScalar(1.06);
             group.add(glowLines);
-            group.add(new THREE.LineSegments(edgeGeom, new THREE.LineBasicMaterial({ color: edgeColor, linewidth: 2 })));
+            group.add(new THREE.LineSegments(edgeGeom, getRetroMat(edgeColorHex, 1.0, 'edge')));
             return group;
         }
 
-        function setRetroGroupColor(group, colorHex) {
-            if (!group) return;
-            group.traverse(obj => {
-                if (obj.material && obj.material.color) {
-                    obj.material.color.setHex(colorHex);
-                }
-            });
+        function setRetroGroupState(group, colorHex, opacityMod = 1.0) {
+            if (!group || group.children.length < 3) return;
+            group.children[1].material = getRetroMat(colorHex, 0.35 * opacityMod, 'glow', THREE.AdditiveBlending);
+            group.children[2].material = getRetroMat(colorHex, 1.0 * opacityMod, 'edge');
         }
 
         function disposeRetroMesh(group) {
-            if (!group || (group.userData && group.userData.__retroDisposed)) return;
-            if (group.userData) group.userData.__retroDisposed = true;
-            const seen = new Set();
-            group.traverse(obj => {
-                const mat = obj.material;
-                if (!mat) return;
-                if (Array.isArray(mat)) {
-                    mat.forEach(m => { if (m && !seen.has(m)) { seen.add(m); if (typeof m.dispose === 'function') m.dispose(); } });
-                } else if (!seen.has(mat)) {
-                    seen.add(mat);
-                    if (typeof mat.dispose === 'function') mat.dispose();
-                }
-            });
+            // Memory Optimization: Do nothing. Geometries and Materials are cached globally.
+            // Eliminates massive Garbage Collection CPU spikes.
         }
 
         function safeDestroy(obj, pool = null) {
@@ -1460,10 +1468,7 @@
 
             if (root.parent) {
                 try { root.parent.remove(root); } catch (e) {}
-            } else if (window.scene && typeof window.scene.remove === 'function') {
-                try { window.scene.remove(root); } catch (e) {}
             }
-
             root.visible = false;
             root.userData = root.userData || {};
             root.userData.__destroyed = true;
@@ -1471,32 +1476,6 @@
 
             if (pool) {
                 if (typeof pool.push === 'function' && !pool.includes(root)) pool.push(root);
-                return;
-            }
-
-            if (typeof root.traverse === 'function') {
-                root.traverse(node => {
-                    if (node.geometry && typeof node.geometry.dispose === 'function') {
-                        try { node.geometry.dispose(); } catch (e) {}
-                    }
-                    const mat = node.material;
-                    if (!mat) return;
-                    if (Array.isArray(mat)) {
-                        mat.forEach(m => { if (m && typeof m.dispose === 'function') { try { m.dispose(); } catch (e) {} } });
-                    } else if (typeof mat.dispose === 'function') {
-                        try { mat.dispose(); } catch (e) {}
-                    }
-                });
-            } else {
-                if (root.geometry && typeof root.geometry.dispose === 'function') {
-                    try { root.geometry.dispose(); } catch (e) {}
-                }
-                const mat = root.material;
-                if (Array.isArray(mat)) {
-                    mat.forEach(m => { if (m && typeof m.dispose === 'function') { try { m.dispose(); } catch (e) {} } });
-                } else if (mat && typeof mat.dispose === 'function') {
-                    try { mat.dispose(); } catch (e) {}
-                }
             }
         }
 
@@ -1560,25 +1539,40 @@
         cameraRig.add(camera);
         scene.add(cameraRig);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        // RETRO RENDERER OPTIMIZATION: Reduce logic resolution and scale up with CSS
+        const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+        renderer.setPixelRatio(1);
+        
+        function setRendererSize() {
+            const targetWidth = window.innerWidth;
+            const targetHeight = window.innerHeight;
+            // Cap internal resolution to 900px wide/tall for retro look and immense performance
+            const scaleFactor = Math.min(1, 900 / Math.max(targetWidth, targetHeight));
+            const renderWidth = Math.floor(targetWidth * scaleFactor);
+            const renderHeight = Math.floor(targetHeight * scaleFactor);
+            
+            renderer.setSize(renderWidth, renderHeight, false);
+            renderer.domElement.style.width = '100%';
+            renderer.domElement.style.height = '100%';
+            renderer.domElement.style.imageRendering = 'pixelated';
+            
+            if (window.composer) {
+                window.composer.setSize(renderWidth, renderHeight);
+            }
+        }
+        
+        setRendererSize();
         container.appendChild(renderer.domElement);
         
         const renderScenePass = new RenderPass(scene, camera);
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.0, 0.5, 0.85);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(renderer.domElement.width, renderer.domElement.height), 2.0, 0.5, 0.85);
         const composer = new EffectComposer(renderer);
+        window.composer = composer;
         composer.addPass(renderScenePass);
         composer.addPass(bloomPass);
-        
-        const ambientLight = new THREE.AmbientLight(0x404040, 2.0);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        dirLight.position.set(50, 100, 50);
-        scene.add(dirLight);
 
         const starGeo = new THREE.BufferGeometry();
-        const starCount = 200;
+        const starCount = 1200; // GREATLY INCREASED FOR HIGHER QUALITY
         const starPos = new Float32Array(starCount * 3);
         for (let i = 0; i < starCount * 3; i += 3) { 
             starPos[i] = (Math.random() - 0.5) * 240;
@@ -1610,14 +1604,12 @@
             document.getElementById('cam-rotate-indicator').style.display = 'none';
         };
 
-        function getCameraRelativeGroundVector(localX, localY) {
+        function getCameraRelativeGroundVector(localX, localY, outVec) {
             const cosA = Math.cos(cameraOrbitAngle);
             const sinA = Math.sin(cameraOrbitAngle);
-            return new THREE.Vector3(
-                localX * cosA + localY * sinA,
-                0,
-                -localX * sinA + localY * cosA
-            );
+            if (!outVec) outVec = new THREE.Vector3();
+            outVec.set(localX * cosA + localY * sinA, 0, -localX * sinA + localY * cosA);
+            return outVec;
         }
 
         function applyScreenShake(amount) {
@@ -1670,9 +1662,9 @@
         }
 
         class Particle {
-            constructor(pos, color, scale) {
+            constructor(pos, colorHex, scale) {
                 this.mesh = getPooledParticleMesh(scale);
-                setRetroGroupColor(this.mesh, color);
+                setRetroGroupState(this.mesh, colorHex, 1.0);
                 this.mesh.position.copy(pos);
                 this.mesh.scale.setScalar(1.0);
                 this.mesh.rotation.set(0, 0, 0);
@@ -1735,7 +1727,7 @@
             constructor(pos, dir, color, speed, isEnemy, powerWeapon = false, pierce = false) {
                 this.mesh = getPooledProjectileMesh(powerWeapon);
                 this.mesh.scale.setScalar(1.0); 
-                setRetroGroupColor(this.mesh, color);
+                setRetroGroupState(this.mesh, color, 1.0);
                 this.mesh.position.copy(pos);
                 this.mesh.position.y = 0;
                 this.mesh.rotation.set(0, Math.atan2(dir.x, dir.z), 0);
@@ -1747,11 +1739,13 @@
                 this.hasPierced = false;
                 this.radius = powerWeapon ? 1.0 : 0.45;
                 this.distance = 0;
+                // Avoid length() sq check for speed by saving scalar distance addition
+                this.speedScalar = speed;
                 scene.add(this.mesh);
             }
             update() { 
                 this.mesh.position.add(this.vel);
-                this.distance += this.vel.length(); 
+                this.distance += this.speedScalar; 
                 if (this.powerWeapon && !this.isEnemy) { this.mesh.rotation.z += 0.2; } 
                 return this.distance < 125; 
             }
@@ -1787,16 +1781,12 @@
         class HealthDrop {
             constructor(pos) {
                 this.mesh = new THREE.Group();
-                const mat = new THREE.MeshBasicMaterial({ color: 0x00ff66, transparent: true, opacity: 0.85 });
-                const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
                 const hGeo = getCachedGeo('healthdrop_h_geo', () => new THREE.BoxGeometry(2.0, 0.5, 0.5));
-                const hEdges = getCachedGeo('healthdrop_h_edges', () => new THREE.EdgesGeometry(hGeo));
-                const hMesh = new THREE.Mesh(hGeo, mat);
-                hMesh.add(new THREE.LineSegments(hEdges, edgeMat));
                 const vGeo = getCachedGeo('healthdrop_v_geo', () => new THREE.BoxGeometry(0.5, 0.5, 2.0));
-                const vEdges = getCachedGeo('healthdrop_v_edges', () => new THREE.EdgesGeometry(vGeo));
-                const vMesh = new THREE.Mesh(vGeo, mat);
-                vMesh.add(new THREE.LineSegments(vEdges, edgeMat));
+                
+                const hMesh = createRetroMesh(hGeo, 0xffffff, 0x00ff66, 0.85);
+                const vMesh = createRetroMesh(vGeo, 0xffffff, 0x00ff66, 0.85);
+                
                 this.mesh.add(hMesh);
                 this.mesh.add(vMesh);
                 this.mesh.position.copy(pos);
@@ -1817,6 +1807,7 @@
                 
                 let col = skinId === 'Default' ? 0x00ffff : parseInt(BOSS_DATABASE.find(b => b.id === skinId).color.replace('#', '0x'), 16);
                 this.mesh = createRetroMesh(getSkinGeo(skinId), col, col, 0.45);
+                this.colorHex = col;
                 if (['Default', 'Sniper', 'SwarmQueen', 'Chaos', 'Vortex'].includes(skinId)) {
                     this.mesh.rotation.x = Math.PI / 2;
                 }
@@ -1827,19 +1818,9 @@
             }
             update() {
                 if (this.isSpectator) {
-                    this.mesh.traverse(child => {
-                        if (child.material) {
-                            if (Array.isArray(child.material)) child.material.forEach(m => { m.transparent = true; m.opacity = 0.2; });
-                            else { child.material.transparent = true; child.material.opacity = 0.2; }
-                        }
-                    });
+                    setRetroGroupState(this.mesh, this.colorHex, 0.2);
                 } else {
-                    this.mesh.traverse(child => {
-                        if (child.material) {
-                            if (Array.isArray(child.material)) child.material.forEach(m => m.opacity = 0.45);
-                            else { child.material.opacity = 0.45; }
-                        }
-                    });
+                    setRetroGroupState(this.mesh, this.colorHex, 1.0);
                 }
                 this.mesh.position.lerp(this.targetPos, 0.3);
                 
@@ -1879,7 +1860,6 @@
                 }
             });
             
-            // Check for game over if multiplayer
             if (isMultiplayer && isHost && GAME.active) {
                 let allDead = true;
                 if (entities.player && !entities.player.isSpectator) allDead = false;
@@ -1920,23 +1900,13 @@
                 this.skinTimer++;
                 
                 if (this.isSpectator) {
-                    this.mesh.traverse(child => {
-                        if (child.material) {
-                            if (Array.isArray(child.material)) child.material.forEach(m => { m.transparent = true; m.opacity = 0.2; });
-                            else { child.material.transparent = true; child.material.opacity = 0.2; }
-                        }
-                    });
+                    setRetroGroupState(this.mesh, this.projColor, 0.2);
                 } else {
-                    this.mesh.traverse(child => {
-                        if (child.material) {
-                            if (Array.isArray(child.material)) child.material.forEach(m => m.opacity = 0.45);
-                            else { child.material.opacity = 0.45; }
-                        }
-                    });
+                    setRetroGroupState(this.mesh, this.projColor, 1.0);
                 }
 
                 this.speed = 0.62 * Math.pow(1.012, Math.floor((GAME.stage - 1) / 5));
-                const moveVector = getCameraRelativeGroundVector(input.x, input.y);
+                const moveVector = getCameraRelativeGroundVector(input.x, input.y, _v1);
                 
                 if (moveVector.lengthSq() > 0) {
                     this.mesh.position.add(moveVector.clone().normalize().multiplyScalar(this.speed));
@@ -1944,7 +1914,7 @@
                 
                 let targetAngle = this.mesh.rotation.y;
                 if (!this.isSpectator && input.isFiring && (input.fireX !== 0 || input.fireY !== 0)) {
-                    const aimVector = getCameraRelativeGroundVector(input.fireX, input.fireY);
+                    const aimVector = getCameraRelativeGroundVector(input.fireX, input.fireY, _v2);
                     targetAngle = Math.atan2(aimVector.x, aimVector.z);
                 } else if (input.x !== 0 || input.y !== 0) {
                     targetAngle = Math.atan2(moveVector.x, moveVector.z);
@@ -1962,7 +1932,7 @@
                 
                 if (!this.isSpectator && input.isFiring && this.fireTimer <= 0) {
                     if (!window.__suppressShootSfx) playSynthSound('shoot');
-                    let fireDir = getCameraRelativeGroundVector(input.fireX, input.fireY);
+                    let fireDir = getCameraRelativeGroundVector(input.fireX, input.fireY, _v3).clone();
                     if (fireDir.lengthSq() === 0) fireDir.set(Math.sin(this.mesh.rotation.y), 0, Math.cos(this.mesh.rotation.y));
                     else fireDir.normalize();
 
@@ -2028,11 +1998,11 @@
         }
 
         function getClosestAlivePlayerPos(refPos) {
-            let bestDist = Infinity; let bestPos = null;
+            let bestDistSq = Infinity; let bestPos = null;
             let check = (p) => {
                 if (p.isSpectator) return;
-                let d = refPos.distanceTo(p.mesh.position);
-                if (d < bestDist) { bestDist = d; bestPos = p.mesh.position; }
+                let dSq = refPos.distanceToSquared(p.mesh.position);
+                if (dSq < bestDistSq) { bestDistSq = dSq; bestPos = p.mesh.position; }
             };
             if (entities.player && !entities.player.isSpectator) check(entities.player);
             if (isMultiplayer) {
@@ -2074,45 +2044,14 @@
                 let geo, col;
                 
                 switch (this.type) {
-                    case 'scout_lane':
-                        geo = getCachedGeo('scout_lane', () => new THREE.TetrahedronGeometry(1.5));
-                        col = 0xffaa00;
-                        this.speed *= 2.0;
-                        break;
-                    case 'ranger_form':
-                        geo = getCachedGeo('ranger_form', () => new THREE.BoxGeometry(1.6, 1.6, 1.6));
-                        col = 0xff00ff;
-                        this.speed *= 0.75;
-                        break;
-                    case 'phase_stalker':
-                        geo = getCachedGeo('phase_stalker', () => new THREE.OctahedronGeometry(1.5, 0));
-                        col = 0x00ff66;
-                        this.speed *= 1.2;
-                        break;
-                    case 'vector_weaver':
-                        geo = getCachedGeo('vector_weaver', () => new THREE.CylinderGeometry(0.8, 0.8, 2.2, 5));
-                        col = 0xff00aa;
-                        this.speed *= 1.0;
-                        break;
-                    case 'shield_bulwark':
-                        geo = getCachedGeo('shield_bulwark', () => new THREE.BoxGeometry(2.2, 2.2, 2.2));
-                        col = 0x3366ff;
-                        this.speed *= 0.45;
-                        this.hp *= 2.2;
-                        break;
-                    case 'omega_cruiser':
-                        geo = getCachedGeo('omega_cruiser', () => new THREE.DodecahedronGeometry(1.7, 0));
-                        col = 0xff3300;
-                        this.speed *= 1.3;
-                        break;
-                    case 'minion':
-                        geo = getCachedGeo('minion', () => new THREE.CylinderGeometry(0, 0.8, 1.6, 4));
-                        col = 0xccff00;
-                        this.speed *= 1.8;
-                        break;
-                    default:
-                        geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-                        col = 0xffffff;
+                    case 'scout_lane': geo = getCachedGeo('scout_lane', () => new THREE.TetrahedronGeometry(1.5)); col = 0xffaa00; this.speed *= 2.0; break;
+                    case 'ranger_form': geo = getCachedGeo('ranger_form', () => new THREE.BoxGeometry(1.6, 1.6, 1.6)); col = 0xff00ff; this.speed *= 0.75; break;
+                    case 'phase_stalker': geo = getCachedGeo('phase_stalker', () => new THREE.OctahedronGeometry(1.5, 0)); col = 0x00ff66; this.speed *= 1.2; break;
+                    case 'vector_weaver': geo = getCachedGeo('vector_weaver', () => new THREE.CylinderGeometry(0.8, 0.8, 2.2, 5)); col = 0xff00aa; this.speed *= 1.0; break;
+                    case 'shield_bulwark': geo = getCachedGeo('shield_bulwark', () => new THREE.BoxGeometry(2.2, 2.2, 2.2)); col = 0x3366ff; this.speed *= 0.45; this.hp *= 2.2; break;
+                    case 'omega_cruiser': geo = getCachedGeo('omega_cruiser', () => new THREE.DodecahedronGeometry(1.7, 0)); col = 0xff3300; this.speed *= 1.3; break;
+                    case 'minion': geo = getCachedGeo('minion', () => new THREE.CylinderGeometry(0, 0.8, 1.6, 4)); col = 0xccff00; this.speed *= 1.8; break;
+                    default: geo = new THREE.BoxGeometry(1.5, 1.5, 1.5); col = 0xffffff;
                 }
                 
                 this.fireTimer = Math.random() * 60;
@@ -2144,12 +2083,12 @@
                 const pTarget = getClosestAlivePlayerPos(this.mesh.position);
                 if (!pTarget) return false;
                 
-                const toPlayer = pTarget.clone().sub(this.mesh.position);
-                const dist = toPlayer.length();
-                if (dist > 150) return false;
+                _v1.subVectors(pTarget, this.mesh.position);
+                const distSq = _v1.lengthSq();
+                if (distSq > 22500) return false; // 150^2
                 
-                toPlayer.normalize();
-                let lateralAxis = new THREE.Vector3(-toPlayer.z, 0, toPlayer.x);
+                _v1.normalize();
+                let lateralAxis = new THREE.Vector3(-_v1.z, 0, _v1.x);
                 this.moveTimer--;
                 if (this.moveTimer <= 0) { 
                     let r = Math.random(); 
@@ -2163,46 +2102,46 @@
                 
                 if (this.type === 'scout_lane' || this.type === 'minion') { 
                     let waveOffset = lateralAxis.clone().multiplyScalar(Math.sin(this.t * 0.08 + this.groupOffset) * 1.2);
-                    moveDir.copy(toPlayer).add(waveOffset).normalize();
+                    moveDir.copy(_v1).add(waveOffset).normalize();
                     this.mesh.rotation.x += 0.05; 
                 } else if (this.type === 'ranger_form') { 
                     if (this.moveState === 'strafe') moveDir.copy(lateralAxis).multiplyScalar(this.strafeDir);
-                    else if (this.moveState === 'retreat' && dist < 40) moveDir.copy(toPlayer).multiplyScalar(-1);
-                    else moveDir.copy(toPlayer);
-                    this.mesh.rotation.y = Math.atan2(toPlayer.x, toPlayer.z); 
+                    else if (this.moveState === 'retreat' && distSq < 1600) moveDir.copy(_v1).multiplyScalar(-1);
+                    else moveDir.copy(_v1);
+                    this.mesh.rotation.y = Math.atan2(_v1.x, _v1.z); 
                     if (--this.fireTimer <= 0) { 
-                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), toPlayer, 0xff00ff, 0.85, true));
+                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), _v1.clone(), 0xff00ff, 0.85, true));
                         this.fireTimer = 70 + Math.random() * 30; 
                     } 
                 } else if (this.type === 'phase_stalker') { 
-                    moveDir.copy(toPlayer);
+                    moveDir.copy(_v1);
                     this.mesh.visible = (Math.floor(this.t / 20) % 2 === 0); 
                     if (--this.fireTimer <= 0 && this.mesh.visible) {
-                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), toPlayer, 0x00ff66, 1.2, true));
+                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), _v1.clone(), 0x00ff66, 1.2, true));
                         this.fireTimer = 60; 
                     } 
                 } else if (this.type === 'vector_weaver') { 
-                    moveDir.copy(toPlayer).multiplyScalar(0.6).add(lateralAxis.multiplyScalar(0.8 * this.strafeDir)).normalize(); 
+                    moveDir.copy(_v1).multiplyScalar(0.6).add(lateralAxis.multiplyScalar(0.8 * this.strafeDir)).normalize(); 
                     if (--this.fireTimer <= 0) {
-                        let bA = Math.atan2(toPlayer.x, toPlayer.z);
+                        let bA = Math.atan2(_v1.x, _v1.z);
                         entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(bA - 0.2), 0, Math.cos(bA - 0.2)), 0xff00aa, 1.0, true));
                         entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(bA + 0.2), 0, Math.cos(bA + 0.2)), 0xff00aa, 1.0, true));
                         this.fireTimer = 80; 
                     } 
                 } else if (this.type === 'shield_bulwark') { 
-                    moveDir.copy(toPlayer);
+                    moveDir.copy(_v1);
                     this.mesh.rotation.y += 0.01; 
                     if (--this.fireTimer <= 0) { 
                         for (let i = 0; i < 3; i++) { 
-                            let a = Math.atan2(toPlayer.x, toPlayer.z) + (i - 1) * 0.3;
+                            let a = Math.atan2(_v1.x, _v1.z) + (i - 1) * 0.3;
                             entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), 0x3366ff, 0.75, true)); 
                         }
                         this.fireTimer = 90; 
                     } 
                 } else if (this.type === 'omega_cruiser') { 
-                    moveDir.copy(toPlayer); 
+                    moveDir.copy(_v1); 
                     if (--this.fireTimer <= 0) { 
-                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), toPlayer, 0xff3300, 1.5, true));
+                        entities.projectiles.push(new Projectile(this.mesh.position.clone(), _v1.clone(), 0xff3300, 1.5, true));
                         this.fireTimer = 45; 
                     } 
                 }
@@ -2244,7 +2183,7 @@
                 if (++this.fireTimer % 80 === 0 && pTarget) { 
                     entities.projectiles.push(new Projectile(this.mesh.position.clone(), pTarget.clone().sub(this.mesh.position).normalize(), 0xff5500, 0.9, true)); 
                 }
-                return pTarget ? this.mesh.position.distanceTo(pTarget) <= 130 : false;
+                return pTarget ? this.mesh.position.distanceToSquared(pTarget) <= 16900 : false;
             }
             takeDamage(amt) { this.hp -= amt; return this.hp <= 0; }
             destroy() { safeDestroy(this.mesh); }
@@ -2275,7 +2214,7 @@
                 this.nameDisplay = `SECTOR ARCHETYPE // ${profile.name}`;
                 this.actionState = 0;
                 this.actionCooldown = 40;
-                this.prevDist = 0;
+                this.prevDistSq = 0;
                 this.chaseBoost = 0;
                 this.networkId = null;
                 this.targetPos = null;
@@ -2329,29 +2268,28 @@
                 const pTarget = getClosestAlivePlayerPos(this.mesh.position);
                 if (!pTarget) return false;
                 
-                const pPos = pTarget;
-                const toPlayer = pPos.clone().sub(this.mesh.position);
-                const dist = toPlayer.length();
+                const toPlayer = _v1.subVectors(pTarget, this.mesh.position);
+                const distSq = toPlayer.lengthSq();
                 toPlayer.normalize();
                 
                 let idealDist = 40;
                 if (['Sniper', 'Chronos', 'Dominator'].includes(this.archetype)) idealDist = 65;
                 if (['Phantom', 'Vortex', 'Goliath'].includes(this.archetype)) idealDist = 15;
                 
-                const isRunning = dist > idealDist + 20 && dist > this.prevDist;
+                const isRunning = distSq > (idealDist + 20) * (idealDist + 20) && distSq > this.prevDistSq;
                 if (isRunning) { 
                     this.chaseBoost = Math.min(this.chaseBoost + 0.18, 3.2); 
                 } else { 
                     this.chaseBoost = Math.max(this.chaseBoost - 0.12, 0); 
                 }
                 
-                this.prevDist = dist;
+                this.prevDistSq = distSq;
                 let pace = this.baseSpeed * (this.currentPhase === 2 ? 1.45 : 1.0) * (1 + this.chaseBoost);
                 if (this.archetype === 'Fortress' || this.archetype === 'Goliath') pace *= 0.55;
                 
-                if (dist > idealDist + 3) { 
+                if (distSq > (idealDist + 3) * (idealDist + 3)) { 
                     this.mesh.position.add(toPlayer.clone().multiplyScalar(pace)); 
-                } else if (dist < idealDist - 10 && this.archetype !== 'Phantom') { 
+                } else if (distSq < (idealDist - 10) * (idealDist - 10) && this.archetype !== 'Phantom') { 
                     this.mesh.position.sub(toPlayer.clone().multiplyScalar(pace * 0.8)); 
                 }
                 
@@ -2372,101 +2310,57 @@
                 
                 switch (this.archetype) {
                     case 'Core':
-                        if (this.actionState === 0 && this.timer % 15 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this
-                                .mesh.position.clone(), dir, 0xffffff, 1.8, true, true)); }); } else if (this.actionState ===
-                            1 && this.timer % 30 === 0) { for (let i = 0; i < 16; i++) { let a = (Math.PI * 2 / 16) * i + this
-                                    .internalRot;
-                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math
-                                    .sin(a), 0, Math.cos(a)), this.colorHex, 1.1, true)); } }
+                        if (this.actionState === 0 && this.timer % 15 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, 0xffffff, 1.8, true, true)); }); } 
+                        else if (this.actionState === 1 && this.timer % 30 === 0) { for (let i = 0; i < 16; i++) { let a = (Math.PI * 2 / 16) * i + this.internalRot; entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), this.colorHex, 1.1, true)); } }
                         break;
                     case 'Glitcher':
-                        if (this.actionState === 0 && this.timer % 35 === 0) { spawnExplosion(this.mesh.position, this
-                            .colorHex, 8);
-                            let rA = Math.random() * Math.PI * 2;
-                            this.mesh.position.copy(pPos).add(new THREE.Vector3(Math.sin(rA) * 24, 0, Math.cos(rA) * 24)); } else if (
-                            this.actionState === 1 && this.timer % 18 === 0) { fireAtAll((dir) => { for (let i = -1; i <= 1; i++) entities.projectiles
-                                .push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(Math.atan2(dir
-                                    .x, dir.z) + i * 0.2), 0, Math.cos(Math.atan2(dir.x, dir.z) + i *
-                                    0.2)), this.colorHex, 1.3, true)); }); }
+                        if (this.actionState === 0 && this.timer % 35 === 0) { spawnExplosion(this.mesh.position, this.colorHex, 8); let rA = Math.random() * Math.PI * 2; this.mesh.position.copy(pTarget).add(new THREE.Vector3(Math.sin(rA) * 24, 0, Math.cos(rA) * 24)); } 
+                        else if (this.actionState === 1 && this.timer % 18 === 0) { fireAtAll((dir) => { for (let i = -1; i <= 1; i++) entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(Math.atan2(dir.x, dir.z) + i * 0.2), 0, Math.cos(Math.atan2(dir.x, dir.z) + i * 0.2)), this.colorHex, 1.3, true)); }); }
                         break;
                     case 'Devourer':
-                        if (this.actionState === 0 && this.timer % 15 === 0) { fireAtAll((dir) => { let baseAngle = Math.atan2(dir.x, dir
-                                .z); for (let off = -0.5; off <= 0.5; off += 0.15) { let swA = baseAngle + off + Math.sin(this
-                                    .timer * 0.15) * 0.25;
-                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(
-                                    swA), 0, Math.cos(swA)), this.colorHex, 1.1, true)); } }); }
+                        if (this.actionState === 0 && this.timer % 15 === 0) { fireAtAll((dir) => { let baseAngle = Math.atan2(dir.x, dir.z); for (let off = -0.5; off <= 0.5; off += 0.15) { let swA = baseAngle + off + Math.sin(this.timer * 0.15) * 0.25; entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(swA), 0, Math.cos(swA)), this.colorHex, 1.1, true)); } }); }
                         break;
                     case 'Phantom':
-                        if (this.actionState === 0 && this.timer % 20 === 0) { this.mesh.position.add(toPlayer.clone()
-                                .multiplyScalar(16));
-                            spawnExplosion(this.mesh.position, this.colorHex, 12); } else if (this.actionState === 1 && this.timer %
-                            15 === 0) { for (let i = 0; i < 8; i++) { let a = (Math.PI * 2 / 8) * i;
-                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(
-                                    a), 0, Math.cos(a)), 0xffffff, 1.6, true)); } }
+                        if (this.actionState === 0 && this.timer % 20 === 0) { this.mesh.position.add(toPlayer.clone().multiplyScalar(16)); spawnExplosion(this.mesh.position, this.colorHex, 12); } 
+                        else if (this.actionState === 1 && this.timer % 15 === 0) { for (let i = 0; i < 8; i++) { let a = (Math.PI * 2 / 8) * i; entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), 0xffffff, 1.6, true)); } }
                         break;
                     case 'Fortress':
-                        if (this.actionState === 0 && this.timer % 25 === 0) { fireAtAll((dir) => { let bA = Math.atan2(dir.x, dir.z); for (
-                                let i = -2; i <= 2; i++) entities.projectiles.push(new Projectile(this.mesh.position.clone(),
-                                new THREE.Vector3(Math.sin(bA + (i * 0.2)), 0, Math.cos(bA + (i * 0.2))), this.colorHex, 0.7,
-                                true)); }); } else if (this.actionState === 1 && this.timer % 35 === 0) { for (let i = 0; i < 12; i++)
-                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin((
-                                    Math.PI * 2 / 12) * i), 0, Math.cos((Math.PI * 2 / 12) * i)), this.colorHex, 0.5,
-                                true)); }
+                        if (this.actionState === 0 && this.timer % 25 === 0) { fireAtAll((dir) => { let bA = Math.atan2(dir.x, dir.z); for (let i = -2; i <= 2; i++) entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(bA + (i * 0.2)), 0, Math.cos(bA + (i * 0.2))), this.colorHex, 0.7, true)); }); } 
+                        else if (this.actionState === 1 && this.timer % 35 === 0) { for (let i = 0; i < 12; i++) entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin((Math.PI * 2 / 12) * i), 0, Math.cos((Math.PI * 2 / 12) * i)), this.colorHex, 0.5, true)); }
                         break;
                     case 'SwarmQueen':
                         if (this.actionState === 0 && this.timer % 60 === 0 && entities.enemies.length < GAME.maxEnemies) { 
                                 let newMinion = new Enemy(this.mesh.position.clone().add(new THREE.Vector3((Math.random() - 0.5) * 10, 0, (Math.random() - 0.5) * 10)), 'minion');
                                 if (isMultiplayer) { newMinion.networkId = Math.random().toString(36).substr(2,9); mpChannel.send({type:'broadcast', event:'spawn_entity', payload:{id:newMinion.networkId, type:'enemy', variant:'minion', x:newMinion.mesh.position.x, z:newMinion.mesh.position.z}});}
                                 entities.enemies.push(newMinion); 
-                            } else if (this.actionState === 1 && this.timer %
-                            12 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir,
-                                0x00ffff, 1.3, true)); }); }
+                            } else if (this.actionState === 1 && this.timer % 12 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, 0x00ffff, 1.3, true)); }); }
                         break;
                     case 'Sniper':
-                        if (this.actionState === 0 && this.timer % 35 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this
-                                .mesh.position.clone(), dir, 0xffffff, 4.5, true, true)); }); } else if (this.actionState ===
-                            1 && this.timer % 15 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(),
-                                dir, this.colorHex, 1.5, true)); }); }
+                        if (this.actionState === 0 && this.timer % 35 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, 0xffffff, 4.5, true, true)); }); } 
+                        else if (this.actionState === 1 && this.timer % 15 === 0) { fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, this.colorHex, 1.5, true)); }); }
                         break;
                     case 'Pulsar':
-                        if (this.actionState === 0 && this.timer % 15 === 0) { let shift = Math.sin(this.timer * 0.05); for (let i =
-                                0; i < 10; i++) entities.projectiles.push(new Projectile(this.mesh.position.clone(),
-                                new THREE.Vector3(Math.sin((Math.PI * 2 / 10) * i + shift), 0, Math.cos((Math.PI * 2 / 10) *
-                                    i + shift)), this.colorHex, 1.0, true)); }
+                        if (this.actionState === 0 && this.timer % 15 === 0) { let shift = Math.sin(this.timer * 0.05); for (let i = 0; i < 10; i++) entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin((Math.PI * 2 / 10) * i + shift), 0, Math.cos((Math.PI * 2 / 10) * i + shift)), this.colorHex, 1.0, true)); }
                         break;
                     case 'Weaver':
-                        if (this.timer % 4 === 0) { fireAtAll((dir) => { let bA = Math.atan2(dir.x, dir.z) + Math.sin(this.timer * 0.12) *
-                                0.7;
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(bA), 0,
-                                Math.cos(bA)), this.colorHex, 1.4, true)); }); }
+                        if (this.timer % 4 === 0) { fireAtAll((dir) => { let bA = Math.atan2(dir.x, dir.z) + Math.sin(this.timer * 0.12) * 0.7; entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(bA), 0, Math.cos(bA)), this.colorHex, 1.4, true)); }); }
                         break;
                     case 'Chaos':
-                        if (this.timer % 8 === 0) { let rD = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5)
-                                .normalize();
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), rD, this.colorHex, 1.4,
-                            true)); } if (this.actionState === 1 && this.timer % 12 === 0) fireAtAll((dir) => { entities.projectiles.push(new
-                            Projectile(this.mesh.position.clone(), dir, 0xffffff, 1.6, true)); });
+                        if (this.timer % 8 === 0) { let rD = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize(); entities.projectiles.push(new Projectile(this.mesh.position.clone(), rD, this.colorHex, 1.4, true)); } 
+                        if (this.actionState === 1 && this.timer % 12 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, 0xffffff, 1.6, true)); });
                         break;
                     case 'Ragnarok':
-                        if (this.actionState === 0 && this.timer % 12 === 0) { fireAtAll((dir) => { let bA = Math.atan2(dir.x, dir.z); for (
-                                let i = -1; i <= 1; i += 2) entities.projectiles.push(new Projectile(this.mesh.position.clone(),
-                                new THREE.Vector3(Math.sin(bA + (i * 0.25)), 0, Math.cos(bA + (i * 0.25))), this.colorHex,
-                                1.5, true)); }); } else if (this.actionState === 1 && this.timer % 30 === 0) { for (let a = 0; a < Math
-                                .PI * 2; a += 0.4) entities.projectiles.push(new Projectile(this.mesh.position.clone(),
-                                new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), 0xffffff, 1.2, true)); }
+                        if (this.actionState === 0 && this.timer % 12 === 0) { fireAtAll((dir) => { let bA = Math.atan2(dir.x, dir.z); for (let i = -1; i <= 1; i += 2) entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(bA + (i * 0.25)), 0, Math.cos(bA + (i * 0.25))), this.colorHex, 1.5, true)); }); } 
+                        else if (this.actionState === 1 && this.timer % 30 === 0) { for (let a = 0; a < Math.PI * 2; a += 0.4) entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), 0xffffff, 1.2, true)); }
                         break;
                     case 'Aether':
-                        if (this.timer % 20 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir,
-                            0x00ffcc, 1.8, true, true)); });
+                        if (this.timer % 20 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, 0x00ffcc, 1.8, true, true)); });
                         break;
                     case 'Oblivion':
                         if (this.timer % 15 === 0) { fireAtAll((dir) => { let cross = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, this.colorHex, 1.2,
-                                true));
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone().add(cross.clone().multiplyScalar(
-                                5)), dir, this.colorHex, 1.2, true));
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone().add(cross.clone().multiplyScalar(-
-                                5)), dir, this.colorHex, 1.2, true)); }); }
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, this.colorHex, 1.2, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone().add(cross.clone().multiplyScalar(5)), dir, this.colorHex, 1.2, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone().add(cross.clone().multiplyScalar(-5)), dir, this.colorHex, 1.2, true)); }); }
                         break;
                     case 'Singularity':
                         if (this.actionState === 0 && this.timer % 60 === 0) { const pLoc = this.mesh.position.clone();
@@ -2475,70 +2369,53 @@
                             scene.add(sp);
                             entities.visualFX.push({ mesh: sp, life: 90, update: function() {
                                     allTargets.forEach(t => {
-                                        if (t.position.distanceTo(this.mesh.position) < 30) {
+                                        if (t.position.distanceToSquared(this.mesh.position) < 900) {
                                             t.position.add(this.mesh.position.clone().sub(t.position).normalize().multiplyScalar(0.25));
                                         }
                                     });
-                                    this.life--; return this.life > 0; }, destroy: function() { safeDestroy(this.mesh); } }); } else if (
-                                this.actionState === 1 && this.timer % 15 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this
-                                .mesh.position.clone(), dir, this.colorHex, 1.5, true)); });
+                                    this.life--; return this.life > 0; }, destroy: function() { safeDestroy(this.mesh); } }); } 
+                        else if (this.actionState === 1 && this.timer % 15 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, this.colorHex, 1.5, true)); });
                         break;
                     case 'Vortex':
-                        let rotValue = this.timer * 0.18; if (this.timer % 3 === 0) { entities.projectiles.push(new Projectile(
-                                this.mesh.position.clone(), new THREE.Vector3(Math.sin(rotValue), 0, Math.cos(rotValue)),
-                                this.colorHex, 1.4, true));
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(-Math.sin(
-                                rotValue), 0, -Math.cos(rotValue)), this.colorHex, 1.4, true)); }
+                        let rotValue = this.timer * 0.18; if (this.timer % 3 === 0) { entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(rotValue), 0, Math.cos(rotValue)), this.colorHex, 1.4, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(-Math.sin(rotValue), 0, -Math.cos(rotValue)), this.colorHex, 1.4, true)); }
                         break;
                     case 'Goliath':
                         if (this.actionState === 0 && this.timer % 60 === 0) { applyScreenShake(2.5); for (let i = 1; i <= 3; i++) {
-                                let rMesh = createRetroMesh(new THREE.TorusGeometry(i * 5.5, 0.25, 4, 24), this.colorHex,
-                                    0x000000, 0.75);
-                                rMesh.position.copy(this.mesh.position);
-                                rMesh.rotation.x = Math.PI / 2;
-                                scene.add(rMesh);
+                                let rMesh = createRetroMesh(new THREE.TorusGeometry(i * 5.5, 0.25, 4, 24), this.colorHex, 0x000000, 0.75);
+                                rMesh.position.copy(this.mesh.position); rMesh.rotation.x = Math.PI / 2; scene.add(rMesh);
                                 entities.visualFX.push({ mesh: rMesh, frameCount: 0, targetRadius: i * 5.5, update: function() {
                                         this.frameCount++;
                                         if (entities.player && !entities.player.isSpectator && entities.player.mesh) {
-                                            if (entities.player.mesh.position.distanceTo(this.mesh.position) < this.targetRadius + 1.2 && entities.player.mesh.position.distanceTo(this.mesh.position) > this.targetRadius - 1.2) { 
+                                            let d = entities.player.mesh.position.distanceTo(this.mesh.position);
+                                            if (d < this.targetRadius + 1.2 && d > this.targetRadius - 1.2) { 
                                                 if (typeof entities.player.takeDamage === 'function') entities.player.takeDamage(12); 
                                             }
                                         }
-                                        return this.frameCount < 25; }, destroy: function() { safeDestroy(this.mesh); } }); } } else if (
-                            this.actionState === 1 && this.timer % 25 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this
-                            .mesh.position.clone(), dir, this.colorHex, 1.2, true)); });
+                                        return this.frameCount < 25; }, destroy: function() { safeDestroy(this.mesh); } }); } } 
+                        else if (this.actionState === 1 && this.timer % 25 === 0) fireAtAll((dir) => { entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, this.colorHex, 1.2, true)); });
                         break;
                     case 'Chronos':
-                        if (this.timer % 50 === 0) { fireAtAll((dir) => { let delayedProj = new Projectile(this.mesh.position.clone(), dir, this
-                                .colorHex, 0.15, true, true);
+                        if (this.timer % 50 === 0) { fireAtAll((dir) => { let delayedProj = new Projectile(this.mesh.position.clone(), dir, this.colorHex, 0.15, true, true);
                             entities.projectiles.push(delayedProj);
-                            setTimeout(() => { if (delayedProj && delayedProj.mesh) delayedProj.vel.multiplyScalar(14); },
-                            750); }); }
+                            setTimeout(() => { if (delayedProj && delayedProj.mesh) delayedProj.vel.multiplyScalar(14); }, 750); }); }
                         break;
                     case 'Nebula':
-                        if (this.timer % 25 === 0) { let randBase = Math.random() * Math.PI * 2; for (let i = 0; i < 6; i++)
-                                entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(
-                                    randBase + (i * 0.4)), 0, Math.cos(randBase + (i * 0.4))), this.colorHex, 1.2,
-                                true)); }
+                        if (this.timer % 25 === 0) { let randBase = Math.random() * Math.PI * 2; for (let i = 0; i < 6; i++) entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(randBase + (i * 0.4)), 0, Math.cos(randBase + (i * 0.4))), this.colorHex, 1.2, true)); }
                         break;
                     case 'Dominator':
                         if (this.timer % 15 === 0) { fireAtAll((dir) => {
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone(),
-                            dir, this.colorHex, 1.5, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), dir, this.colorHex, 1.5, true));
                             let aL = Math.atan2(dir.x, dir.z) - 0.4;
                             let aR = Math.atan2(dir.x, dir.z) + 0.4;
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(aL), 0,
-                                Math.cos(aL)), 0xffffff, 1.3, true));
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(aR), 0,
-                                Math.cos(aR)), 0xffffff, 1.3, true)); }); }
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(aL), 0, Math.cos(aL)), 0xffffff, 1.3, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(aR), 0, Math.cos(aR)), 0xffffff, 1.3, true)); }); }
                         break;
                     case 'Infinity':
                         if (this.timer % 8 === 0) { let idx = Math.floor(this.timer / 10) % 10;
                             let a = (Math.PI * 2 / 10) * idx + this.internalRot;
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a), 0,
-                                Math.cos(a)), 0xffffff, 1.6, true));
-                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a + Math
-                                .PI), 0, Math.cos(a + Math.PI)), 0x00ffff, 1.6, true)); }
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), 0xffffff, 1.6, true));
+                            entities.projectiles.push(new Projectile(this.mesh.position.clone(), new THREE.Vector3(Math.sin(a + Math.PI), 0, Math.cos(a + Math.PI)), 0x00ffff, 1.6, true)); }
                         break;
                 }
                 return true;
@@ -2614,15 +2491,17 @@
                 update: function() {
                     this.currentScale += 2.6;
                     this.mesh.scale.setScalar(this.currentScale);
+                    const scaleSq = this.currentScale * this.currentScale;
+                    
                     for (let i = entities.projectiles.length - 1; i >= 0; i--) { 
-                        if (entities.projectiles[i].isEnemy && entities.projectiles[i].mesh.position.distanceTo(this.mesh.position) < this.currentScale) { 
+                        if (entities.projectiles[i].isEnemy && entities.projectiles[i].mesh.position.distanceToSquared(this.mesh.position) < scaleSq) { 
                             entities.projectiles[i].destroy(); entities.projectiles.splice(i, 1); 
                         } 
                     }
-                    if (isLocal) { // Only local initiates damage for super
+                    if (isLocal) { 
                         for (let j = entities.enemies.length - 1; j >= 0; j--) { 
                             let enemy = entities.enemies[j]; 
-                            if (enemy.mesh.position.distanceTo(this.mesh.position) < this.currentScale && !enemy.hitByBomb) {
+                            if (enemy.mesh.position.distanceToSquared(this.mesh.position) < scaleSq && !enemy.hitByBomb) {
                                 enemy.hitByBomb = true;
                                 enemy.knockbackVel = enemy.mesh.position.clone().sub(this.mesh.position).normalize().multiplyScalar(7.0);
                                 if (isMultiplayer) {
@@ -2680,7 +2559,7 @@
                     update: function() { 
                         this.timer++;
                         entities.enemies.forEach(e => { 
-                            if (e.mesh.position.distanceTo(this.mesh.position) < 35) { 
+                            if (e.mesh.position.distanceToSquared(this.mesh.position) < 1225) { 
                                 e.mesh.position.add(this.mesh.position.clone().sub(e.mesh.position).normalize().multiplyScalar(0.7));
                                 if (isLocal) {
                                     if (isMultiplayer && e.networkId && this.timer % 10 === 0) mpChannel.send({ type: 'broadcast', event: 'hit_enemy', payload: { id: e.networkId, dmg: 3 } });
@@ -2704,10 +2583,10 @@
                             this.frame++; 
                             if (this.frame % 6 === 0) { 
                                 let targetPos = null;
-                                let bestDist = Infinity;
+                                let bestDistSq = Infinity;
                                 entities.enemies.forEach(e => {
-                                    let d = e.mesh.position.distanceTo(this.mesh.position);
-                                    if (d < bestDist) { bestDist = d; targetPos = e.mesh.position; }
+                                    let dSq = e.mesh.position.distanceToSquared(this.mesh.position);
+                                    if (dSq < bestDistSq) { bestDistSq = dSq; targetPos = e.mesh.position; }
                                 });
                                 if (targetPos) {
                                     let dir = targetPos.clone().sub(this.mesh.position).normalize();
@@ -2795,10 +2674,9 @@
         function handleWorldGeneration() {
             if (!entities.player) return;
             
-            // Only host or single player handles AI generation
             if (!isMultiplayer || isHost) {
                 const pTarget = getClosestAlivePlayerPos(new THREE.Vector3(0,0,0));
-                if (!pTarget) return; // Wait for players
+                if (!pTarget) return; 
 
                 if (GAME.started && !GAME.hyperdriveMode && Math.random() < 0.005 && entities.hazards.length < 3) {
                     let haz = new Meteorite();
@@ -2841,7 +2719,8 @@
             if (isAlive) {
                 for (let h = entities.healthDrops.length - 1; h >= 0; h--) {
                     let hd = entities.healthDrops[h];
-                    if (pPos.distanceTo(hd.mesh.position) < pRad + hd.radius) {
+                    let rSum = pRad + hd.radius;
+                    if (pPos.distanceToSquared(hd.mesh.position) < rSum * rSum) {
                         playSynthSound('powerup');
                         entities.player.hp = Math.min(entities.player.maxHp, entities.player.hp + 50);
                         entities.player.updateUI();
@@ -2853,7 +2732,8 @@
                 }
                 for (let h = entities.hazards.length - 1; h >= 0; h--) { 
                     let haz = entities.hazards[h]; 
-                    if (pPos.distanceTo(haz.mesh.position) < pRad + haz.radius) { 
+                    let rSum = pRad + haz.radius;
+                    if (pPos.distanceToSquared(haz.mesh.position) < rSum * rSum) { 
                         if (damagePlayer(120)) gameOver();
                         spawnExplosion(haz.mesh.position, 0xff5500, 8);
                         if (isMultiplayer && haz.networkId) mpChannel.send({ type: 'broadcast', event: 'remove_entity', payload: { id: haz.networkId, type: 'hazard' } });
@@ -2863,7 +2743,8 @@
                 }
                 for (let p = entities.powerups.length - 1; p >= 0; p--) { 
                     let pu = entities.powerups[p]; 
-                    if (pPos.distanceTo(pu.mesh.position) < pRad + pu.radius) { 
+                    let rSum = pRad + pu.radius;
+                    if (pPos.distanceToSquared(pu.mesh.position) < rSum * rSum) { 
                         playSynthSound('powerup');
                         entities.player.powerWeaponTime = 380;
                         document.getElementById('weapon-status').style.display = 'block';
@@ -2880,14 +2761,18 @@
                 let hit = false;
 
                 if (p.isEnemy) {
-                    if (isAlive && p.mesh.position.distanceTo(pPos) < pRad + p.radius) {
-                        if (entities.player.takeDamage(15)) gameOver();
-                        hit = true;
+                    if (isAlive) {
+                        let rSum = pRad + p.radius;
+                        if (p.mesh.position.distanceToSquared(pPos) < rSum * rSum) {
+                            if (entities.player.takeDamage(15)) gameOver();
+                            hit = true;
+                        }
                     }
                 } else {
                     for (let h = entities.hazards.length - 1; h >= 0; h--) {
                         let haz = entities.hazards[h];
-                        if (p.mesh.position.distanceTo(haz.mesh.position) < haz.radius + p.radius) {
+                        let rSum = haz.radius + p.radius;
+                        if (p.mesh.position.distanceToSquared(haz.mesh.position) < rSum * rSum) {
                             hit = true;
                             if (isMultiplayer && haz.networkId) mpChannel.send({ type: 'broadcast', event: 'hit_enemy', payload: { id: haz.networkId, dmg: 35 } });
                             else if (haz.takeDamage(35)) {
@@ -2907,7 +2792,8 @@
 
                     for (let j = entities.enemies.length - 1; j >= 0; j--) {
                         const e = entities.enemies[j];
-                        if (p.mesh.position.distanceTo(e.mesh.position) < e.radius + p.radius) {
+                        let rSum = e.radius + p.radius;
+                        if (p.mesh.position.distanceToSquared(e.mesh.position) < rSum * rSum) {
                             if (isMultiplayer && e.networkId) {
                                 mpChannel.send({ type: 'broadcast', event: 'hit_enemy', payload: { id: e.networkId, dmg: 35 } });
                             } else {
@@ -2941,7 +2827,8 @@
             if (isAlive) {
                 for (let j = entities.enemies.length - 1; j >= 0; j--) { 
                     const e = entities.enemies[j]; 
-                    if (pPos.distanceTo(e.mesh.position) < pRad + e.radius) { 
+                    let rSum = pRad + e.radius;
+                    if (pPos.distanceToSquared(e.mesh.position) < rSum * rSum) { 
                         spawnExplosion(pPos, 0x00ffff, 6); 
                         if (damagePlayer(20)) gameOver(); 
                         if (!(e instanceof Boss)) { 
@@ -3093,7 +2980,6 @@
         function gameOver(forceGameOver = false) {
             if (GAME.gameOverShown) return;
             if (isMultiplayer && !forceGameOver) {
-                // Return since death in MP turns into spectator (handled in takeDamage) unless forced
                 return;
             }
             GAME.active = false;
@@ -3115,7 +3001,7 @@
 
         function drawMultiplayerUI() {
             const container = document.getElementById('multiplayer-ui');
-            container.innerHTML = ''; // Rebuild DOM for simplicity
+            container.innerHTML = ''; 
             
             if (!isMultiplayer || !GAME.active || !camera) return;
 
@@ -3123,23 +3009,20 @@
                 if (rp.isSpectator || !rp.mesh) return;
                 
                 const vec = new THREE.Vector3();
-                vec.copy(rp.mesh.position).add(new THREE.Vector3(0, 3, 0)); // Top of head
+                vec.copy(rp.mesh.position).add(new THREE.Vector3(0, 3, 0)); 
                 vec.project(camera);
                 
                 const x = (vec.x * .5 + .5) * window.innerWidth;
                 const y = (vec.y * -.5 + .5) * window.innerHeight;
                 
                 if (vec.z > 1 || x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) {
-                    // Offscreen
                     const indicator = document.createElement('div');
                     indicator.className = 'offscreen-indicator';
-                    // Calculate angle to player relative to screen center
                     const cx = window.innerWidth / 2;
                     const cy = window.innerHeight / 2;
                     let angle = Math.atan2(y - cy, x - cx);
                     indicator.style.transform = `rotate(${angle + Math.PI/2}rad)`;
                     
-                    // Clamp to borders
                     const pad = 20;
                     let ix = x, iy = y;
                     if (ix < pad) ix = pad;
@@ -3151,7 +3034,6 @@
                     indicator.style.top = iy + 'px';
                     container.appendChild(indicator);
                 } else {
-                    // Onscreen nametag
                     const nametag = document.createElement('div');
                     nametag.className = 'player-nametag';
                     nametag.innerText = rp.username;
@@ -3382,7 +3264,6 @@
                 if (GAME.hyperdriveTimer <= 0) GAME.hyperdriveMode = false;
             }
 
-            // Smooth orbit camera calculation
             cameraOrbitAngle = THREE.MathUtils.lerp(cameraOrbitAngle, targetOrbitAngle, 0.08);
             cameraOrbitPitch = THREE.MathUtils.lerp(cameraOrbitPitch, targetOrbitPitch, 0.08);
             cameraOrbitDistance = THREE.MathUtils.lerp(cameraOrbitDistance, targetOrbitDistance, 0.08);
@@ -3401,18 +3282,11 @@
                 const lookTarget = cameraRig.position.clone().add(new THREE.Vector3(0, -2, 0));
                 camera.lookAt(lookTarget);
                 
-                // Network Sync for Player
                 if (isMultiplayer && mpChannel && now > nextSyncTime) {
                     mpChannel.send({ type: 'broadcast', event: 'p_state', payload: {
-                        uuid: localUserId,
-                        x: entities.player.mesh.position.x,
-                        z: entities.player.mesh.position.z,
-                        rot: entities.player.mesh.rotation.y,
-                        skin: equippedSkin,
-                        username: myUsername,
-                        isSpectator: entities.player.isSpectator
+                        uuid: localUserId, x: entities.player.mesh.position.x, z: entities.player.mesh.position.z,
+                        rot: entities.player.mesh.rotation.y, skin: equippedSkin, username: myUsername, isSpectator: entities.player.isSpectator
                     }});
-                    
                     if (isHost) {
                         let syncData = { score: GAME.score, enemies: [] };
                         entities.enemies.forEach(e => {
@@ -3420,9 +3294,8 @@
                         });
                         mpChannel.send({ type: 'broadcast', event: 'sync_host', payload: syncData });
                     }
-                    nextSyncTime = now + 100; // 10fps network sync
+                    nextSyncTime = now + 100;
                 }
-
             } else if (!GAME.active || !GAME.started) {
                 if (entities.player) {
                     cameraRig.position.lerp(entities.player.mesh.position, 0.15);
@@ -3437,11 +3310,8 @@
 
             if (GAME.active) {
                 drawMultiplayerUI();
+                if (isMultiplayer) Object.values(entities.remotePlayers).forEach(rp => rp.update());
                 
-                if (isMultiplayer) {
-                    Object.values(entities.remotePlayers).forEach(rp => rp.update());
-                }
-
                 if (GAME.started) {
                     const skipTransientMotion = window.__stageTransitionProjectileBufferFrames > 0;
                     if (skipTransientMotion) window.__stageTransitionProjectileBufferFrames--;
@@ -3762,11 +3632,6 @@
             const canvas = document.getElementById('game-canvas');
             const indicator = document.getElementById('cam-rotate-indicator');
 
-            const getTouchPos = (e) => {
-                if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-                return { x: e.clientX, y: e.clientY };
-            };
-
             const isInJoystickZone = (pos) => {
                 const moveZone = document.getElementById('joystick-base');
                 const fireZone = document.getElementById('fire-joystick-base');
@@ -3867,8 +3732,7 @@
         window.addEventListener('resize', () => { 
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight); 
+            setRendererSize();
         });
 
         // Initialize Loop
@@ -3876,4 +3740,5 @@
     </script>
 </body>
 </html>
+
 
