@@ -274,8 +274,7 @@ const AssetCache = {
 
 const AudioSys = {
     ctx: null,
-    bgmNode: null,
-    bgmGain: null,
+    bgmAudio: null,
     isPlayingBGM: false,
 
     init() {
@@ -283,6 +282,12 @@ const AudioSys = {
             try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
         }
         if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+
+        if (!this.bgmAudio) {
+            this.bgmAudio = new Audio("What's That Sound- Sir Music.mp3");
+            this.bgmAudio.loop = true;
+            this.bgmAudio.volume = 0.5;
+        }
     },
 
     playTone(freq, type, duration, vol=0.1) {
@@ -333,33 +338,27 @@ const AudioSys = {
     startBGM() {
         if (this.isPlayingBGM) return;
         this.init();
-        if(!this.ctx) return;
         
         try {
             this.isPlayingBGM = true;
             const btn = document.getElementById('btnToggleSong');
             if(btn) { btn.innerText = 'STOP'; btn.classList.add('bg-red-500', 'text-white'); btn.classList.remove('bg-yellow-400', 'text-black'); }
 
-            const notes = [110, 220, 164.81, 196, 220, 329.63, 246.94, 220];
-            let step = 0;
-            
-            this._bgmInterval = setInterval(() => {
-                if (!this.isPlayingBGM) return;
-                let freq = notes[step % notes.length];
-                this.playTone(freq, step % 2 === 0 ? 'sawtooth' : 'sine', 0.18, 0.08);
-                if (step % 4 === 0) {
-                    this.playTone(55, 'square', 0.12, 0.15);
-                }
-                step++;
-            }, 250);
+            if (this.bgmAudio) {
+                this.bgmAudio.play().catch(e => {
+                    console.error("Audio playback failed:", e);
+                    this.isPlayingBGM = false;
+                    if(btn) { btn.innerText = 'PLAY'; btn.classList.remove('bg-red-500', 'text-white'); btn.classList.add('bg-yellow-400', 'text-black'); }
+                });
+            }
         } catch(e) { this.isPlayingBGM = false; }
     },
 
     stopBGM() {
         this.isPlayingBGM = false;
-        if (this._bgmInterval) {
-            clearInterval(this._bgmInterval);
-            this._bgmInterval = null;
+        if (this.bgmAudio) {
+            this.bgmAudio.pause();
+            this.bgmAudio.currentTime = 0;
         }
         const btn = document.getElementById('btnToggleSong');
         if(btn) { btn.innerText = 'PLAY'; btn.classList.remove('bg-red-500', 'text-white'); btn.classList.add('bg-yellow-400', 'text-black'); }
@@ -1087,4 +1086,5 @@ Game.init();
 </script>
 </body>
 </html>
+
 
