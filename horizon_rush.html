@@ -396,12 +396,20 @@ const Input = {
         });
 
         window.addEventListener('touchstart', e => {
+            if (e.target.tagName === 'BUTTON') return;
+            if (GAME_STATE === 'PLAYING') e.preventDefault();
             this.touchStartX = e.changedTouches[0].screenX; 
             this.touchStartY = e.changedTouches[0].screenY;
             if (GAME_STATE === 'PLAYING') AudioSys.init();
         }, {passive: false});
+        
+        window.addEventListener('touchmove', e => {
+            if (e.target.tagName === 'BUTTON') return;
+            if (GAME_STATE === 'PLAYING') e.preventDefault();
+        }, {passive: false});
 
         window.addEventListener('touchend', e => {
+            if (e.target.tagName === 'BUTTON') return;
             if (GAME_STATE !== 'PLAYING') return;
             let dx = e.changedTouches[0].screenX - this.touchStartX;
             let dy = e.changedTouches[0].screenY - this.touchStartY;
@@ -547,7 +555,6 @@ class Player {
 
         if (this.dashCooldown > 0) this.dashCooldown -= dt;
         
-        // Ground Swipe Left/Right -> Cinematic Ground Dash Animation
         if (Input.consume('dash') && this.dashCooldown <= 0 && this.grounded) {
             this.setState('GROUND_DASH');
             this.dashTimer = 0.35;
@@ -557,9 +564,63 @@ class Player {
             Particles.burst(this.x + this.w/2, this.y + this.h, 30, '#38bdf8', 450, 'glow');
             Game.showComboText("GROUND SLASHER!", "text-cyan-400 text-glow-cyan text-4xl");
             Game.addScore(120); Game.addFlow(15);
+        } else if (Input.consume('dash') && this.dashCooldown <= 0) {
+            this.recordMove('DASH');
+            let hist = this.moveHistory.join(',');
+
+            if (hist.endsWith('SLIDE,SLIDE,DASH')) {
+                this.setState('HELLFIRE'); this.dashTimer = 0.5; this.vx = 2200; this.vy = 0;
+                Game.showComboText("HELLFIRE SPRINT!", "text-red-500 text-glow-red text-5xl");
+                AudioSys.playDash(); this.moveHistory = [];
+            } else if (hist.endsWith('DASH,DASH,DASH')) {
+                this.setState('OMEGA'); this.dashTimer = 0.4; this.vx = 2600; this.vy = 0;
+                Game.showComboText("OMEGA BURST!", "text-cyan-300 text-glow-cyan text-5xl");
+                AudioSys.playDash(); this.moveHistory = [];
+            } else if (hist.endsWith('JUMP,JUMP,DASH')) {
+                this.setState('PLASMA_GLIDE'); this.dashTimer = 0.6; this.vx = 1900; this.vy = 0;
+                Game.showComboText("PLASMA GLIDE!", "text-green-400 text-glow text-5xl");
+                AudioSys.playDash(); this.moveHistory = [];
+            } else if (hist.endsWith('DASH,JUMP,DASH')) {
+                this.setState('THUNDERBOLT'); this.dashTimer = 0.5; this.vx = 2000; this.vy = 0;
+                Game.showComboText("THUNDERBOLT!", "text-yellow-400 text-glow-orange text-5xl");
+                AudioSys.playDash(); this.moveHistory = [];
+            } else {
+                this.setState('DASHING'); this.vx = CONFIG.dashSpeed;
+                this.dashTimer = 0.28; this.dashCooldown = 0.8;
+                Particles.burst(this.x, this.y+this.h/2, 25, '#38bdf8', 400, 'glow');
+                AudioSys.playDash(); Game.addScore(80); Game.addFlow(12);
+            }
         }
 
-        if ((Input.slide || Input.consume('slide')) && this.grounded && !['GROUND_DASH', 'DASHING', 'HELLFIRE'].includes(this.state)) {
+        if (Input.consume('dive') && !this.grounded && !['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
+            this.recordMove('DIVE');
+            let hist = this.moveHistory.join(',');
+            
+            if (hist.endsWith('JUMP,DIVE,JUMP,DIVE')) {
+                this.setState('VOID_CRASH'); this.vy = Math.max(this.vy, 1200);
+                AudioSys.playMeteor(); Game.showComboText("VOID CRASH!", "text-purple-500 text-glow-cyan text-5xl");
+                this.moveHistory = [];
+            } else if (hist.endsWith('DIVE,DASH,DIVE')) {
+                this.setState('SHADOW_STEP'); 
+                Particles.burst(this.x, this.y, 30, '#1e293b', 400, 'glow');
+                this.x += 600; this.y -= 150; this.vy = -300; 
+                Particles.burst(this.x, this.y, 30, '#475569', 400, 'glow');
+                AudioSys.playDash(); Game.showComboText("SHADOW STEP!", "text-gray-400 text-glow text-5xl");
+                this.moveHistory = [];
+            } else if (hist.endsWith('WALL_RUN,JUMP,DIVE')) {
+                this.setState('TITAN'); this.vy = Math.max(this.vy, 1500);
+                AudioSys.playMeteor(); Game.showComboText("TITAN KICK!", "text-orange-500 text-glow-orange text-5xl");
+                this.moveHistory = [];
+            } else if (hist.endsWith('JUMP,DASH,JUMP,DIVE')) {
+                this.setState('METEOR_DIVING'); this.vy = Math.max(this.vy, 800);
+                AudioSys.playMeteor(); Game.showComboText("EARTHQUAKE PREP!", "text-orange-500 text-glow-red");
+            } else {
+                this.setState('DIVING'); this.vy = Math.max(this.vy, 400); AudioSys.playDive();
+            }
+            Particles.burst(this.x+this.w/2, this.y, 25, '#fff', 300);
+        }
+
+        if ((Input.slide || Input.consume('slide')) && this.grounded && !['GROUND_DASH', 'DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(this.state)) {
             if (Input.consume('slide')) this.recordMove('SLIDE');
             if (this.state !== 'SLIDING') {
                 this.setState('SLIDING'); this.h = 26; this.y += 30; 
@@ -570,14 +631,58 @@ class Player {
         }
 
         if (this.state === 'SLIDING') Particles.slideSparks(this.x, this.y, this.w, this.h);
+        
+        if (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
+            let pColor = this.state === 'VOID_CRASH' ? '#a855f7' : (this.state === 'TITAN' ? '#f97316' : '#ef4444');
+            Particles.add(this.x + this.w/2, this.y + this.h/2, (Math.random()-0.5)*100, -300, 0.4, pColor, 4, 'glow');
+        }
 
         if (Input.consume('jump')) {
-            if (this.grounded || this.state === 'GRinding') {
+            this.recordMove('JUMP');
+            let hist = this.moveHistory.join(',');
+
+            if (hist.endsWith('DASH,JUMP,JUMP')) {
+                this.setState('ASTRAL'); this.vy = -700; this.grounded = false; this.jumpCount = 2;
+                AudioSys.playTripleJump(); Game.showComboText("ASTRAL FLOAT!", "text-pink-400 text-glow text-5xl");
+                Particles.burst(this.x, this.y, 40, '#ec4899', 400, 'glow');
+                this.moveHistory = [];
+            } else if (hist.endsWith('SLIDE,DASH,JUMP')) {
+                this.setState('DRAGON_ASCENT'); this.vy = -1400; this.grounded = false; this.jumpCount = 2;
+                AudioSys.playTripleJump(); Game.showComboText("DRAGON ASCENT!", "text-amber-500 text-glow-orange text-5xl");
+                Particles.burst(this.x, this.y, 50, '#f59e0b', 500, 'glow');
+                this.moveHistory = [];
+            } else if (hist.endsWith('DASH,DIVE,JUMP')) {
+                this.setState('SUPERNOVA'); this.vy = -1200; this.grounded = false; this.jumpCount = 2;
+                AudioSys.playTripleJump(); Game.showComboText("SUPERNOVA!", "text-white text-glow text-5xl");
+                Particles.burst(this.x, this.y, 60, '#ffffff', 600, 'glow');
+                this.moveHistory = [];
+            } else if (this.state === 'SLIDING' && this.tripleJumpWindow > 0) {
+                this.y -= 30; this.h = 56; this.vy = CONFIG.tripleJumpForce;
+                this.setState('TRIPLE_JUMPING');
+                this.grounded = false; this.jumpCount = 2; this.tripleJumpWindow = 0;
+                AudioSys.playTripleJump();
+                Particles.burst(this.x + this.w/2, this.y + this.h, 40, '#a855f7', 400, 'glow');
+                Game.showComboText("TRIPLE FLIP!", "text-purple-400 text-glow-cyan");
+                Game.addScore(600); Game.addFlow(40);
+            } else if (this.grounded || this.state === 'GRINDING') {
                 if (this.state === 'SLIDING') { this.h = 56; this.y -= 30; }
                 this.vy = CONFIG.jumpForce; this.setState('JUMPING');
                 this.grounded = false; this.jumpCount = 1;
                 AudioSys.playJump();
                 Particles.burst(this.x + this.w/2, this.y + this.h, 15, '#ffffff', 160);
+            } else if (this.state === 'WALL_RUN') {
+                this.vy = CONFIG.jumpForce; this.vx = currentSpeed;
+                this.setState('DOUBLE_JUMPING'); this.grounded = false;
+                AudioSys.playDoubleJump();
+                Particles.burst(this.x, this.y + this.h, 20, '#f59e0b', 200, 'glow');
+                Game.addScore(120); Game.addFlow(15);
+            } else if (this.jumpCount < 2 && !['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
+                this.vy = CONFIG.jumpForce * 1.1; 
+                this.setState('DOUBLE_JUMPING'); this.jumpCount = 2;
+                AudioSys.playDoubleJump();
+                Particles.burst(this.x + this.w/2, this.y + this.h, 25, '#22d3ee', 250, 'glow');
+                Game.showComboText("AIR FLIP!", "text-cyan-400 text-glow-cyan");
+                Game.addScore(150); Game.addFlow(10);
             }
         }
 
@@ -590,10 +695,19 @@ class Player {
                     this.x = colX.x - this.w; this.vx = 0;
                     if (this.state !== 'WALL_RUN') {
                         this.setState('WALL_RUN');
+                        this.recordMove('WALL_RUN');
                         this.vy = -350; 
                         Particles.burst(this.x + this.w, this.y, 12, '#f59e0b', 120);
                     }
-                } else {
+                    if (this.y < colX.y + 15 && this.vy <= 0) {
+                        this.setState('JUMPING'); 
+                        this.vy = CONFIG.jumpForce * 0.7; this.vx = currentSpeed;
+                        this.x = colX.x + 5; this.y = colX.y - this.h - 5;
+                        Game.addScore(50);
+                    } else if (this.stateTime > 0.8 && this.vy > 0) {
+                        this.setState('FALLING'); this.x -= 8;
+                    }
+                } else if (!['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
                     this.x = colX.x - this.w;
                     AudioSys.playHit(); Game.gameOver(); return;
                 }
@@ -610,13 +724,34 @@ class Player {
             if (this.vy > 0) { 
                 this.y = colY.y - this.h;
                 this.vy = 0; this.grounded = true; this.jumpCount = 0;
+                this.moveHistory = []; 
                 
-                if (this.state === 'DIVING') {
+                if (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state)) {
+                    Game.cameraShake = this.state === 'VOID_CRASH' ? 50 : 35; 
+                    AudioSys.playExplosion();
+                    
+                    let smashName = this.state === 'VOID_CRASH' ? "VOID SHATTER!" : (this.state === 'TITAN' ? "TITAN IMPACT!" : "EARTHQUAKE SIDESMASH!");
+                    let smashColor = this.state === 'VOID_CRASH' ? "text-purple-500 text-glow-cyan" : (this.state === 'TITAN' ? "text-orange-500 text-glow-orange" : "text-red-500 text-glow-red");
+                    Game.showComboText(smashName, smashColor + " text-5xl");
+                    
+                    world.shatterPlatform(colY, this.x + this.w/2);
+                    
+                    let pColor = this.state === 'VOID_CRASH' ? '#a855f7' : (this.state === 'TITAN' ? '#f97316' : '#ef4444');
+                    Particles.burst(this.x + this.w/2, this.y + this.h, 60, pColor, 800, 'glow');
+                    Game.addScore(this.state === 'VOID_CRASH' ? 2500 : 1500); Game.addFlow(100);
+                    
                     this.setState('SLIDING'); this.h = 26; this.y += 30; 
-                    AudioSys.playSlide();
+                    this.tripleJumpWindow = 0.5; 
+                } else if (this.state === 'DIVING') {
+                    this.setState('SLIDING'); this.h = 26; this.y += 30; 
+                    this.tripleJumpWindow = 0.45; AudioSys.playSlide();
+                    Particles.burst(this.x + this.w/2, this.y + this.h, 30, '#facc15', 300, 'glow');
+                    Game.addScore(100); Game.addFlow(20);
+                } else if (colY.type === CONFIG.platformTypes.WIRE) {
+                    this.setState('GRINDING'); Particles.burst(this.x + this.w/2, this.y + this.h, 6, '#22d3ee', 180);
                 } else {
                     if (this.state !== 'SLIDING' && this.state !== 'RUNNING' && this.state !== 'GROUND_DASH') {
-                        this.setState('RUNNING'); 
+                        this.setState('RUNNING'); Particles.burst(this.x + this.w/2, this.y + this.h, 15, '#cbd5e1', 120);
                     }
                 }
             } else if (this.vy < 0) { 
@@ -625,15 +760,16 @@ class Player {
         } else {
             this.y = nextY;
             if (['RUNNING', 'GRINDING', 'SLIDING', 'GROUND_DASH'].includes(this.state) && this.state !== 'GROUND_DASH') {
+                if(this.state === 'SLIDING' && !Input.slide) { this.y -= 30; this.h = 56; }
                 this.setState('FALLING');
             }
         }
 
         if (this.y > 2000) { AudioSys.playHit(); Game.gameOver(); return; }
         
-        if (['GROUND_DASH', 'DASHING', 'HELLFIRE'].includes(this.state) || Game.flowMeter > 40) {
+        if (['GROUND_DASH', 'DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT', 'METEOR_DIVING', 'VOID_CRASH', 'TITAN', 'ASTRAL', 'DRAGON_ASCENT', 'SUPERNOVA'].includes(this.state) || Game.flowMeter > 40) {
             this.trail.push({x: this.x, y: this.y, state: this.state, stateTime: this.stateTime});
-            if (this.trail.length > 8) this.trail.shift();
+            if (this.trail.length > (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state) ? 12 : 8)) this.trail.shift();
         } else if(this.trail.length > 0) {
             this.trail.shift();
         }
@@ -643,16 +779,40 @@ class Player {
         if (this.trail.length > 0) {
             this.trail.forEach((t, i) => {
                 ctx.globalAlpha = (i / this.trail.length) * 0.4;
-                let color = t.state === 'GROUND_DASH' ? '#38bdf8' : '#94a3b8';
+                let color = '#94a3b8';
+                if (t.state === 'GROUND_DASH') color = '#38bdf8';
+                if (['METEOR_DIVING', 'HELLFIRE'].includes(t.state)) color = '#ef4444';
+                if (t.state === 'VOID_CRASH') color = '#a855f7';
+                if (t.state === 'TITAN' || t.state === 'DRAGON_ASCENT') color = '#f97316';
+                if (t.state === 'OMEGA') color = '#06b6d4';
+                if (t.state === 'PLASMA_GLIDE') color = '#22c55e';
+                if (t.state === 'THUNDERBOLT') color = '#eab308';
+                if (t.state === 'ASTRAL') color = '#ec4899';
+                if (t.state === 'SUPERNOVA') color = '#ffffff';
                 this.drawStickman(ctx, t.x, t.y, t.state, t.stateTime, color, camX, camY, true);
             });
             ctx.globalAlpha = 1;
         }
 
-        let sColor = this.state === 'GROUND_DASH' ? '#38bdf8' : '#ffffff';
-        ctx.shadowBlur = this.state === 'GROUND_DASH' ? 22 : 0;
+        let isCrash = ['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(this.state);
+        let isGroundDash = this.state === 'GROUND_DASH';
+        
+        let sColor = '#38bdf8';
+        if (this.state === 'VOID_CRASH') sColor = '#a855f7';
+        else if (this.state === 'HELLFIRE' || this.state === 'METEOR_DIVING') sColor = '#ef4444';
+        else if (this.state === 'TITAN' || this.state === 'DRAGON_ASCENT') sColor = '#f97316';
+        else if (this.state === 'OMEGA') sColor = '#06b6d4';
+        else if (this.state === 'PLASMA_GLIDE') sColor = '#22c55e';
+        else if (this.state === 'THUNDERBOLT') sColor = '#eab308';
+        else if (this.state === 'ASTRAL') sColor = '#ec4899';
+        else if (this.state === 'SUPERNOVA') sColor = '#ffffff';
+        else if (Game.flowMeter >= 100) sColor = '#f59e0b';
+        else if (isGroundDash) sColor = '#38bdf8';
+        else sColor = '#ffffff';
+        
+        ctx.shadowBlur = (isCrash || isGroundDash) ? 22 : (Game.flowMeter > 50 ? 15 : 0);
         ctx.shadowColor = sColor;
-        this.drawStickman(ctx, this.x, this.y, this.state, this.stateTime, sColor, camX, camY, false);
+        this.drawStickman(ctx, this.x, this.y, this.state, this.stateTime, (isCrash || isGroundDash) ? sColor : '#ffffff', camX, camY, false);
         ctx.shadowBlur = 0;
     }
 
@@ -667,6 +827,18 @@ class Player {
         if (state === 'GROUND_DASH') {
             ctx.rotate(Math.PI / 12);
             ctx.scale(1.5, 0.65);
+        } else if (['DOUBLE_JUMPING', 'SUPERNOVA'].includes(state)) {
+            ctx.rotate(Math.min(1, stateTime / 0.5) * Math.PI * 2);
+        } else if (['TRIPLE_JUMPING', 'ASTRAL'].includes(state)) {
+            ctx.rotate(-Math.min(1, stateTime / 0.6) * Math.PI * 4);
+        } else if (state === 'DIVING') {
+            ctx.rotate(Math.PI / 4);
+        } else if (['METEOR_DIVING', 'VOID_CRASH', 'TITAN'].includes(state)) {
+            ctx.rotate(Math.PI / 2); ctx.scale(1.3, 0.7); 
+        } else if (['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(state)) {
+            ctx.rotate(Math.PI / 8); ctx.scale(1.4, 0.6);
+        } else if (state === 'DRAGON_ASCENT') {
+            ctx.rotate(-Math.PI / 4); ctx.scale(0.8, 1.2);
         }
 
         ctx.strokeStyle = color; ctx.lineWidth = 4.5;
@@ -693,7 +865,7 @@ class Player {
             ctx.moveTo(hipX, hipY); ctx.lineTo(hipX - 22, hh - 4);
             ctx.moveTo(hipX, hipY); ctx.lineTo(hipX + 12, hh - 2);
         } else if (state === 'RUNNING' || state === 'GRINDING') {
-            let bounce = Math.abs(Math.sin(cycle)) * 4;
+            let bounce = Math.abs(Math.sin(cycle*0.8)) * 4;
             let lean = 12; 
             
             headY = -hh + 16 + bounce; let headX = lean;
@@ -703,19 +875,31 @@ class Player {
             ctx.moveTo(headX + 7, headY); ctx.arc(headX, headY, 7, 0, Math.PI*2);
             ctx.moveTo(headX, headY + 7); ctx.lineTo(hipX, hipY);
 
-            let armBob = Math.sin(cycle) * 2;
+            let armBob = Math.sin(cycle*0.8) * 2;
             ctx.moveTo(shoulderX, shoulderY); ctx.lineTo(shoulderX - 20, shoulderY - 4 + armBob);
             ctx.moveTo(shoulderX, shoulderY); ctx.lineTo(shoulderX - 22, shoulderY - 8 - armBob);
 
-            let lThigh = Math.sin(cycle); let rThigh = Math.sin(cycle + Math.PI);
+            let lThigh = Math.sin(cycle*0.8); let rThigh = Math.sin(cycle*0.8 + Math.PI);
             let lKnee = { x: hipX + lThigh * 14, y: hipY + 12 - Math.min(0, lThigh*8) };
             let rKnee = { x: hipX + rThigh * 14, y: hipY + 12 - Math.min(0, rThigh*8) };
-            let lFoot = { x: hipX + lThigh * 18, y: hh - Math.max(0, Math.cos(cycle) * 12) };
-            let rFoot = { x: hipX + rThigh * 18, y: hh - Math.max(0, Math.cos(cycle + Math.PI) * 12) };
+            let lFoot = { x: hipX + lThigh * 18, y: hh - Math.max(0, Math.cos(cycle*0.8) * 12) };
+            let rFoot = { x: hipX + rThigh * 18, y: hh - Math.max(0, Math.cos(cycle*0.8 + Math.PI) * 12) };
 
             ctx.moveTo(hipX, hipY); ctx.lineTo(lKnee.x, lKnee.y); ctx.lineTo(lFoot.x, lFoot.y);
             ctx.moveTo(hipX, hipY); ctx.lineTo(rKnee.x, rKnee.y); ctx.lineTo(rFoot.x, rFoot.y);
 
+        } else if (['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT'].includes(state)) {
+            let dashLean = 18; headY = -hh + 24; let headX = dashLean; hipY = headY + 8; let hipX = -dashLean;
+
+            ctx.moveTo(headX + 7, headY); ctx.arc(headX, headY, 7, 0, Math.PI*2);
+            ctx.moveTo(headX, headY + 7); ctx.lineTo(hipX, hipY);
+
+            ctx.moveTo(headX - 2, headY + 5); ctx.lineTo(hipX - 15, headY - 2);
+            ctx.moveTo(headX - 2, headY + 5); ctx.lineTo(hipX - 12, headY + 2);
+
+            ctx.moveTo(hipX, hipY); ctx.lineTo(hipX - 20, hh - 10);
+            ctx.moveTo(hipX, hipY); ctx.lineTo(hipX - 16, hh - 4);
+            
         } else if (state === 'SLIDING') {
             hipY = hh - 6; headY = hh - 22; shoulderY = headY + 5; let hipX = -5;
             ctx.moveTo(4, headY); ctx.arc(-2, headY, 7, 0, Math.PI*2);
@@ -729,12 +913,33 @@ class Player {
             headY = -hh + 10; hipY = headY + 26; shoulderY = headY + 8;
             ctx.moveTo(7, headY); ctx.arc(0, headY, 7, 0, Math.PI*2);
             ctx.moveTo(0, headY + 7); ctx.lineTo(0, hipY);
-            ctx.moveTo(0, hipY); ctx.lineTo(-12, hipY + 10); ctx.lineTo(-16, hh - 6);
-            ctx.moveTo(0, hipY); ctx.lineTo(12, hipY + 8); ctx.lineTo(8, hh - 12);
-            ctx.moveTo(0, shoulderY); ctx.lineTo(24, shoulderY + 2); 
-            ctx.moveTo(0, shoulderY); ctx.lineTo(-18, shoulderY - 4); 
+
+            if (['JUMPING', 'FALLING', 'DIVING', 'METEOR_DIVING', 'VOID_CRASH', 'TITAN', 'DRAGON_ASCENT'].includes(state)) {
+                ctx.moveTo(0, hipY); ctx.lineTo(-12, hipY + 10); ctx.lineTo(-16, hh - 6);
+                ctx.moveTo(0, hipY); ctx.lineTo(12, hipY + 8); ctx.lineTo(8, hh - 12);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(24, shoulderY + 2); 
+                ctx.moveTo(0, shoulderY); ctx.lineTo(-18, shoulderY - 4); 
+            } else if (['DOUBLE_JUMPING', 'TRIPLE_JUMPING', 'ASTRAL', 'SUPERNOVA'].includes(state)) {
+                ctx.moveTo(0, hipY); ctx.lineTo(-10, hh - 10); ctx.lineTo(2, hh - 6);
+                ctx.moveTo(0, hipY); ctx.lineTo(6, hh - 12); ctx.lineTo(12, hh - 2);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(-10, shoulderY + 10);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(10, shoulderY + 10);
+            } else if (state === 'WALL_RUN') {
+                ctx.moveTo(0, hipY); ctx.lineTo(6, hh - 10 + Math.sin(cycle)*10);
+                ctx.moveTo(0, hipY); ctx.lineTo(12, hh - 10 - Math.sin(cycle)*10);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(-12, shoulderY + 6);
+                ctx.moveTo(0, shoulderY); ctx.lineTo(8, shoulderY - 4);
+            }
         }
         ctx.stroke();
+
+        if (!isTrail && (Game.flowMeter >= 100 || ['METEOR_DIVING', 'VOID_CRASH', 'TITAN', 'HELLFIRE', 'OMEGA', 'GROUND_DASH'].includes(state))) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            let coreY = ['DASHING', 'HELLFIRE', 'OMEGA', 'PLASMA_GLIDE', 'THUNDERBOLT', 'RUNNING', 'GROUND_DASH'].includes(state) ? hipY - 6 : hipY - 10;
+            ctx.arc(0, coreY, 4.5, 0, Math.PI*2); ctx.fill();
+        }
+
         ctx.restore();
     }
 }
@@ -752,6 +957,28 @@ const World = {
 
     addPlatform(x, y, w, h, type) {
         this.platforms.push({x, y, w, h, type});
+    },
+
+    shatterPlatform(targetPlatform, impactX) {
+        if (targetPlatform.type !== CONFIG.platformTypes.BUILDING) return;
+        Particles.debris(impactX, targetPlatform.y, 45);
+
+        let craterW = 160;
+        let leftEdge = impactX - craterW/2;
+        
+        if (leftEdge > targetPlatform.x + 40 && leftEdge + craterW < targetPlatform.x + targetPlatform.w - 40) {
+            let origW = targetPlatform.w;
+            let origX = targetPlatform.x;
+            
+            targetPlatform.w = leftEdge - targetPlatform.x;
+            this.addPlatform(
+                leftEdge + craterW, 
+                targetPlatform.y, 
+                (origX + origW) - (leftEdge + craterW), 
+                targetPlatform.h, 
+                targetPlatform.type
+            );
+        }
     },
 
     generateAhead(camX) {
