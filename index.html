@@ -738,6 +738,7 @@ footer p{
     <a href="javascript:void(0)" onclick="switchView('games')">Games</a>
     <a href="javascript:void(0)" onclick="switchView('rules')">Rules</a>
     <a href="javascript:void(0)" onclick="switchView('forum')">Customer Care</a>
+    <a href="javascript:void(0)" onclick="switchView('audio')">Audio</a>
     
     <!-- Hidden Admin Section in Menu -->
     <a href="javascript:void(0)" id="menuAdminLink" onclick="switchView('admin')" style="display:none; color:#f59e0b;">Admin Panel</a>
@@ -1122,6 +1123,27 @@ footer p{
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 10: AUDIO
+======================================================== -->
+<div id="view-audio" style="display: none;">
+    <section id="audio-section">
+        <h2 class="section-title">Studio <span>Audio</span></h2>
+        <p class="section-sub">Listen to the official soundtrack playlist.</p>
+
+        <div class="account-container">
+            <h3 style="color: #ff3b3b; font-size: 1.5rem; margin-bottom: 20px;">Playlist</h3>
+            
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <span style="color: #d4d4d4; font-weight: 600; font-size: 1.05rem;">1. Upbeat Rock Energy Workout by Infraction-Red Car</span>
+                <button id="audio-toggle-btn" class="btn btn-secondary" onclick="toggleMainAudio()" style="padding: 10px 20px;">Play</button>
+            </div>
+            
+            <audio id="main-audio-player" src="Upbeat Rock Energy Workout by Infraction-Red Car.mp3" preload="none" loop></audio>
+        </div>
+    </section>
+</div>
+
 
 <!-- =======================================================
      GLOBAL COMPONENTS (Footer & Modals)
@@ -1184,6 +1206,7 @@ function switchView(viewName) {
     document.getElementById("view-forum").style.display = "none"; 
     document.getElementById("view-profile").style.display = "none"; 
     document.getElementById("view-admin").style.display = "none"; 
+    document.getElementById("view-audio").style.display = "none"; 
     
     document.getElementById("view-" + viewName).style.display = "block";
     
@@ -2014,12 +2037,47 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     <iframe id="game-iframe" src=""></iframe>
 </div>
 <script>
+// --- AUDIO PLAYER LOGIC ---
+const audioPlayer = document.getElementById('main-audio-player');
+const audioToggleBtn = document.getElementById('audio-toggle-btn');
+
+function toggleMainAudio() {
+    if (audioPlayer.paused) {
+        audioPlayer.play();
+        audioToggleBtn.textContent = "Stop";
+        audioToggleBtn.classList.remove('btn-secondary');
+        audioToggleBtn.classList.add('btn-primary');
+    } else {
+        audioPlayer.pause();
+        audioToggleBtn.textContent = "Play";
+        audioToggleBtn.classList.remove('btn-primary');
+        audioToggleBtn.classList.add('btn-secondary');
+    }
+}
+
+function stopAudio() {
+    if (audioPlayer && !audioPlayer.paused) {
+        audioPlayer.pause();
+        audioToggleBtn.textContent = "Play";
+        audioToggleBtn.classList.remove('btn-primary');
+        audioToggleBtn.classList.add('btn-secondary');
+    }
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        stopAudio();
+    }
+});
+
+// --- GAME OVERLAY LOGIC ---
 document.addEventListener("DOMContentLoaded", () => {
     const gameLinks = document.querySelectorAll('.download-btn');
     gameLinks.forEach(link => {
         if (link.textContent.trim() === "Play Web Version") {
             link.addEventListener("click", function(e) {
                 e.preventDefault();
+                stopAudio(); // NEW: Stops the audio when a player enters the game overlay
                 document.getElementById("game-iframe").src = this.href;
                 document.getElementById("game-overlay").style.display = "block";
             });
@@ -2037,4 +2095,3 @@ function closeGameOverlay() {
 </script>
 </body>
 </html>
-
