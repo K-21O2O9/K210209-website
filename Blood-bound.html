@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BLOODBOUND - 2 Player Multiplayer</title>
+    <title>BLOODBOUND - Premium Edition</title>
     <!-- Tailwind for rapid UI layout -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -129,6 +129,14 @@
             </div>
         </div>
     </div>
+    
+    <!-- OVERLAY: WILDCARD CHOOSER -->
+    <div id="wildcard-modal" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[100] bg-slate-900 border-2 border-amber-500 rounded-2xl p-6 shadow-[0_0_30px_rgba(245,158,11,0.4)] flex flex-col gap-4 pointer-events-auto text-center min-w-[300px]">
+        <div class="text-3xl text-amber-500 animate-pulse"><i class="fa-solid fa-star"></i></div>
+        <span class="text-sm font-black tracking-widest text-amber-400 uppercase">WILD CARD TRIGGERED</span>
+        <span class="text-xs text-gray-300 mb-2">Choose how to focus this energy:</span>
+        <div id="wildcard-options" class="grid grid-cols-2 gap-3"></div>
+    </div>
 
     <!-- OVERLAY 1: MAIN MENU -->
     <div id="main-menu" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 modal-blur">
@@ -140,14 +148,33 @@
                     <i class="fa-solid fa-droplet"></i>
                 </div>
                 <h1 class="text-3xl font-extrabold tracking-tight text-white uppercase font-serif">Bloodbound</h1>
-                <p class="text-xs text-slate-400 mt-1">2-Player Online Strategy</p>
+                <p class="text-xs text-slate-400 mt-1">Strategic Dark Fantasy</p>
             </div>
 
             <!-- Primary Buttons -->
             <div id="menu-actions" class="space-y-3">
-                <button id="play-btn" class="w-full bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-play"></i> PLAY MULTIPLAYER
+                <button id="play-ai-btn" class="w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2 border border-blue-600/50">
+                    <i class="fa-solid fa-robot"></i> SINGLE PLAYER (AI)
                 </button>
+                <button id="play-btn" class="w-full bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2 border border-red-600/50">
+                    <i class="fa-solid fa-globe"></i> PLAY MULTIPLAYER
+                </button>
+            </div>
+
+            <!-- Single Player Submenu -->
+            <div id="ai-submenu" class="hidden space-y-3 pt-2">
+                <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">Select AI Difficulty</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="start-ai-normal" class="bg-blue-900/20 hover:bg-blue-900/40 border border-blue-800/40 text-blue-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
+                        <i class="fa-solid fa-user-shield text-2xl text-blue-500"></i>
+                        <span class="text-xs">NORMAL</span>
+                    </button>
+                    <button id="start-ai-hard" class="bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/40 text-rose-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
+                        <i class="fa-solid fa-skull text-2xl text-rose-500"></i>
+                        <span class="text-xs">HARD</span>
+                    </button>
+                </div>
+                <button id="back-to-menu-from-ai" class="text-xs text-slate-500 hover:text-slate-300 transition underline mt-4 block mx-auto">&larr; Back to Main Menu</button>
             </div>
 
             <!-- Play Submenu (Join / Create) -->
@@ -174,7 +201,7 @@
             </div>
 
             <div class="text-[11px] text-slate-500 border-t border-slate-800/80 pt-4 flex items-center justify-between">
-                <span>Supabase: <span id="supabase-status" class="text-amber-400 font-medium">Local Simulator</span></span>
+                <span>Network: <span id="supabase-status" class="text-amber-400 font-medium">Local Simulator</span></span>
                 <button id="supabase-config-link" class="text-blue-400 hover:underline">Change Keys</button>
             </div>
         </div>
@@ -275,6 +302,8 @@
     let isLocalSimulator = true;
     let roomCode = null;
     let playerNumber = 1; // 1 = Blue (P1), 2 = Red (P2)
+    let isAIMode = false;
+    let aiDifficulty = 'normal';
     
     function showNetToast(message, type = 'info') {
         const container = document.getElementById('net-toast-container');
@@ -339,6 +368,7 @@
 
     function broadcastEvent(eventType, payloadData) {
         const packet = { event: eventType, sender: playerNumber, data: payloadData };
+        if (isAIMode) return; // Ignore network if AI mode
         if (isLocalSimulator) {
             localStorage.setItem('sim_event_' + roomCode, JSON.stringify({ packet, time: Date.now() }));
             return;
@@ -349,13 +379,14 @@
     }
 
     function handleSimulatorStorage(e) {
+        if (isAIMode) return;
         if (e.key === 'sim_event_' + roomCode && e.newValue) {
             try { handleRemoteEvent(JSON.parse(e.newValue).packet); } catch(err) {}
         }
     }
 
     function handleRemoteEvent(packet) {
-        if (!packet || packet.sender === playerNumber) return;
+        if (!packet || packet.sender === playerNumber || isAIMode) return;
         const { event, data } = packet;
 
         switch (event) {
@@ -389,6 +420,7 @@
                 break;
             case 'ACTION_INTENT':
                 selectedDieIndex = data.dieIndex;
+                if(data.morphedId && diceRolled[selectedDieIndex]) diceRolled[selectedDieIndex].effectiveId = data.morphedId;
                 executeAction(data);
                 break;
             case 'SYNC_FACING':
@@ -436,11 +468,11 @@
             let progress = Math.min(t.elapsed / t.duration, 1);
             let e = t.easing(progress);
             for (let k in t.targetProps) t.obj[k] = t.startProps[k] + (t.targetProps[k] - t.startProps[k]) * e;
-            if (t.onUpdate) t.onUpdate();
+            if (t.onUpdate) t.onUpdate(e);
             if (progress >= 1) { if (t.onComplete) t.onComplete(); Tweens.splice(i, 1); }
         }
     }
-    const Easing = { Linear: t=>t, OutQuad: t=>t*(2-t), InQuad: t=>t*t, OutElastic: t => t===0?0:t===1?1:Math.pow(2,-10*t)*Math.sin((t*10-0.75)*((2*Math.PI)/3))+1 };
+    const Easing = { Linear: t=>t, OutQuad: t=>t*(2-t), InQuad: t=>t*t, InOutQuad: t=>t<0.5?2*t*t:-1+(4-2*t)*t, OutElastic: t => t===0?0:t===1?1:Math.pow(2,-10*t)*Math.sin((t*10-0.75)*((2*Math.PI)/3))+1 };
     function shuffleArray(array) {
         let arr = [...array];
         for (let i = arr.length - 1; i > 0; i--) {
@@ -495,6 +527,17 @@
         }
     }
     const vfx = new ParticleSystem();
+
+    function spawnSlashVFX(pos, dir, colorHex) {
+        const geo = new THREE.PlaneGeometry(3, 0.5);
+        const mat = new THREE.MeshBasicMaterial({color: colorHex, transparent: true, opacity: 0.9, side: THREE.DoubleSide});
+        const slash = new THREE.Mesh(geo, mat);
+        slash.position.copy(pos).add(new THREE.Vector3(0, 1.2, 0));
+        slash.lookAt(pos.x + dir.x, pos.y + 1.2, pos.z + dir.z);
+        scene.add(slash);
+        tween(slash.scale, {x: 1.5, y: 0.1}, 0.25, Easing.OutQuad);
+        tween(slash.material, {opacity: 0}, 0.25, Easing.OutQuad, null, () => scene.remove(slash));
+    }
 
     function triggerShake(intensity) { cameraShake.intensity = intensity; }
     
@@ -557,68 +600,96 @@
 
             tiles[x][z].unit = this;
             this.updateUIPosition();
-            if(team === 2) this.mesh.rotation.y = Math.PI;
+            // Facing each other initially: Z goes from 0 to 7.
+            this.mesh.rotation.y = team === 1 ? Math.PI : 0;
         }
 
         buildRiggedHumanoid(colorHex, team) {
             const group = new THREE.Group();
             const isTeam1 = team === 1;
             const matBody = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.6, metalness: 0.2 });
-            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.35), matBody); torso.position.y = 0.85; torso.castShadow = true; group.add(torso); this.parts.torso = torso;
-            
-            const legR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.4, 0.18), matBody); legR.position.set(0.15, -0.55, 0); legR.castShadow = true; torso.add(legR); this.parts.legR = legR;
-            const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.4, 0.18), matBody); legL.position.set(-0.15, -0.55, 0); legL.castShadow = true; torso.add(legL); this.parts.legL = legL;
-
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), new THREE.MeshStandardMaterial({ color: 0xffdcb3, roughness: 0.4 })); head.position.y = 0.6; head.castShadow = true; torso.add(head); this.parts.head = head;
-            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: team === 2 ? 0xff0000 : 0xffffff, emissive: team === 2 ? 0xff0000 : 0x000000 })); visor.position.set(0, 0, 0.15); head.add(visor);
-
-            const armRGroup = new THREE.Group(); armRGroup.position.set(0.35, 0.25, 0); 
-            const armR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), matBody); armR.position.y = -0.25; armR.castShadow = true; armRGroup.add(armR); torso.add(armRGroup); this.parts.armR = armRGroup;
-            const armLGroup = new THREE.Group(); armLGroup.position.set(-0.35, 0.25, 0); 
-            const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), matBody); armL.position.y = -0.25; armL.castShadow = true; armLGroup.add(armL); torso.add(armLGroup); this.parts.armL = armLGroup;
-
-            // Details and Accents
             const metalMat = new THREE.MeshStandardMaterial({ color: isTeam1 ? 0xe2e8f0 : 0x27272a, metalness: 0.9, roughness: 0.2 });
             const detailMat = new THREE.MeshStandardMaterial({ color: isTeam1 ? 0xfcd34d : 0x7f1d1d, metalness: 0.5, roughness: 0.5 });
-            
-            visor.material.color.setHex(isTeam1 ? 0x38bdf8 : 0xf43f5e);
-            visor.material.emissive.setHex(isTeam1 ? 0x0284c7 : 0x9f1239);
-            
-            const pauldronGeo = isTeam1 ? new THREE.SphereGeometry(0.2, 16, 16, 0, Math.PI*2, 0, Math.PI/2) : new THREE.ConeGeometry(0.2, 0.4, 4);
-            const pauldronL = new THREE.Mesh(pauldronGeo, metalMat);
-            pauldronL.position.set(0, 0.25, 0);
-            if (!isTeam1) { pauldronL.rotation.x = Math.PI; pauldronL.position.y = 0.3; }
-            armLGroup.add(pauldronL);
-            
-            const pauldronR = pauldronL.clone();
-            armRGroup.add(pauldronR);
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+            const leatherMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.8 });
 
-            const belt = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.1, 0.4), detailMat);
-            belt.position.y = -0.3;
-            torso.add(belt);
-
-            if (this.name === 'Commander' || this.name === 'Vanguard') {
-                const cape = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 0.05), new THREE.MeshStandardMaterial({color: isTeam1 ? 0x1d4ed8 : 0x7f1d1d}));
-                cape.position.set(0, 0.1, -0.2);
-                cape.rotation.x = 0.1;
-                torso.add(cape);
+            // Torso Base
+            let torsoGeo = new THREE.BoxGeometry(0.5, 0.7, 0.35);
+            if (this.name === 'Mage') torsoGeo = new THREE.ConeGeometry(0.4, 0.9, 16);
+            if (this.name === 'Assassin') torsoGeo = new THREE.BoxGeometry(0.4, 0.7, 0.3);
+            
+            const torso = new THREE.Mesh(torsoGeo, this.name === 'Assassin' ? darkMat : matBody); 
+            torso.position.y = 0.85; torso.castShadow = true; group.add(torso); this.parts.torso = torso;
+            
+            // Legs (Skipped for Mage robe base)
+            if (this.name !== 'Mage') {
+                const legR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.4, 0.18), this.name === 'Assassin' ? darkMat : matBody); legR.position.set(0.15, -0.55, 0); legR.castShadow = true; torso.add(legR); this.parts.legR = legR;
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.4, 0.18), this.name === 'Assassin' ? darkMat : matBody); legL.position.set(-0.15, -0.55, 0); legL.castShadow = true; torso.add(legL); this.parts.legL = legL;
+            } else {
+                this.parts.legR = new THREE.Group(); this.parts.legL = new THREE.Group(); // Dummy for animation references
+                torso.position.y = 0.7; // Lower center for cone
             }
 
-            const matMetal = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
-            if (this.name === 'Vanguard' || this.name === 'Commander') {
-                const sword = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.2), matMetal); sword.position.set(0, -0.4, 0.2); sword.rotation.x = Math.PI / 2; armRGroup.add(sword);
-                const shieldBox = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.6), metalMat); shieldBox.position.set(-0.2, -0.2, 0); armLGroup.add(shieldBox);
+            // Head
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), new THREE.MeshStandardMaterial({ color: 0xffdcb3, roughness: 0.4 })); 
+            head.position.y = this.name === 'Mage' ? 0.5 : 0.6; head.castShadow = true; torso.add(head); this.parts.head = head;
+            
+            if(this.name !== 'Assassin') {
+                const visor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: isTeam1 ? 0x38bdf8 : 0xf43f5e, emissive: isTeam1 ? 0x0284c7 : 0x9f1239 })); 
+                visor.position.set(0, 0, 0.15); head.add(visor);
+            } else {
+                // Assassin Hood
+                const hood = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.45, 0.4), darkMat);
+                hood.position.set(0, 0.05, -0.05); head.add(hood);
+                const voidFace = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.1), new THREE.MeshBasicMaterial({color: 0x000000}));
+                voidFace.position.set(0, 0, 0.16); head.add(voidFace);
             }
-            else if (this.name === 'Mage') {
-                const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.2), new THREE.MeshStandardMaterial({ color: 0x5c4033 })); staff.position.set(0, -0.2, 0.2); staff.rotation.x = Math.PI / 2;
-                const gem = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshStandardMaterial({ color: isTeam1 ? 0x0ea5e9 : 0xf43f5e, emissive: isTeam1 ? 0x0ea5e9 : 0xf43f5e })); gem.position.y = 0.6; staff.add(gem); armRGroup.add(staff);
+
+            // Arms
+            const armMat = this.name === 'Assassin' ? darkMat : matBody;
+            const armRGroup = new THREE.Group(); armRGroup.position.set(0.35, 0.25, 0); 
+            const armR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), armMat); armR.position.y = -0.25; armR.castShadow = true; armRGroup.add(armR); torso.add(armRGroup); this.parts.armR = armRGroup;
+            const armLGroup = new THREE.Group(); armLGroup.position.set(-0.35, 0.25, 0); 
+            const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), armMat); armL.position.y = -0.25; armL.castShadow = true; armLGroup.add(armL); torso.add(armLGroup); this.parts.armL = armLGroup;
+
+            // Distinct Class Gear
+            if (this.name === 'Commander') {
+                // Pauldrons
+                const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16, 0, Math.PI*2, 0, Math.PI/2), detailMat);
+                pauldron.position.set(0, 0.25, 0); armLGroup.add(pauldron); armRGroup.add(pauldron.clone());
+                // Plume & Cape
+                const plume = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.35, 0.4), detailMat); plume.position.y = 0.3; head.add(plume);
+                const cape = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 0.05), new THREE.MeshStandardMaterial({color: isTeam1 ? 0x1d4ed8 : 0x7f1d1d})); cape.position.set(0, 0.05, -0.2); cape.rotation.x = 0.15; torso.add(cape);
+                // Big Sword
+                const sword = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.2, 0.3), metalMat); sword.position.set(0, -0.6, 0.2); sword.rotation.x = Math.PI / 2; armRGroup.add(sword);
             }
-            else if (this.name === 'Archer') {
-                const bow = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 0.1), new THREE.MeshStandardMaterial({ color: 0x8b5a2b })); bow.position.set(0, -0.2, 0.2); armLGroup.add(bow);
+            else if (this.name === 'Vanguard') {
+                // Heavy Pauldrons
+                const pauldron = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.3, 8), metalMat);
+                pauldron.rotation.z = Math.PI/2; pauldron.position.set(0, 0.2, 0); armLGroup.add(pauldron); armRGroup.add(pauldron.clone());
+                // Spear & Tower Shield
+                const spear = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6), metalMat); spear.position.set(0, -0.4, 0.2); spear.rotation.x = Math.PI / 2; 
+                const tip = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 4), metalMat); tip.position.y = 0.9; spear.add(tip); armRGroup.add(spear);
+                const shieldBox = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.9, 0.6), metalMat); shieldBox.position.set(-0.25, -0.1, 0); armLGroup.add(shieldBox);
             }
             else if (this.name === 'Assassin') {
-                const dagger1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.4, 0.1), metalMat); dagger1.position.set(0, -0.2, 0.2); dagger1.rotation.x = Math.PI / 2; armRGroup.add(dagger1);
-                const dagger2 = dagger1.clone(); armLGroup.add(dagger2);
+                // Daggers
+                const dagger1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.1), metalMat); dagger1.position.set(0, -0.3, 0.2); dagger1.rotation.x = Math.PI / 2; armRGroup.add(dagger1);
+                const dagger2 = dagger1.clone(); dagger2.rotation.x = -Math.PI / 2; dagger2.position.set(0, -0.3, -0.2); armLGroup.add(dagger2); // reverse grip
+            }
+            else if (this.name === 'Archer') {
+                // Quiver
+                const quiver = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.6), leatherMat);
+                quiver.position.set(0.1, 0.1, -0.25); quiver.rotation.z = -Math.PI/6; quiver.rotation.x = -0.1; torso.add(quiver);
+                // Bow
+                const bow = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.1, 0.1), leatherMat); bow.position.set(0, -0.2, 0.2); armLGroup.add(bow);
+            }
+            else if (this.name === 'Mage') {
+                // Pointy Hat
+                const hat = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 16), matBody); hat.position.y = 0.45; head.add(hat);
+                // Staff
+                const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4), leatherMat); staff.position.set(0, -0.3, 0.2); staff.rotation.x = Math.PI / 2;
+                const gem = new THREE.Mesh(new THREE.SphereGeometry(0.18), new THREE.MeshStandardMaterial({ color: isTeam1 ? 0x0ea5e9 : 0xf43f5e, emissive: isTeam1 ? 0x0ea5e9 : 0xf43f5e })); gem.position.y = 0.7; staff.add(gem); armRGroup.add(staff);
             }
             group.userData.unitMesh = true; return group;
         }
@@ -664,7 +735,7 @@
     const UNIT_TYPES = {
         commander: { name: 'Commander', maxHp: 12, atk: 4, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.95, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x2563eb, color2: 0xdc2626 },
         vanguard: { name: 'Vanguard', maxHp: 15, atk: 3, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.90, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x3b82f6, color2: 0xef4444 },
-        assassin: { name: 'Assassin', maxHp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x8b5cf6, color2: 0xb91c1c },
+        assassin: { name: 'Assassin', maxHp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x1f2937, color2: 0x111827 }, // Dark colors for assassins
         archer: { name: 'Archer', maxHp: 8, atk: 3, moveRange: 2, dashRange: 4, atkRange: 4, accuracy: 0.92, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x10b981, color2: 0xf87171 },
         mage: { name: 'Mage', maxHp: 6, atk: 4, moveRange: 2, dashRange: 4, atkRange: 3, accuracy: 0.85, actions: ['move', 'dash', 'magic', 'defend', 'wild'], color1: 0x0ea5e9, color2: 0xfca5a5 }
     };
@@ -700,7 +771,7 @@
 
     function generateUnitId() { return 'u_' + Math.random().toString(36).substr(2, 9); }
 
-    function startGameSession(isHost) {
+    function startGameSession(isHost, mode = 'multi') {
         if(isHost) {
             const rosterDef = [
                 { type: UNIT_TYPES.commander, x: 3, z: 7 }, { type: UNIT_TYPES.vanguard, x: 2, z: 6 }, { type: UNIT_TYPES.vanguard, x: 4, z: 6 },
@@ -770,12 +841,16 @@
             rollDice();
             broadcastEvent('SYNC_DICE', { dice: diceRolled });
         } else {
-            document.getElementById('turn-indicator').innerText = "OPPONENT'S TURN";
+            document.getElementById('turn-indicator').innerText = isAIMode ? "AI'S TURN" : "OPPONENT'S TURN";
             document.getElementById('turn-indicator').classList.replace('text-yellow-400', 'text-red-500');
-            document.getElementById('unit-desc').innerText = "Opponent is deciding...";
+            document.getElementById('unit-desc').innerText = "Enemy is acting...";
             btnEndTurn.style.display = 'none';
             showToast("Enemy Acts", '#ef4444');
             diceContainer.innerHTML = ''; 
+
+            if (isAIMode && activeUnit.team === 2) {
+                setTimeout(playAITurn, 800); // Trigger local AI Logic
+            }
         }
 
         tween(activeUnit.mesh.scale, {y: 1.3}, 0.15, Easing.OutQuad, null, () => tween(activeUnit.mesh.scale, {y: 1.0}, 0.15, Easing.InQuad));
@@ -794,7 +869,7 @@
         shuffleArray(gen);
         
         for(let i=0; i<3; i++) {
-            const d = ALL_DICE_FACES[gen[i]]; diceRolled.push({ ...d, used: false });
+            const d = ALL_DICE_FACES[gen[i]]; diceRolled.push({ ...d, used: false, effectiveId: d.id });
             const btn = document.createElement('button');
             btn.className = `die-btn rolling`;
             btn.innerHTML = `<span class="die-icon">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-gray-200 relative z-10">${d.name}</span>`;
@@ -808,27 +883,64 @@
         diceContainer.innerHTML = '';
         diceRolled.forEach((d, i) => {
             const btn = document.createElement('button');
+            const displayObj = ALL_DICE_FACES[d.effectiveId || d.id];
             btn.className = `die-btn pointer-events-none ${d.used ? 'used' : ''}`;
-            btn.innerHTML = `<span class="die-icon">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-gray-200 relative z-10">${d.name}</span>`;
+            btn.innerHTML = `<span class="die-icon">${displayObj.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-gray-200 relative z-10">${displayObj.name}</span>`;
             diceContainer.appendChild(btn);
         });
     }
 
     function selectDie(index, btnEl) {
         if (state !== 'PLAYER_TURN' || diceRolled[index].used || activeUnit.team !== playerNumber) return;
+        
+        const die = diceRolled[index];
+        if (die.id === 'wild' && die.effectiveId === 'wild') {
+            openWildCardMenu(index, btnEl);
+            return;
+        }
+
+        finalizeDieSelection(index, btnEl);
+    }
+
+    function finalizeDieSelection(index, btnEl) {
         selectedDieIndex = index;
         Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
-        btnEl.classList.add('selected');
+        if(btnEl) btnEl.classList.add('selected');
+        
         broadcastEvent('SELECT_DIE', { index });
 
         const die = diceRolled[index];
-        if(die.id === 'defend') {
+        const actionType = die.effectiveId;
+
+        if(actionType === 'defend') {
             const intent = { targetInfo: { type: 'defend' }, dieIndex: index };
             broadcastEvent('ACTION_INTENT', intent);
             executeAction(intent);
             return;
         }
-        showValidTargets(die.id);
+        showValidTargets(actionType);
+    }
+
+    function openWildCardMenu(dieIndex, btnEl) {
+        const modal = document.getElementById('wildcard-modal');
+        const optsContainer = document.getElementById('wildcard-options');
+        optsContainer.innerHTML = '';
+        
+        activeUnit.actions.filter(a => a !== 'wild').forEach(act => {
+            const d = ALL_DICE_FACES[act];
+            const b = document.createElement('button');
+            b.className = "flex flex-col items-center p-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition transform hover:-translate-y-1";
+            b.innerHTML = `<span class="text-xl font-bold text-gray-200">${d.abbr}</span><span class="text-[10px] text-amber-400 mt-1">${d.name}</span>`;
+            b.onclick = () => {
+                modal.classList.add('hidden');
+                diceRolled[dieIndex].effectiveId = act;
+                // Update Button visually locally
+                btnEl.innerHTML = `<span class="die-icon text-amber-300">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-amber-400 relative z-10">${d.name}</span>`;
+                finalizeDieSelection(dieIndex, btnEl);
+            };
+            optsContainer.appendChild(b);
+        });
+        modal.classList.remove('hidden');
     }
 
     function clearHighlights() {
@@ -838,7 +950,7 @@
 
     function showValidTargets(actionType) {
         clearHighlights();
-        const isMove = actionType === 'move' || actionType === 'wild', isDash = actionType === 'dash' || actionType === 'wild', isAttack = actionType === 'attack' || actionType === 'magic' || actionType === 'wild';
+        const isMove = actionType === 'move', isDash = actionType === 'dash', isAttack = actionType === 'attack' || actionType === 'magic';
         let maxRange = 0;
         if (isDash) maxRange = Math.max(maxRange, activeUnit.dashRange); if (isMove) maxRange = Math.max(maxRange, activeUnit.moveRange);
 
@@ -867,8 +979,8 @@
                 else if (!highlighted && isMove && pathDist <= activeUnit.moveRange && pathDist > 0 && !tile.unit) { tile.mesh.material = matTileHighlight; highlightMeshes.push({x, z, type: 'move'}); }
                 const canTarget = !tile.unit || tile.unit.team !== activeUnit.team;
                 if (isAttack && manhattanDist <= activeUnit.atkRange && manhattanDist > 0 && canTarget) {
-                    if (actionType === 'magic' && activeUnit.name !== 'Mage' && actionType !== 'wild') continue;
-                    if (actionType === 'attack' && activeUnit.name === 'Mage' && actionType !== 'wild') continue;
+                    if (actionType === 'magic' && activeUnit.name !== 'Mage') continue;
+                    if (actionType === 'attack' && activeUnit.name === 'Mage') continue;
                     tile.mesh.material = matTileAttack; highlightMeshes.push({x, z, type: 'attack'});
                 }
             }
@@ -904,7 +1016,8 @@
 
         if(state !== 'PLAYER_TURN' || selectedDieIndex === -1 || activeUnit.name !== 'Mage' || isDraggingCam || activeUnit.team !== playerNumber) return;
         const die = diceRolled[selectedDieIndex];
-        if(die.id !== 'magic' && die.id !== 'wild') return;
+        const actionType = die.effectiveId;
+        if(actionType !== 'magic') return;
 
         mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
@@ -952,9 +1065,9 @@
             const {x, z} = tileIntersects[0].object.userData;
             const highlight = highlightMeshes.find(h => h.x === x && h.z === z);
             if (highlight && selectedDieIndex !== -1) {
-                const actionType = diceRolled[selectedDieIndex].id;
+                const actionType = diceRolled[selectedDieIndex].effectiveId;
                 const hitResults = generateHitResults(actionType, highlight.x, highlight.z);
-                const intent = { targetInfo: highlight, dieIndex: selectedDieIndex, hitResults };
+                const intent = { targetInfo: highlight, dieIndex: selectedDieIndex, hitResults, morphedId: diceRolled[selectedDieIndex].effectiveId };
                 broadcastEvent('ACTION_INTENT', intent);
                 executeAction(intent);
             } else {
@@ -983,7 +1096,7 @@
 
     function generateHitResults(actionType, tx, tz) {
         const results = {};
-        if (actionType === 'magic' || (actionType === 'wild' && activeUnit.name === 'Mage')) {
+        if (actionType === 'magic') {
             [{tx, tz}, {tx: tx+1, tz}, {tx: tx-1, tz}, {tx, tz: tz+1}, {tx, tz: tz-1}].forEach(t => {
                 if(t.tx >= 0 && t.tx < BOARD_SIZE && t.tz >= 0 && t.tz < BOARD_SIZE) {
                     let u = tiles[t.tx][t.tz].unit;
@@ -999,8 +1112,9 @@
 
     async function executeAction(intent) {
         state = 'ACTION_ANIMATING'; clearHighlights();
-        const {x, z, type} = intent.targetInfo;
+        const {x, z} = intent.targetInfo;
         const die = diceRolled[intent.dieIndex]; die.used = true;
+        const type = die.effectiveId;
         
         const dieEl = diceContainer.children[intent.dieIndex];
         if(dieEl) { dieEl.classList.add('used'); dieEl.classList.remove('selected'); }
@@ -1020,18 +1134,22 @@
             const oldCamRadius = targetCamRadius;
             
             // Cinematic Zoom & Tension
-            targetCamRadius = Math.max(6, targetCamRadius - 12);
+            targetCamRadius = Math.max(8, targetCamRadius - 10);
             triggerShake(0.05);
             tween(activeUnit.parts.torso.rotation, {x: 0.5}, 0.3, Easing.OutQuad);
             await tweenAsync(activeUnit.mesh.position, {y: 0.1}, 0.3, Easing.OutQuad); // crouch
             
             // Slow Motion Arc Launch
-            const jumpTime = 0.9; 
-            tween(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, jumpTime, Easing.Linear, () => {
-                activeUnit.updateUIPosition();
-                if(Math.random() > 0.5) vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 2, 0.5); // trail
+            const jumpTime = 0.8; 
+            let animData = {p: 0};
+            tween(animData, {p: 1}, jumpTime, Easing.Linear, (e) => {
+                let cycle = Math.sin(e * Math.PI);
+                activeUnit.parts.legR.rotation.x = cycle * 0.8; activeUnit.parts.legL.rotation.x = -cycle * 0.8;
+                activeUnit.parts.armR.rotation.x = -cycle * 0.8; activeUnit.parts.armL.rotation.x = cycle * 0.8;
+                if(Math.random() > 0.6) vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 2, 0.5); // trail
             });
-            await tweenAsync(activeUnit.mesh.position, { y: 3.5 }, jumpTime/2, Easing.OutQuad);
+            tween(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, jumpTime, Easing.InOutQuad, () => activeUnit.updateUIPosition());
+            await tweenAsync(activeUnit.mesh.position, { y: 3.0 }, jumpTime/2, Easing.OutQuad);
             
             // Apex & Descent
             tween(activeUnit.parts.torso.rotation, {x: -0.3}, jumpTime/2);
@@ -1041,41 +1159,40 @@
             triggerShake(0.5);
             vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 30, 4);
             tween(activeUnit.parts.torso.rotation, {x: 0}, 0.2, Easing.OutElastic);
+            tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1);
+            tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
             
             targetCamRadius = oldCamRadius;
             finishAction();
         }
         else if (type === 'move') {
             tiles[activeUnit.x][activeUnit.z].unit = null; activeUnit.x = x; activeUnit.z = z; tiles[x][z].unit = activeUnit;
-            const speed = 0.5, steps = 6, stepDur = speed / steps;
+            const speed = 0.5;
             
-            tween(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, speed, Easing.Linear, () => activeUnit.updateUIPosition());
-            for(let i=0; i<steps; i++) {
-                let isRight = i % 2 === 0, legAngle = 0.5;
-                tween(activeUnit.parts.legR.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear); tween(activeUnit.parts.legL.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear);
-                tween(activeUnit.parts.armR.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear); tween(activeUnit.parts.armL.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear);
-                await tweenAsync(activeUnit.mesh.position, {y: 0.6}, stepDur/2, Easing.OutQuad); await tweenAsync(activeUnit.mesh.position, {y: 0.2}, stepDur/2, Easing.InQuad);
-            }
+            let animData = {p: 0};
+            tween(animData, {p: 1}, speed, Easing.Linear, (e) => {
+                let cycle = Math.sin(e * Math.PI * 6);
+                activeUnit.parts.legR.rotation.x = cycle * 0.5; activeUnit.parts.legL.rotation.x = -cycle * 0.5;
+                activeUnit.parts.armR.rotation.x = -cycle * 0.5; activeUnit.parts.armL.rotation.x = cycle * 0.5;
+                activeUnit.mesh.position.y = 0.2 + Math.abs(Math.sin(e * Math.PI * 6)) * 0.2;
+            });
+            await tweenAsync(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, speed, Easing.InOutQuad, () => activeUnit.updateUIPosition());
+            
+            tween(activeUnit.mesh.position, {y: 0.2}, 0.1);
             tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1);
             tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
             finishAction();
         } 
-        else if (type === 'attack') {
+        else if (type === 'attack' || type === 'magic') {
             const targetUnit = tiles[x][z].unit;
             let dir = new THREE.Vector3(activeUnit.x - x, 0, activeUnit.z - z).normalize();
             let startPos = { x: activeUnit.mesh.position.x, z: activeUnit.mesh.position.z };
             let emptyTargetPos = new THREE.Vector3(x * TILE_SCALE, 0.2, z * TILE_SCALE);
 
             if (activeUnit.name === 'Archer') {
-                let oldCamRadius = targetCamRadius, oldCamTheta = targetCamTheta, oldCamPhi = targetCamPhi;
+                let oldCamRadius = targetCamRadius;
+                targetCamRadius = Math.max(12, targetCamRadius - 4); // Smoother, less aggressive shift
                 
-                // Bullseye Cinematic Aiming
-                targetCamRadius = 8;
-                targetCamPhi = Math.PI / 2.2; // Lower angle, over shoulder
-                let dx = x * TILE_SCALE - activeUnit.mesh.position.x;
-                let dz = z * TILE_SCALE - activeUnit.mesh.position.z;
-                targetCamTheta = Math.atan2(dx, dz) + Math.PI/8; // Slightly off to the side
-
                 // Wind up bow slowly
                 tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2.2, y: Math.PI/4 }, 0.6, Easing.OutQuad);
                 tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2.2 }, 0.6, Easing.OutQuad);
@@ -1094,10 +1211,6 @@
                 tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2.5 }, 0.1); 
                 tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2.5, y: Math.PI/6 }, 0.1); 
 
-                // Camera snaps to target to watch impact
-                targetCamRadius = 12;
-                targetCamTheta = Math.atan2(-dx, -dz) + Math.PI/6; // Looking from front/side
-                
                 await tweenAsync(arrow.position, {x: x * TILE_SCALE, z: z * TILE_SCALE}, 0.15, Easing.InQuad); scene.remove(arrow);
                 triggerShake(0.4); // Impact shake
 
@@ -1111,13 +1224,13 @@
                 
                 // Reset
                 tween(activeUnit.parts.armR.position, { z: 0 }, 0.2); tween(activeUnit.parts.armR.rotation, { x: 0 }, 0.3); tween(activeUnit.parts.armL.rotation, { x: 0, y: 0 }, 0.3);
-                targetCamRadius = oldCamRadius; targetCamTheta = oldCamTheta; targetCamPhi = oldCamPhi;
+                targetCamRadius = oldCamRadius;
                 finishAction();
             } 
             else if (activeUnit.name === 'Mage') {
                 let oldCamRadius = targetCamRadius, oldCamPhi = targetCamPhi;
-                targetCamRadius = Math.max(10, targetCamRadius - 12); 
-                targetCamPhi = Math.PI / 2.5; // Look up at the mage
+                targetCamRadius = Math.max(10, targetCamRadius - 8); 
+                targetCamPhi = Math.PI / 2.5; // Look up slightly
                 
                 // Levitate Mage
                 tween(activeUnit.mesh.position, { y: 2.0 }, 1.0, Easing.OutQuad);
@@ -1172,8 +1285,8 @@
                 finishAction();
             }
             else if (activeUnit.name === 'Assassin') {
-                let oldCamRadius = targetCamRadius, oldCamTheta = targetCamTheta;
-                targetCamRadius = Math.max(8, targetCamRadius - 14);
+                let oldCamRadius = targetCamRadius;
+                targetCamRadius = Math.max(12, targetCamRadius - 6); // Smoother, no orientation inversion
                 
                 // Slow motion vanish
                 tween(activeUnit.parts.torso.rotation, { x: 0.4 }, 0.3);
@@ -1184,11 +1297,6 @@
                 await new Promise(r => setTimeout(r, 300)); // Hold tension in empty space
                 
                 // Re-appear right behind target (or at target pos if empty)
-                targetCamRadius = 10;
-                let dx = x * TILE_SCALE - activeUnit.mesh.position.x;
-                let dz = z * TILE_SCALE - activeUnit.mesh.position.z;
-                targetCamTheta = Math.atan2(dx, dz) + Math.PI; // Face the hit from the other side
-                
                 activeUnit.mesh.position.set(x * TILE_SCALE, 2.5, z * TILE_SCALE); 
                 activeUnit.mesh.visible = true; 
                 activeUnit.parts.armR.rotation.x = -Math.PI; activeUnit.parts.armL.rotation.x = -Math.PI;
@@ -1214,7 +1322,7 @@
                     }
                     else spawnFloatingText(targetUnit, 'DODGED', '#d1d5db');
                 } else {
-                    vfx.spawnBurst(emptyTargetPos, 0x8b5cf6, 20, 3);
+                    vfx.spawnBurst(emptyTargetPos, 0x4b5563, 20, 3);
                 }
                 
                 // Cinematic pose hold
@@ -1225,75 +1333,72 @@
                 vfx.spawnBurst(activeUnit.mesh.position, 0x111111, 30, 3);
                 
                 activeUnit.mesh.position.set(startPos.x, 0.2, startPos.z);
-                targetCamRadius = oldCamRadius; targetCamTheta = oldCamTheta; 
                 
                 // Re-appear at start
                 tween(activeUnit.parts.torso.rotation, {x: 0}, 0.1);
                 tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1);
                 tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
                 await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.3, Easing.OutQuad); 
+                targetCamRadius = oldCamRadius;
                 
                 finishAction();
             }
             else {
-                // MELEE ATTACK
+                // FLUID MELEE ATTACK (Commander / Vanguard)
                 let oldCamRadius = targetCamRadius;
-                targetCamRadius = Math.max(8, targetCamRadius - 12);
-                let clashPos = { x: startPos.x - dir.x*(0.6 * TILE_SCALE), z: startPos.z - dir.z*(0.6 * TILE_SCALE) }; 
+                targetCamRadius = Math.max(8, targetCamRadius - 8);
+                let clashPos = { x: startPos.x - dir.x*(0.7 * TILE_SCALE), z: startPos.z - dir.z*(0.7 * TILE_SCALE) }; 
                 
-                // Windup
-                tween(activeUnit.parts.torso.rotation, { y: Math.PI/4, x: -0.1 }, 0.4, Easing.OutQuad);
-                tween(activeUnit.parts.armR.rotation, { x: Math.PI/3, z: Math.PI/4 }, 0.4, Easing.OutQuad);
-                if(activeUnit.parts.armL) tween(activeUnit.parts.armL.rotation, { x: Math.PI/4 }, 0.4);
-                await new Promise(r => setTimeout(r, 200)); // Tension pause
+                // Smooth Windup
+                tween(activeUnit.parts.torso.rotation, { y: Math.PI/3, x: -0.1 }, 0.3, Easing.OutQuad);
+                tween(activeUnit.parts.armR.rotation, { x: Math.PI/2, z: Math.PI/4 }, 0.3, Easing.OutQuad);
+                if(activeUnit.parts.armL) tween(activeUnit.parts.armL.rotation, { x: Math.PI/4 }, 0.3);
+                await new Promise(r => setTimeout(r, 200));
 
-                // Lunge
-                triggerShake(0.2);
-                tween(activeUnit.parts.torso.rotation, { y: -Math.PI/6, x: 0.3 }, 0.15, Easing.InQuad);
-                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2, z: -Math.PI/8 }, 0.15, Easing.InQuad);
+                // Dash to target
                 await tweenAsync(activeUnit.mesh.position, clashPos, 0.15, Easing.InQuad);
+                
+                // Slash & Impact
+                tween(activeUnit.parts.torso.rotation, { y: -Math.PI/4, x: 0.2 }, 0.1, Easing.OutQuad);
+                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2, z: -Math.PI/6 }, 0.1, Easing.OutQuad);
+                triggerShake(0.5);
+                
+                // Slash VFX
+                spawnSlashVFX(clashPos, dir, activeUnit.team === 1 ? 0x3b82f6 : 0xef4444);
 
                 if (targetUnit) {
-                    // Struggle
-                    targetCamRadius = Math.max(6, targetCamRadius - 4); // Push in closer
-                    triggerShake(0.4);
-                    
-                    // Target braces for impact
-                    if(targetUnit.parts.armL) tween(targetUnit.parts.armL.rotation, { x: -Math.PI/2.5, z: Math.PI/6 }, 0.1);
-                    if(targetUnit.parts.armR) tween(targetUnit.parts.armR.rotation, { x: -Math.PI/2.5, z: -Math.PI/6 }, 0.1);
-                    tween(targetUnit.parts.torso.rotation, { x: 0.2 }, 0.1);
-
-                    for(let i=0; i<6; i++) { // The struggle loop
-                        tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2 - 0.2 + Math.random()*0.4 }, 0.08); 
-                        if (targetUnit.parts.armL) tween(targetUnit.parts.armL.rotation, { x: -Math.PI/2.5 + Math.random()*0.3 }, 0.08);
-                        tween(activeUnit.parts.torso.rotation, { y: -Math.PI/6 + Math.random()*0.2 }, 0.08); 
-                        if (targetUnit.parts.torso) tween(targetUnit.parts.torso.rotation, { y: Math.random()*0.2 }, 0.08);
-                        await tweenAsync(activeUnit.mesh.position, {x: clashPos.x - dir.x*0.05 + (Math.random()-0.5)*0.1, z: clashPos.z - dir.z*0.05 + (Math.random()-0.5)*0.1}, 0.08); 
-                    }
-                    
-                    // Breakthrough!
-                    await tweenAsync(activeUnit.parts.armR.rotation, {x: -Math.PI + 0.5}, 0.1, Easing.OutQuad); 
-                    triggerShake(0.6);
-                    vfx.spawnBurst(clashPos, 0xffaa00, 20, 4);
-
                     const res = intent.hitResults[targetUnit.id];
                     if(res && res.isHit) {
-                        targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: -0.6}, 0.1); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.4); }, 150);
+                        targetUnit.takeDamage(res.finalDamage); 
+                        spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); 
+                        tween(targetUnit.parts.torso.rotation, {x: -0.5, y: (Math.random()-0.5)}, 0.1); 
+                        setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0, y: 0}, 0.4); }, 200);
+                        
                         if (activeUnit.name === 'Vanguard' && targetUnit.hp > 0) {
                             let kx = Math.round(x - dir.x), kz = Math.round(z - dir.z);
                             if (kx >= 0 && kx < BOARD_SIZE && kz >= 0 && kz < BOARD_SIZE && !tiles[kx][kz].unit) {
-                                tiles[x][z].unit = null; targetUnit.x = kx; targetUnit.z = kz; tiles[kx][kz].unit = targetUnit; tween(targetUnit.mesh.position, {x: kx * TILE_SCALE, z: kz * TILE_SCALE}, 0.2, Easing.OutQuad, () => targetUnit.updateUIPosition());
+                                tiles[x][z].unit = null; targetUnit.x = kx; targetUnit.z = kz; tiles[kx][kz].unit = targetUnit; 
+                                tween(targetUnit.mesh.position, {x: kx * TILE_SCALE, z: kz * TILE_SCALE}, 0.2, Easing.OutQuad, () => targetUnit.updateUIPosition());
                             }
                         }
                     } else {
-                        spawnFloatingText(targetUnit, 'PARRIED', '#d1d5db'); tween(targetUnit.mesh.position, {x: targetUnit.mesh.position.x - dir.z*0.5, z: targetUnit.mesh.position.z + dir.x*0.5}, 0.15, Easing.OutQuad); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.mesh.position, {x: x*TILE_SCALE, z: z*TILE_SCALE}, 0.2, Easing.InQuad); }, 150);
+                        spawnFloatingText(targetUnit, 'PARRIED', '#d1d5db'); 
+                        tween(targetUnit.mesh.position, {x: targetUnit.mesh.position.x - dir.z*0.5, z: targetUnit.mesh.position.z + dir.x*0.5}, 0.15, Easing.OutQuad); 
+                        setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.mesh.position, {x: x*TILE_SCALE, z: z*TILE_SCALE}, 0.2, Easing.InQuad); }, 150);
                     }
-                    if(targetUnit.mesh) { tween(targetUnit.parts.armL.rotation, { x: 0 }, 0.4); tween(targetUnit.parts.armR.rotation, { x: 0 }, 0.4); tween(targetUnit.parts.torso.rotation, { y: 0, x: 0 }, 0.4); }
                 } else {
-                    await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.1, Easing.InQuad); await tweenAsync(activeUnit.parts.armR.rotation, { x: 0 }, 0.3, Easing.OutQuad); vfx.spawnBurst(emptyTargetPos, 0xcccccc, 10, 2);
+                    vfx.spawnBurst(emptyTargetPos, 0xcccccc, 10, 2);
                 }
+                
+                await new Promise(r => setTimeout(r, 400));
+                
+                // Smooth return
+                tween(activeUnit.parts.torso.rotation, { y: 0, x: 0 }, 0.3); 
+                tween(activeUnit.parts.armR.rotation, { x: 0, z: 0 }, 0.3);
+                if(activeUnit.parts.armL) tween(activeUnit.parts.armL.rotation, { x: 0, z: 0 }, 0.3);
+                targetCamRadius = oldCamRadius; 
+                await tweenAsync(activeUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.4, Easing.OutQuad);
 
-                tween(activeUnit.parts.torso.rotation, { y: 0, x: 0 }, 0.3); targetCamRadius = oldCamRadius; await tweenAsync(activeUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.4, Easing.OutElastic);
                 finishAction();
             }
         }
@@ -1349,6 +1454,95 @@
         }
     }
 
+    /** --- AI LOGIC --- **/
+    async function playAITurn() {
+        rollDice();
+        renderRemoteDice();
+        await new Promise(r => setTimeout(r, 1500)); // Initial think time
+
+        while (ap > 0 && state === 'PLAYER_TURN' && !checkWinCondition()) {
+            let available = diceRolled.map((d, i) => ({d, i})).filter(x => !x.d.used);
+            if (available.length === 0) break;
+
+            let bestIntent = null;
+            let bestScore = -Infinity;
+            let myEnemies = units.filter(u => u.team === 1 && u.hp > 0);
+            
+            if (myEnemies.length === 0) break;
+
+            // Simple heuristic evaluation
+            for (let avail of available) {
+                let effActs = avail.d.id === 'wild' ? activeUnit.actions.filter(a => a !== 'wild') : [avail.d.id];
+                
+                for (let act of effActs) {
+                    showValidTargets(act); // Populates highlightMeshes based on this action
+                    
+                    for (let hl of highlightMeshes) {
+                        let score = 0;
+                        let distToNearest = Math.min(...myEnemies.map(e => Math.abs(e.x - hl.x) + Math.abs(e.z - hl.z)));
+
+                        if (hl.type === 'attack') {
+                            let results = generateHitResults(act, hl.x, hl.z);
+                            let dmg = Object.values(results).reduce((sum, res) => sum + (res.isHit ? res.finalDamage : 0), 0);
+                            score = 50 + dmg * 10;
+                            
+                            // Hard AI prioritizes finishing low HP targets
+                            if (aiDifficulty === 'hard') {
+                                Object.keys(results).forEach(id => {
+                                    let u = units.find(x => x.id === id);
+                                    if (u && u.hp <= results[id].finalDamage) score += 100;
+                                });
+                            }
+                        } else if (hl.type === 'move' || hl.type === 'dash') {
+                            score = 20 - distToNearest; // Prefer moving closer
+                        } else if (hl.type === 'defend') {
+                            score = 5; // Low priority fallback
+                        }
+
+                        // Add a tiny randomness so AI isn't perfectly deterministic
+                        score += Math.random(); 
+
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestIntent = {
+                                targetInfo: hl,
+                                dieIndex: avail.i,
+                                hitResults: hl.type === 'attack' ? generateHitResults(act, hl.x, hl.z) : null,
+                                morphedId: act
+                            };
+                        }
+                    }
+                }
+            }
+
+            clearHighlights();
+
+            if (bestIntent) {
+                diceRolled[bestIntent.dieIndex].effectiveId = bestIntent.morphedId;
+                selectedDieIndex = bestIntent.dieIndex;
+                const dieEl = diceContainer.children[bestIntent.dieIndex];
+                if(dieEl) {
+                    const d = ALL_DICE_FACES[bestIntent.morphedId];
+                    dieEl.innerHTML = `<span class="die-icon text-amber-300">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-amber-400 relative z-10">${d.name}</span>`;
+                    dieEl.classList.add('selected');
+                }
+                
+                await new Promise(r => setTimeout(r, 600)); // Pause before execution
+                await executeAction(bestIntent);
+            } else {
+                break; // No valid moves found
+            }
+        }
+
+        if (state === 'CHOOSE_FACING' && !checkWinCondition()) {
+            let nearest = units.filter(u => u.team === 1).sort((a,b) => 
+                (Math.abs(a.x - activeUnit.x) + Math.abs(a.z - activeUnit.z)) - (Math.abs(b.x - activeUnit.x) + Math.abs(b.z - activeUnit.z))
+            )[0];
+            if (nearest) activeUnit.lookAtTile(nearest.x, nearest.z);
+            endPlayerTurnPhase();
+        }
+    }
+
     /** --- MAIN LOOP & EVENTS --- **/
     const clock = new THREE.Clock();
     function animate() {
@@ -1367,8 +1561,9 @@
         units.forEach(u => {
             u.updateUIPosition();
             if (state !== 'ACTION_ANIMATING' && u.parts && u.parts.torso) {
-                 u.parts.torso.position.y = 0.85 + Math.sin(clock.elapsedTime * 4 + u.mesh.position.x) * 0.03;
-                 u.parts.armR.rotation.z = Math.sin(clock.elapsedTime * 3) * 0.05; u.parts.armL.rotation.z = -Math.sin(clock.elapsedTime * 3) * 0.05;
+                 u.parts.torso.position.y = (u.name === 'Mage' ? 0.7 : 0.85) + Math.sin(clock.elapsedTime * 4 + u.mesh.position.x) * 0.03;
+                 if(u.parts.armR) u.parts.armR.rotation.z = Math.sin(clock.elapsedTime * 3) * 0.05; 
+                 if(u.parts.armL) u.parts.armL.rotation.z = -Math.sin(clock.elapsedTime * 3) * 0.05;
             }
         });
         renderer.render(scene, camera);
@@ -1386,8 +1581,26 @@
             document.getElementById('play-submenu').classList.add('hidden'); document.getElementById('menu-actions').classList.remove('hidden');
         });
 
+        // AI Modes
+        document.getElementById('play-ai-btn').addEventListener('click', () => {
+            document.getElementById('menu-actions').classList.add('hidden'); document.getElementById('ai-submenu').classList.remove('hidden');
+        });
+        document.getElementById('back-to-menu-from-ai').addEventListener('click', () => {
+            document.getElementById('ai-submenu').classList.add('hidden'); document.getElementById('menu-actions').classList.remove('hidden');
+        });
+
+        document.getElementById('start-ai-normal').addEventListener('click', () => {
+            aiDifficulty = 'normal'; isAIMode = true; playerNumber = 1; roomCode = 'AI_GAME';
+            startGameSession(true, 'ai');
+        });
+        document.getElementById('start-ai-hard').addEventListener('click', () => {
+            aiDifficulty = 'hard'; isAIMode = true; playerNumber = 1; roomCode = 'AI_GAME';
+            startGameSession(true, 'ai');
+        });
+
+        // Multiplayer Create/Join
         document.getElementById('create-room-btn').addEventListener('click', () => {
-            playerNumber = 1;
+            playerNumber = 1; isAIMode = false;
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
             setupRealtimeChannel(code);
             document.getElementById('lobby-code-display').textContent = code;
@@ -1397,8 +1610,9 @@
         document.getElementById('confirm-join-btn').addEventListener('click', () => {
             const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
             if (codeInput.length !== 6) return showNetToast('Please enter a valid 6-character room code.', 'error');
-            playerNumber = 2; setupRealtimeChannel(codeInput);
+            playerNumber = 2; isAIMode = false; setupRealtimeChannel(codeInput);
         });
+        
         document.getElementById('copy-code-btn').addEventListener('click', () => {
             navigator.clipboard.writeText(document.getElementById('lobby-code-display').textContent);
             showNetToast('Room code copied!');
@@ -1427,4 +1641,5 @@
 </script>
 </body>
 </html>
+
 
