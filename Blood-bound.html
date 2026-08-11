@@ -562,6 +562,7 @@
 
         buildRiggedHumanoid(colorHex, team) {
             const group = new THREE.Group();
+            const isTeam1 = team === 1;
             const matBody = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.6, metalness: 0.2 });
             const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.35), matBody); torso.position.y = 0.85; torso.castShadow = true; group.add(torso); this.parts.torso = torso;
             
@@ -576,20 +577,47 @@
             const armLGroup = new THREE.Group(); armLGroup.position.set(-0.35, 0.25, 0); 
             const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), matBody); armL.position.y = -0.25; armL.castShadow = true; armLGroup.add(armL); torso.add(armLGroup); this.parts.armL = armLGroup;
 
+            // Details and Accents
+            const metalMat = new THREE.MeshStandardMaterial({ color: isTeam1 ? 0xe2e8f0 : 0x27272a, metalness: 0.9, roughness: 0.2 });
+            const detailMat = new THREE.MeshStandardMaterial({ color: isTeam1 ? 0xfcd34d : 0x7f1d1d, metalness: 0.5, roughness: 0.5 });
+            
+            visor.material.color.setHex(isTeam1 ? 0x38bdf8 : 0xf43f5e);
+            visor.material.emissive.setHex(isTeam1 ? 0x0284c7 : 0x9f1239);
+            
+            const pauldronGeo = isTeam1 ? new THREE.SphereGeometry(0.2, 16, 16, 0, Math.PI*2, 0, Math.PI/2) : new THREE.ConeGeometry(0.2, 0.4, 4);
+            const pauldronL = new THREE.Mesh(pauldronGeo, metalMat);
+            pauldronL.position.set(0, 0.25, 0);
+            if (!isTeam1) { pauldronL.rotation.x = Math.PI; pauldronL.position.y = 0.3; }
+            armLGroup.add(pauldronL);
+            
+            const pauldronR = pauldronL.clone();
+            armRGroup.add(pauldronR);
+
+            const belt = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.1, 0.4), detailMat);
+            belt.position.y = -0.3;
+            torso.add(belt);
+
+            if (this.name === 'Commander' || this.name === 'Vanguard') {
+                const cape = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 0.05), new THREE.MeshStandardMaterial({color: isTeam1 ? 0x1d4ed8 : 0x7f1d1d}));
+                cape.position.set(0, 0.1, -0.2);
+                cape.rotation.x = 0.1;
+                torso.add(cape);
+            }
+
             const matMetal = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
             if (this.name === 'Vanguard' || this.name === 'Commander') {
                 const sword = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.2), matMetal); sword.position.set(0, -0.4, 0.2); sword.rotation.x = Math.PI / 2; armRGroup.add(sword);
-                const shieldBox = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.6), matBody); shieldBox.position.set(-0.2, -0.2, 0); armLGroup.add(shieldBox);
+                const shieldBox = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.6), metalMat); shieldBox.position.set(-0.2, -0.2, 0); armLGroup.add(shieldBox);
             }
             else if (this.name === 'Mage') {
                 const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.2), new THREE.MeshStandardMaterial({ color: 0x5c4033 })); staff.position.set(0, -0.2, 0.2); staff.rotation.x = Math.PI / 2;
-                const gem = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshStandardMaterial({ color: 0x0ea5e9, emissive: 0x0ea5e9 })); gem.position.y = 0.6; staff.add(gem); armRGroup.add(staff);
+                const gem = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshStandardMaterial({ color: isTeam1 ? 0x0ea5e9 : 0xf43f5e, emissive: isTeam1 ? 0x0ea5e9 : 0xf43f5e })); gem.position.y = 0.6; staff.add(gem); armRGroup.add(staff);
             }
             else if (this.name === 'Archer') {
                 const bow = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 0.1), new THREE.MeshStandardMaterial({ color: 0x8b5a2b })); bow.position.set(0, -0.2, 0.2); armLGroup.add(bow);
             }
             else if (this.name === 'Assassin') {
-                const dagger1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.4, 0.1), matMetal); dagger1.position.set(0, -0.2, 0.2); dagger1.rotation.x = Math.PI / 2; armRGroup.add(dagger1);
+                const dagger1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.4, 0.1), metalMat); dagger1.position.set(0, -0.2, 0.2); dagger1.rotation.x = Math.PI / 2; armRGroup.add(dagger1);
                 const dagger2 = dagger1.clone(); armLGroup.add(dagger2);
             }
             group.userData.unitMesh = true; return group;
@@ -987,13 +1015,43 @@
 
         activeUnit.lookAtTile(x, z);
 
-        if (type === 'move' || type === 'dash') {
+        if (type === 'dash') {
             tiles[activeUnit.x][activeUnit.z].unit = null; activeUnit.x = x; activeUnit.z = z; tiles[x][z].unit = activeUnit;
-            const speed = type === 'dash' ? 0.35 : 0.5, steps = type === 'dash' ? 4 : 6, stepDur = speed / steps;
+            const oldCamRadius = targetCamRadius;
+            
+            // Cinematic Zoom & Tension
+            targetCamRadius = Math.max(6, targetCamRadius - 12);
+            triggerShake(0.05);
+            tween(activeUnit.parts.torso.rotation, {x: 0.5}, 0.3, Easing.OutQuad);
+            await tweenAsync(activeUnit.mesh.position, {y: 0.1}, 0.3, Easing.OutQuad); // crouch
+            
+            // Slow Motion Arc Launch
+            const jumpTime = 0.9; 
+            tween(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, jumpTime, Easing.Linear, () => {
+                activeUnit.updateUIPosition();
+                if(Math.random() > 0.5) vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 2, 0.5); // trail
+            });
+            await tweenAsync(activeUnit.mesh.position, { y: 3.5 }, jumpTime/2, Easing.OutQuad);
+            
+            // Apex & Descent
+            tween(activeUnit.parts.torso.rotation, {x: -0.3}, jumpTime/2);
+            await tweenAsync(activeUnit.mesh.position, { y: 0.2 }, jumpTime/2, Easing.InQuad);
+            
+            // Impact
+            triggerShake(0.5);
+            vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 30, 4);
+            tween(activeUnit.parts.torso.rotation, {x: 0}, 0.2, Easing.OutElastic);
+            
+            targetCamRadius = oldCamRadius;
+            finishAction();
+        }
+        else if (type === 'move') {
+            tiles[activeUnit.x][activeUnit.z].unit = null; activeUnit.x = x; activeUnit.z = z; tiles[x][z].unit = activeUnit;
+            const speed = 0.5, steps = 6, stepDur = speed / steps;
             
             tween(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, speed, Easing.Linear, () => activeUnit.updateUIPosition());
             for(let i=0; i<steps; i++) {
-                let isRight = i % 2 === 0, legAngle = type === 'dash' ? 0.8 : 0.5;
+                let isRight = i % 2 === 0, legAngle = 0.5;
                 tween(activeUnit.parts.legR.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear); tween(activeUnit.parts.legL.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear);
                 tween(activeUnit.parts.armR.rotation, {x: isRight ? legAngle : -legAngle}, stepDur, Easing.Linear); tween(activeUnit.parts.armL.rotation, {x: isRight ? -legAngle : legAngle}, stepDur, Easing.Linear);
                 await tweenAsync(activeUnit.mesh.position, {y: 0.6}, stepDur/2, Easing.OutQuad); await tweenAsync(activeUnit.mesh.position, {y: 0.2}, stepDur/2, Easing.InQuad);
@@ -1007,81 +1065,220 @@
             let dir = new THREE.Vector3(activeUnit.x - x, 0, activeUnit.z - z).normalize();
             let startPos = { x: activeUnit.mesh.position.x, z: activeUnit.mesh.position.z };
             let emptyTargetPos = new THREE.Vector3(x * TILE_SCALE, 0.2, z * TILE_SCALE);
-            let oldCamRadius = targetCamRadius;
 
             if (activeUnit.name === 'Archer') {
-                targetCamRadius = Math.max(14, targetCamRadius - 6);
-                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2, y: Math.PI/4 }, 0.3, Easing.OutQuad);
-                await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.3, Easing.OutQuad);
+                let oldCamRadius = targetCamRadius, oldCamTheta = targetCamTheta, oldCamPhi = targetCamPhi;
                 
-                const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7), new THREE.MeshStandardMaterial({color: 0xcccccc, metalness: 0.8}));
+                // Bullseye Cinematic Aiming
+                targetCamRadius = 8;
+                targetCamPhi = Math.PI / 2.2; // Lower angle, over shoulder
+                let dx = x * TILE_SCALE - activeUnit.mesh.position.x;
+                let dz = z * TILE_SCALE - activeUnit.mesh.position.z;
+                targetCamTheta = Math.atan2(dx, dz) + Math.PI/8; // Slightly off to the side
+
+                // Wind up bow slowly
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2.2, y: Math.PI/4 }, 0.6, Easing.OutQuad);
+                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2.2 }, 0.6, Easing.OutQuad);
+                
+                // Draw string with tension
+                await tweenAsync(activeUnit.parts.armR.position, { z: -0.4 }, 1.0, Easing.OutQuad);
+                triggerShake(0.02); // Shaking from tension
+                await new Promise(r => setTimeout(r, 400)); // Held breath pause
+                
+                const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.8), new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0x444444, metalness: 0.8}));
                 arrow.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 1.2, 0));
                 arrow.lookAt(targetUnit ? targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)) : emptyTargetPos); arrow.rotateX(Math.PI/2); scene.add(arrow);
-                await tweenAsync(activeUnit.parts.armR.position, { z: -0.2 }, 0.2); await tweenAsync(activeUnit.parts.armR.position, { z: -0.3 }, 0.3);
-                tween(activeUnit.parts.armR.position, { z: 0 }, 0.1); tween(activeUnit.parts.armR.rotation, { x: 0 }, 0.2); tween(activeUnit.parts.armL.rotation, { x: 0, y: 0 }, 0.3);
+                
+                // Release!
+                tween(activeUnit.parts.armR.position, { z: 0 }, 0.05); 
+                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2.5 }, 0.1); 
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2.5, y: Math.PI/6 }, 0.1); 
+
+                // Camera snaps to target to watch impact
+                targetCamRadius = 12;
+                targetCamTheta = Math.atan2(-dx, -dz) + Math.PI/6; // Looking from front/side
+                
                 await tweenAsync(arrow.position, {x: x * TILE_SCALE, z: z * TILE_SCALE}, 0.15, Easing.InQuad); scene.remove(arrow);
+                triggerShake(0.4); // Impact shake
 
                 if (targetUnit && intent.hitResults[targetUnit.id]) {
                     const res = intent.hitResults[targetUnit.id];
                     if(res.isHit) { targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: -0.3}, 0.1); setTimeout(() => tween(targetUnit.parts.torso.rotation, {x: 0}, 0.2), 100); }
                     else spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
+                } else {
+                    vfx.spawnBurst(emptyTargetPos, 0xcccccc, 10, 2);
                 }
-                targetCamRadius = oldCamRadius; finishAction();
+                
+                // Reset
+                tween(activeUnit.parts.armR.position, { z: 0 }, 0.2); tween(activeUnit.parts.armR.rotation, { x: 0 }, 0.3); tween(activeUnit.parts.armL.rotation, { x: 0, y: 0 }, 0.3);
+                targetCamRadius = oldCamRadius; targetCamTheta = oldCamTheta; targetCamPhi = oldCamPhi;
+                finishAction();
             } 
             else if (activeUnit.name === 'Mage') {
-                targetCamRadius = Math.max(12, targetCamRadius - 10); triggerShake(0.1);
-                await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI }, 0.4, Easing.OutQuad);
-                const spell = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({color: 0x0ea5e9, transparent: true, opacity: 0.8}));
-                spell.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 2.5, 0)); scene.add(spell);
-                tween(spell.rotation, {y: Math.PI*4}, 0.6); tween(spell.scale, {x: 2, y: 2, z: 2}, 0.6, Easing.OutQuad);
-                vfx.spawnBurst(spell.position, 0x0ea5e9, 20, 0.5); await new Promise(r => setTimeout(r, 600));
-                tween(spell.scale, {x: 0.5, y: 0.5, z: 0.5}, 0.2);
-                await tweenAsync(spell.position, {x: x * TILE_SCALE, y: 0.2, z: z * TILE_SCALE}, 0.2, Easing.InQuad); scene.remove(spell);
+                let oldCamRadius = targetCamRadius, oldCamPhi = targetCamPhi;
+                targetCamRadius = Math.max(10, targetCamRadius - 12); 
+                targetCamPhi = Math.PI / 2.5; // Look up at the mage
+                
+                // Levitate Mage
+                tween(activeUnit.mesh.position, { y: 2.0 }, 1.0, Easing.OutQuad);
+                tween(activeUnit.parts.torso.rotation, { x: -0.2 }, 1.0, Easing.OutQuad);
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI }, 1.0, Easing.OutQuad); // Both arms up
+                await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI }, 1.0, Easing.OutQuad);
+                
+                const spell = new THREE.Mesh(new THREE.SphereGeometry(0.5), new THREE.MeshBasicMaterial({color: 0x0ea5e9, transparent: true, opacity: 0.9}));
+                spell.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 3.5, 0)); scene.add(spell);
+                
+                // Gather energy
+                triggerShake(0.15);
+                tween(spell.rotation, {y: Math.PI*8}, 1.2, Easing.InQuad); 
+                tween(spell.scale, {x: 3, y: 3, z: 3}, 1.2, Easing.InQuad);
+                
+                let gatherInterval = setInterval(() => {
+                    if(spell.parent) vfx.spawnBurst(spell.position, 0x0ea5e9, 5, -1); // particles suck inwards
+                }, 100);
+                await new Promise(r => setTimeout(r, 1200));
+                clearInterval(gatherInterval);
+                
+                // Cast!
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2 }, 0.1);
+                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.1);
+                tween(spell.scale, {x: 0.6, y: 0.6, z: 0.6}, 0.1);
+                
+                // Follow spell
+                targetCamRadius = 14;
+                await tweenAsync(spell.position, {x: x * TILE_SCALE, y: 0.2, z: z * TILE_SCALE}, 0.25, Easing.InQuad); scene.remove(spell);
 
+                // AoE Explosion
+                triggerShake(0.9);
                 [{tx: x, tz: z}, {tx: x+1, tz: z}, {tx: x-1, tz: z}, {tx: x, tz: z+1}, {tx: x, tz: z-1}].forEach(t => {
                     if(t.tx >= 0 && t.tx < BOARD_SIZE && t.tz >= 0 && t.tz < BOARD_SIZE) {
                         let u = tiles[t.tx][t.tz].unit;
                         if(u && intent.hitResults[u.id]) {
                             const res = intent.hitResults[u.id];
-                            if(res.isHit) { u.takeDamage(res.finalDamage); spawnFloatingText(u, `-${res.finalDamage}`, '#ef4444'); tween(u.parts.torso.rotation, {x: -0.4, z: (Math.random()-0.5)}, 0.1); setTimeout(() => { if(u.mesh) tween(u.parts.torso.rotation, {x: 0, z: 0}, 0.3); }, 150); }
+                            if(res.isHit) { u.takeDamage(res.finalDamage); spawnFloatingText(u, `-${res.finalDamage}`, '#ef4444'); tween(u.parts.torso.rotation, {x: -0.5, z: (Math.random()-0.5)}, 0.1); setTimeout(() => { if(u.mesh) tween(u.parts.torso.rotation, {x: 0, z: 0}, 0.4); }, 200); }
                             else spawnFloatingText(u, 'MISSED', '#d1d5db');
                         }
-                        vfx.spawnBurst(new THREE.Vector3(t.tx * TILE_SCALE, 0.5, t.tz * TILE_SCALE), 0x0ea5e9, 25, 6);
+                        vfx.spawnBurst(new THREE.Vector3(t.tx * TILE_SCALE, 0.5, t.tz * TILE_SCALE), 0x0ea5e9, 40, 8);
                     }
                 });
-                triggerShake(0.8); targetCamRadius = oldCamRadius; await tweenAsync(activeUnit.parts.armR.rotation, { x: 0 }, 0.4, Easing.OutQuad); finishAction();
+                
+                // Mage lands
+                tween(activeUnit.mesh.position, { y: 0.2 }, 0.5, Easing.InQuad);
+                tween(activeUnit.parts.torso.rotation, { x: 0 }, 0.5);
+                tween(activeUnit.parts.armL.rotation, { x: 0 }, 0.5);
+                await tweenAsync(activeUnit.parts.armR.rotation, { x: 0 }, 0.5);
+                
+                targetCamRadius = oldCamRadius; targetCamPhi = oldCamPhi;
+                finishAction();
             }
             else if (activeUnit.name === 'Assassin') {
-                targetCamRadius = Math.max(10, targetCamRadius - 12);
-                await tweenAsync(activeUnit.mesh.scale, {x: 0.1, y: 0.1, z: 0.1}, 0.15, Easing.InQuad); activeUnit.mesh.visible = false; vfx.spawnBurst(startPos, 0x8b5cf6, 15, 2);
-                activeUnit.mesh.position.set(x * TILE_SCALE, 2.0, z * TILE_SCALE); activeUnit.mesh.visible = true; activeUnit.parts.armR.rotation.x = -Math.PI; activeUnit.parts.armL.rotation.x = -Math.PI;
+                let oldCamRadius = targetCamRadius, oldCamTheta = targetCamTheta;
+                targetCamRadius = Math.max(8, targetCamRadius - 14);
+                
+                // Slow motion vanish
+                tween(activeUnit.parts.torso.rotation, { x: 0.4 }, 0.3);
+                await tweenAsync(activeUnit.mesh.scale, {x: 0.01, y: 0.01, z: 0.01}, 0.4, Easing.InQuad); 
+                activeUnit.mesh.visible = false; 
+                vfx.spawnBurst(startPos, 0x111111, 40, 3); // dark smoke
+                
+                await new Promise(r => setTimeout(r, 300)); // Hold tension in empty space
+                
+                // Re-appear right behind target (or at target pos if empty)
+                targetCamRadius = 10;
+                let dx = x * TILE_SCALE - activeUnit.mesh.position.x;
+                let dz = z * TILE_SCALE - activeUnit.mesh.position.z;
+                targetCamTheta = Math.atan2(dx, dz) + Math.PI; // Face the hit from the other side
+                
+                activeUnit.mesh.position.set(x * TILE_SCALE, 2.5, z * TILE_SCALE); 
+                activeUnit.mesh.visible = true; 
+                activeUnit.parts.armR.rotation.x = -Math.PI; activeUnit.parts.armL.rotation.x = -Math.PI;
+                activeUnit.parts.torso.rotation.x = 0.5; // diving pose
+                
+                vfx.spawnBurst(activeUnit.mesh.position, 0x111111, 30, 2);
+                
+                // Drop down and slice
                 await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.1, Easing.OutQuad);
-                tween(activeUnit.mesh.position, {y: 0.2}, 0.15, Easing.InQuad); tween(activeUnit.parts.armR.rotation, {x: 0}, 0.15, Easing.InQuad); await tweenAsync(activeUnit.parts.armL.rotation, {x: 0}, 0.15, Easing.InQuad);
+                tween(activeUnit.mesh.position, {y: 0.2}, 0.15, Easing.InQuad); 
+                
+                // Slice!
+                tween(activeUnit.parts.armR.rotation, {x: -Math.PI/4}, 0.15, Easing.InQuad); 
+                await tweenAsync(activeUnit.parts.armL.rotation, {x: -Math.PI/4}, 0.15, Easing.InQuad);
+                triggerShake(0.4);
 
                 if(targetUnit && intent.hitResults[targetUnit.id]) {
                     const res = intent.hitResults[targetUnit.id];
-                    if(res.isHit) { targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: 0.5}, 0.1); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.3); }, 150); }
-                    else spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
-                } else vfx.spawnBurst(emptyTargetPos, 0x8b5cf6, 15, 2);
+                    if(res.isHit) { 
+                        targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); 
+                        tween(targetUnit.parts.torso.rotation, {x: 0.6}, 0.1); // brutal hit
+                        setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.5); }, 200); 
+                    }
+                    else spawnFloatingText(targetUnit, 'DODGED', '#d1d5db');
+                } else {
+                    vfx.spawnBurst(emptyTargetPos, 0x8b5cf6, 20, 3);
+                }
                 
-                await new Promise(r=>setTimeout(r, 200)); await tweenAsync(activeUnit.mesh.scale, {x: 0.1, y: 0.1, z: 0.1}, 0.15, Easing.InQuad); activeUnit.mesh.position.set(startPos.x, 0.2, startPos.z);
-                targetCamRadius = oldCamRadius; await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.15, Easing.OutQuad); finishAction();
+                // Cinematic pose hold
+                await new Promise(r=>setTimeout(r, 400)); 
+                
+                // Vanish back
+                await tweenAsync(activeUnit.mesh.scale, {x: 0.01, y: 0.01, z: 0.01}, 0.2, Easing.InQuad); 
+                vfx.spawnBurst(activeUnit.mesh.position, 0x111111, 30, 3);
+                
+                activeUnit.mesh.position.set(startPos.x, 0.2, startPos.z);
+                targetCamRadius = oldCamRadius; targetCamTheta = oldCamTheta; 
+                
+                // Re-appear at start
+                tween(activeUnit.parts.torso.rotation, {x: 0}, 0.1);
+                tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1);
+                tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
+                await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.3, Easing.OutQuad); 
+                
+                finishAction();
             }
             else {
-                targetCamRadius = Math.max(12, targetCamRadius - 8);
-                let clashPos = { x: startPos.x - dir.x*(0.6 * TILE_SCALE), z: startPos.z - dir.z*(0.6 * TILE_SCALE) }; await tweenAsync(activeUnit.mesh.position, clashPos, 0.2, Easing.OutQuad);
+                // MELEE ATTACK
+                let oldCamRadius = targetCamRadius;
+                targetCamRadius = Math.max(8, targetCamRadius - 12);
+                let clashPos = { x: startPos.x - dir.x*(0.6 * TILE_SCALE), z: startPos.z - dir.z*(0.6 * TILE_SCALE) }; 
+                
+                // Windup
+                tween(activeUnit.parts.torso.rotation, { y: Math.PI/4, x: -0.1 }, 0.4, Easing.OutQuad);
+                tween(activeUnit.parts.armR.rotation, { x: Math.PI/3, z: Math.PI/4 }, 0.4, Easing.OutQuad);
+                if(activeUnit.parts.armL) tween(activeUnit.parts.armL.rotation, { x: Math.PI/4 }, 0.4);
+                await new Promise(r => setTimeout(r, 200)); // Tension pause
+
+                // Lunge
+                triggerShake(0.2);
+                tween(activeUnit.parts.torso.rotation, { y: -Math.PI/6, x: 0.3 }, 0.15, Easing.InQuad);
+                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2, z: -Math.PI/8 }, 0.15, Easing.InQuad);
+                await tweenAsync(activeUnit.mesh.position, clashPos, 0.15, Easing.InQuad);
 
                 if (targetUnit) {
-                    for(let i=0; i<3; i++) {
-                        tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2 - 0.5 + Math.random()*0.5 }, 0.1); if (targetUnit.parts.armL) tween(targetUnit.parts.armL.rotation, { x: -Math.PI/2 + Math.random()*0.5 }, 0.1);
-                        tween(activeUnit.parts.torso.rotation, { y: Math.random()*0.2 - 0.1 }, 0.1); if (targetUnit.parts.torso) tween(targetUnit.parts.torso.rotation, { y: Math.random()*0.2 - 0.1 }, 0.1);
-                        await tweenAsync(activeUnit.mesh.position, {x: clashPos.x - dir.x*0.1, z: clashPos.z - dir.z*0.1}, 0.1); await tweenAsync(activeUnit.mesh.position, {x: clashPos.x + dir.x*0.1, z: clashPos.z + dir.z*0.1}, 0.1);
+                    // Struggle
+                    targetCamRadius = Math.max(6, targetCamRadius - 4); // Push in closer
+                    triggerShake(0.4);
+                    
+                    // Target braces for impact
+                    if(targetUnit.parts.armL) tween(targetUnit.parts.armL.rotation, { x: -Math.PI/2.5, z: Math.PI/6 }, 0.1);
+                    if(targetUnit.parts.armR) tween(targetUnit.parts.armR.rotation, { x: -Math.PI/2.5, z: -Math.PI/6 }, 0.1);
+                    tween(targetUnit.parts.torso.rotation, { x: 0.2 }, 0.1);
+
+                    for(let i=0; i<6; i++) { // The struggle loop
+                        tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2 - 0.2 + Math.random()*0.4 }, 0.08); 
+                        if (targetUnit.parts.armL) tween(targetUnit.parts.armL.rotation, { x: -Math.PI/2.5 + Math.random()*0.3 }, 0.08);
+                        tween(activeUnit.parts.torso.rotation, { y: -Math.PI/6 + Math.random()*0.2 }, 0.08); 
+                        if (targetUnit.parts.torso) tween(targetUnit.parts.torso.rotation, { y: Math.random()*0.2 }, 0.08);
+                        await tweenAsync(activeUnit.mesh.position, {x: clashPos.x - dir.x*0.05 + (Math.random()-0.5)*0.1, z: clashPos.z - dir.z*0.05 + (Math.random()-0.5)*0.1}, 0.08); 
                     }
-                    await tweenAsync(activeUnit.parts.armR.rotation, {x: -Math.PI}, 0.2, Easing.InQuad); await tweenAsync(activeUnit.parts.armR.rotation, {x: 0}, 0.1, Easing.OutElastic);
+                    
+                    // Breakthrough!
+                    await tweenAsync(activeUnit.parts.armR.rotation, {x: -Math.PI + 0.5}, 0.1, Easing.OutQuad); 
+                    triggerShake(0.6);
+                    vfx.spawnBurst(clashPos, 0xffaa00, 20, 4);
 
                     const res = intent.hitResults[targetUnit.id];
                     if(res && res.isHit) {
-                        targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: -0.4}, 0.1); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.3); }, 100);
+                        targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: -0.6}, 0.1); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.4); }, 150);
                         if (activeUnit.name === 'Vanguard' && targetUnit.hp > 0) {
                             let kx = Math.round(x - dir.x), kz = Math.round(z - dir.z);
                             if (kx >= 0 && kx < BOARD_SIZE && kz >= 0 && kz < BOARD_SIZE && !tiles[kx][kz].unit) {
@@ -1089,12 +1286,14 @@
                             }
                         }
                     } else {
-                        spawnFloatingText(targetUnit, 'MISSED', '#d1d5db'); tween(targetUnit.mesh.position, {x: targetUnit.mesh.position.x - dir.z*0.5, z: targetUnit.mesh.position.z + dir.x*0.5}, 0.15, Easing.OutQuad); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.mesh.position, {x: x*TILE_SCALE, z: z*TILE_SCALE}, 0.2, Easing.InQuad); }, 150);
+                        spawnFloatingText(targetUnit, 'PARRIED', '#d1d5db'); tween(targetUnit.mesh.position, {x: targetUnit.mesh.position.x - dir.z*0.5, z: targetUnit.mesh.position.z + dir.x*0.5}, 0.15, Easing.OutQuad); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.mesh.position, {x: x*TILE_SCALE, z: z*TILE_SCALE}, 0.2, Easing.InQuad); }, 150);
                     }
-                    if(targetUnit.mesh) { tween(targetUnit.parts.armL.rotation, { x: 0 }, 0.2); tween(targetUnit.parts.torso.rotation, { y: 0 }, 0.2); }
-                } else { await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.1, Easing.InQuad); await tweenAsync(activeUnit.parts.armR.rotation, { x: 0 }, 0.2, Easing.OutQuad); vfx.spawnBurst(emptyTargetPos, 0xcccccc, 5, 1); }
+                    if(targetUnit.mesh) { tween(targetUnit.parts.armL.rotation, { x: 0 }, 0.4); tween(targetUnit.parts.armR.rotation, { x: 0 }, 0.4); tween(targetUnit.parts.torso.rotation, { y: 0, x: 0 }, 0.4); }
+                } else {
+                    await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.1, Easing.InQuad); await tweenAsync(activeUnit.parts.armR.rotation, { x: 0 }, 0.3, Easing.OutQuad); vfx.spawnBurst(emptyTargetPos, 0xcccccc, 10, 2);
+                }
 
-                tween(activeUnit.parts.torso.rotation, { y: 0 }, 0.2); targetCamRadius = oldCamRadius; await tweenAsync(activeUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.3, Easing.OutElastic);
+                tween(activeUnit.parts.torso.rotation, { y: 0, x: 0 }, 0.3); targetCamRadius = oldCamRadius; await tweenAsync(activeUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.4, Easing.OutElastic);
                 finishAction();
             }
         }
@@ -1228,3 +1427,4 @@
 </script>
 </body>
 </html>
+
