@@ -6,10 +6,10 @@
 
 <title>K210209♤ Studios</title>
 
-<!-- High-Quality Inter for readable body text, Pixelify Sans for cinematic retro headers/UI -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- High-Quality Pixelify Sans for global cinematic retro text -->
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<!-- NEW: EmailJS CDN for the Auto-Mod Email Trigger -->
+<!-- EmailJS CDN for the Auto-Mod Email Trigger -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script type="text/javascript">
    (function(){
@@ -28,15 +28,17 @@
     box-sizing:border-box;
     /* Smooth transitions for high-quality feel */
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Apply Pixel font globally to all elements */
+    font-family: 'Pixelify Sans', sans-serif;
 }
 
 body{
-    font-family:'Inter',sans-serif;
     background:#030303; /* Deeper cinematic black */
     color:#e5e5e5;
     overflow-x:hidden;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    letter-spacing: 0.5px; /* Slight tracking for readability with pixel font */
 }
 
 /* SUBTLE CINEMATIC SCANLINES (Not overly dark or old) */
@@ -51,9 +53,8 @@ body::after {
     opacity: 0.6;
 }
 
-/* PREMIUM PIXEL TYPOGRAPHY */
+/* PREMIUM TYPOGRAPHY - Headers */
 h1, h2, h3, h4, .logo, .hero-tag, .btn, .game-banner, .download-btn, th, .devlog-date {
-    font-family: 'Pixelify Sans', sans-serif;
     letter-spacing: 1px;
 }
 
@@ -154,7 +155,6 @@ nav{
 }
 
 .side-menu a {
-    font-family: 'Pixelify Sans', sans-serif;
     padding: 25px 50px;
     text-decoration: none;
     font-size: 1.4rem;
@@ -177,7 +177,6 @@ nav{
     padding: 0;
     border: none;
     background: none;
-    font-family: 'Inter', sans-serif;
 }
 .side-menu .close-btn:hover {
     background: none;
@@ -218,7 +217,6 @@ section{
     border-radius: 4px; /* Subtle pixel rounding */
     color: white;
     font-size: 1.1rem;
-    font-family: inherit;
 }
 .form-input:focus {
     outline: none;
@@ -428,7 +426,6 @@ section{
     background: #25D366;
     color: #000;
     text-decoration:none;
-    font-family: 'Pixelify Sans', sans-serif;
     font-size: 1.1rem;
     font-weight:600;
     box-shadow: 0 0 20px rgba(37,211,102,0.3);
@@ -534,7 +531,6 @@ section{
     font-size: 2.5rem;
     cursor: pointer;
     color: #ff2d2d;
-    font-family: 'Inter', sans-serif;
 }
 .close-guide:hover{
     opacity: 0.7;
@@ -577,7 +573,6 @@ section{
     padding: 25px 20px 25px 0;
     text-align: left;
     color: white;
-    font-family: 'Pixelify Sans', sans-serif;
     font-size: 1.2rem;
     width: 250px;
 }
@@ -611,7 +606,6 @@ section{
     font-size: 2rem;
     margin-bottom: 10px;
     color: white;
-    font-family: 'Pixelify Sans', sans-serif;
 }
 .profile-info p {
     color: #a3a3a3;
@@ -674,7 +668,6 @@ section{
 }
 .message-author {
     color: #ff2d2d;
-    font-family: 'Pixelify Sans', sans-serif;
     font-size: 1.1rem;
 }
 .message-time {
@@ -740,7 +733,6 @@ footer{
 }
 footer p{
     color:#666;
-    font-family: 'Pixelify Sans', sans-serif;
     letter-spacing: 1px;
 }
 @media(max-width:768px){
@@ -845,9 +837,9 @@ footer p{
         <h2 class="section-title">Featured <span>Games</span></h2>
         <p class="section-sub">Explore current projects from K210209♤ Studios. Download available titles directly below.</p>
 
-        <!-- NEW: Logged out message for Games -->
+        <!-- Logged out message for Games -->
         <div id="gamesLoggedOut" style="text-align:center; padding: 60px 30px; background: rgba(10,10,10,0.8); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; max-width: 800px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <h3 style="font-size: 1.8rem; margin-bottom: 15px; font-family:'Pixelify Sans';">Authentication Required</h3>
+            <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
             <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access and download our games.</p>
             <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
         </div>
@@ -958,7 +950,7 @@ footer p{
 
         <div class="contact-container">
             <div class="email-box">
-                <h3 style="font-family:'Pixelify Sans';">Studio Email</h3>
+                <h3>Studio Email</h3>
                 <a href="mailto:k210209.studios@gmail.com">k210209.studios@gmail.com</a>
             </div>
 
@@ -981,7 +973,7 @@ footer p{
         <div class="account-container">
             
             <div id="loggedOutState">
-                <h3 style="font-size: 2rem; margin-bottom: 15px; font-family:'Pixelify Sans';">Join the K210209 Ecosystem</h3>
+                <h3 style="font-size: 2rem; margin-bottom: 15px;">Join the K210209 Ecosystem</h3>
                 <p style="color: #a3a3a3; font-size: 1.15rem; margin-bottom: 35px;">Sign in for free to elevate your gaming experience.</p>
                 
                 <table class="advantages-table" style="margin-bottom: 45px;">
@@ -1007,7 +999,7 @@ footer p{
 
                 <!-- Email Registration / Login Box -->
                 <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 45px; border-radius: 4px;">
-                    <h4 style="margin-bottom: 25px; font-size: 1.3rem; color: white; font-family:'Pixelify Sans';">Email Login / Registration</h4>
+                    <h4 style="margin-bottom: 25px; font-size: 1.3rem; color: white;">Email Login / Registration</h4>
                     
                     <input type="email" id="authEmail" class="form-input" placeholder="Email Address" style="margin-bottom: 20px;" />
                     <input type="password" id="authPassword" class="form-input" placeholder="Password" style="margin-bottom: 20px;" />
@@ -1054,7 +1046,7 @@ footer p{
         <p class="section-sub">All players must read and agree to these terms before opening a support ticket with K210209♤ Studios.</p>
 
         <div class="account-container">
-            <h3 style="color: #ff2d2d; font-family:'Pixelify Sans'; font-size: 1.8rem; margin-bottom: 25px;">Support Ticket Rules</h3>
+            <h3 style="color: #ff2d2d; font-size: 1.8rem; margin-bottom: 25px;">Support Ticket Rules</h3>
             
             <table class="advantages-table">
                 <tbody>
@@ -1097,7 +1089,7 @@ footer p{
         <div class="forum-container">
             
             <div id="forumLoggedOut" class="forum-logged-out-msg">
-                <h3 style="font-family:'Pixelify Sans';">Authentication Required</h3>
+                <h3>Authentication Required</h3>
                 <p>The customer care service is exclusive to registered members of the K210209 Ecosystem to prevent spam.</p>
                 <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
             </div>
@@ -1106,7 +1098,7 @@ footer p{
                 
                 <!-- Admin Ticket Management UI -->
                 <div id="adminTicketUI" style="display:none; padding: 20px 30px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                    <label style="color:#ff2d2d; font-weight:700; font-family:'Pixelify Sans'; font-size: 1.1rem;">Admin View</label>
+                    <label style="color:#ff2d2d; font-weight:700; font-size: 1.1rem;">Admin View</label>
                     <select id="adminTicketSelect" class="form-input" style="flex: 1; min-width: 250px;" onchange="switchAdminTicket()">
                         <option value="">-- Select a Player to Support --</option>
                     </select>
@@ -1138,7 +1130,7 @@ footer p{
         <div class="account-container" style="max-width: 600px; margin: 0 auto;">
             
             <div id="profileLoggedOut" style="display:none; text-align:center;">
-                <h3 style="font-size: 1.8rem; margin-bottom: 15px; font-family:'Pixelify Sans';">Authentication Required</h3>
+                <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
                 <p style="color: #a3a3a3; margin-bottom: 30px; font-size:1.1rem;">You must be signed in to edit your profile.</p>
                 <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
             </div>
@@ -1164,7 +1156,7 @@ footer p{
         <p class="section-sub" style="text-align: center;">Confidential overview of all registered K210209 Ecosystem users.</p>
 
         <div class="account-container admin-db-container">
-            <h3 style="color: #ff2d2d; font-family:'Pixelify Sans'; font-size: 1.8rem; margin-bottom: 25px;">Registered Player Accounts</h3>
+            <h3 style="color: #ff2d2d; font-size: 1.8rem; margin-bottom: 25px;">Registered Player Accounts</h3>
             <div id="adminUserList" style="max-height: 75vh; overflow-y: auto; padding-right: 20px;">
                 <!-- User data populated by JS -->
             </div>
@@ -1181,7 +1173,7 @@ footer p{
         <p class="section-sub">Listen to the official soundtrack playlist.</p>
 
         <div class="account-container">
-            <h3 style="color: #ff2d2d; font-family:'Pixelify Sans'; font-size: 1.8rem; margin-bottom: 25px;">Playlist</h3>
+            <h3 style="color: #ff2d2d; font-size: 1.8rem; margin-bottom: 25px;">Playlist</h3>
             
             <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 30px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
                 <span style="color: #d4d4d4; font-weight: 500; font-size: 1.15rem;">1. Upbeat Rock Energy Workout by Infraction-Red Car</span>
@@ -1307,7 +1299,7 @@ async function openGuide() {
             <div class="scoundrel-tutorial-wrapper">
                 ${finalContent}
                 <hr style="border-color:rgba(255,45,45,0.3); margin:30px 0 15px 0;">
-                <div style="font-size:0.95rem; color:#999; text-align:center; font-family:'Pixelify Sans';">📜 K210209♤ Studios · Scoundrel deep dive</div>
+                <div style="font-size:0.95rem; color:#999; text-align:center;">📜 K210209♤ Studios · Scoundrel deep dive</div>
             </div>
         `;
         
@@ -1350,7 +1342,7 @@ function openDWGuide() {
              <i>Optimized for mobile.</i><br>
             <i>NOTE: enter the app in landscape mode to play web version</i>
             <br><br>
-            <span style="color:#ff7b7b; font-family:'Pixelify Sans';">K210209♤ STUDIOS · Space Warfare Division</span>
+            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Space Warfare Division</span>
         </div>
     `;
     
@@ -1365,7 +1357,7 @@ function openMirrorVerseGuide() {
             <b style="font-size:1.2rem; color:#ff2d2d;">Spatial Puzzle Platformer · Mirror-verse</b><br><br>
             One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer. Navigate asymmetrical realities to solve complex puzzles and progress.
             <br><br>
-            <span style="color:#ff7b7b; font-family:'Pixelify Sans';">K210209♤ STUDIOS · Puzzle Division</span>
+            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Puzzle Division</span>
         </div>
     `;
     
@@ -1380,7 +1372,7 @@ function openHorizonRushGuide() {
             <b style="font-size:1.2rem; color:#ff2d2d;">Endless Runner · Horizon Rush</b><br><br>
             An adrenaline-fueled endless runner. Dodge obstacles and race towards the ever-expanding horizon in this fast-paced arcade experience. Test your reflexes and aim for the highest score. 
             <br><br>
-            <span style="color:#ff7b7b; font-family:'Pixelify Sans';">K210209♤ STUDIOS · Arcade Division</span>
+            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Arcade Division</span>
         </div>
     `;
     
@@ -1395,7 +1387,7 @@ function openBloodBoundGuide() {
             <b style="font-size:1.2rem; color:#ff2d2d;">Action Survival · Blood-Bound</b><br><br>
             An intense, Blood-bound experience. Step into the darkness and fight for your survival in this thrilling web-based title. Face challenging enemies and uncover the secrets of the dark.
             <br><br>
-            <span style="color:#ff7b7b; font-family:'Pixelify Sans';">K210209♤ STUDIOS · Survival Division</span>
+            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Survival Division</span>
         </div>
     `;
     
@@ -1651,10 +1643,10 @@ async function loadAdminUserList() {
         html += `
         <div style="background: rgba(20,20,20,0.8); border: 1px solid rgba(255,255,255,0.05); border-left: 3px solid ${badgeColor}; border-radius: 4px; padding: 25px; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.4);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                <h4 style="color: white; font-size: 1.3rem; margin: 0; font-weight: 600; font-family:'Pixelify Sans'; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%;">
+                <h4 style="color: white; font-size: 1.3rem; margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%;">
                     ${escapeHTML(u.name || 'Anonymous')}
                 </h4>
-                <span style="font-size: 0.8rem; font-family:'Pixelify Sans'; font-weight: 700; letter-spacing: 1px; background: ${badgeBg}; color: ${badgeColor}; padding: 6px 12px; border-radius: 2px;">
+                <span style="font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; background: ${badgeBg}; color: ${badgeColor}; padding: 6px 12px; border-radius: 2px;">
                     ${badgeText}
                 </span>
             </div>
@@ -1663,13 +1655,13 @@ async function loadAdminUserList() {
                 <span style="opacity: 0.6;">✉️</span> ${escapeHTML(u.email)}
             </p>
             
-            <div style="background: rgba(0,0,0,0.5); padding: 12px 15px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; color: #888; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: rgba(0,0,0,0.5); padding: 12px 15px; border-radius: 4px; font-size: 0.85rem; color: #888; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center;">
                 <span>ID:</span>
                 <span>${u.id}</span>
             </div>
 
             <!-- NEW: Moderate button added to card so you can Unban from the database list directly -->
-            <button onclick="openAdminModal('${u.id}', '${safeNameForJS}')" style="margin-top: 20px; width: 100%; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #d4d4d4; border-radius: 2px; cursor: pointer; transition: 0.3s; font-family:'Pixelify Sans'; font-size:1.05rem;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">Moderate Player</button>
+            <button onclick="openAdminModal('${u.id}', '${safeNameForJS}')" style="margin-top: 20px; width: 100%; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #d4d4d4; border-radius: 2px; cursor: pointer; transition: 0.3s; font-size:1.05rem;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">Moderate Player</button>
         </div>`;
     });
     
@@ -1690,9 +1682,9 @@ async function checkGlobalBan() {
     if (data && data.length > 0) {
         document.body.innerHTML = `
             <div style="display:flex; height:100vh; width:100%; align-items:center; justify-content:center; background:#050505; color:#ff2d2d; flex-direction:column; text-align:center; padding:30px;">
-                <h1 style="font-size:3.5rem; margin-bottom:20px; font-family:'Pixelify Sans';">ACCOUNT BANNED</h1>
+                <h1 style="font-size:3.5rem; margin-bottom:20px;">ACCOUNT BANNED</h1>
                 <p style="color:#a3a3a3; font-size:1.2rem; margin-bottom:40px; max-width:650px; line-height:1.8;">Your account (${GLOBAL_USER.email}) has been permanently banned from K210209♤ Studios for violating community guidelines.</p>
-                <button style="padding:18px 40px; font-family:'Pixelify Sans'; background:#111; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:4px; cursor:pointer; font-size:1.1rem; transition:0.3s;" onmouseover="this.style.background='#222'" onmouseout="this.style.background='#111'" onclick="signOutAndReload()">Sign Out</button>
+                <button style="padding:18px 40px; background:#111; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:4px; cursor:pointer; font-size:1.1rem; transition:0.3s;" onmouseover="this.style.background='#222'" onmouseout="this.style.background='#111'" onclick="signOutAndReload()">Sign Out</button>
             </div>
         `;
         return true;
@@ -2043,7 +2035,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 });
 </script>
 
-<!-- NEW CODE: Web Games Overlay with X button -->
+<!-- Web Games Overlay with small X button -->
 <style>
 #game-overlay {
     display: none;
@@ -2062,28 +2054,26 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 }
 #game-close-btn {
     position: absolute;
-    top: 20px;
-    right: 25px;
+    top: 15px;
+    right: 15px;
     color: white;
-    font-family: 'Pixelify Sans', sans-serif;
-    font-size: 1.5rem;
+    font-size: 2.5rem;
     cursor: pointer;
-    background: rgba(0,0,0,0.7);
-    padding: 8px 16px;
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 4px;
+    background: transparent;
+    padding: 0;
+    border: none;
+    line-height: 1;
     user-select: none;
     transition: 0.3s;
     z-index: 10001;
-    backdrop-filter: blur(5px);
 }
 #game-close-btn:hover {
-    background: rgba(255,45,45,0.8);
-    border-color: #ff2d2d;
+    color: #ff2d2d;
+    transform: scale(1.1);
 }
 </style>
 <div id="game-overlay">
-    <div id="game-close-btn" onclick="closeGameOverlay()">CLOSE</div>
+    <div id="game-close-btn" onclick="closeGameOverlay()">&times;</div>
     <iframe id="game-iframe" src=""></iframe>
 </div>
 <script>
@@ -2127,7 +2117,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (link.textContent.trim() === "Play Web Version") {
             link.addEventListener("click", function(e) {
                 e.preventDefault();
-                stopAudio(); // NEW: Stops the audio when a player enters the game overlay
+                stopAudio(); // Stops the audio when a player enters the game overlay
                 document.getElementById("game-iframe").src = this.href;
                 document.getElementById("game-overlay").style.display = "block";
             });
@@ -2145,5 +2135,4 @@ function closeGameOverlay() {
 </script>
 </body>
 </html>
-
 
