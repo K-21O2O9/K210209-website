@@ -1111,7 +1111,19 @@
             });
         } else {
             let u = tiles[tx][tz].unit;
-            if (u && u.team !== activeUnit.team) results[u.id] = calculateHit(activeUnit, u, activeUnit.atk);
+            if (u && u.team !== activeUnit.team) {
+                results[u.id] = calculateHit(activeUnit, u, activeUnit.atk);
+                
+                // Pre-calculate 65% counter logic for sync across clients
+                const canTargetCounter = ['Assassin', 'Vanguard', 'Commander'].includes(u.name);
+                const canActiveBeCountered = ['Vanguard', 'Commander'].includes(activeUnit.name); // Assassin cannot be countered
+                
+                if (canTargetCounter && canActiveBeCountered) {
+                    if (Math.random() < 0.65) {
+                        results.counter = calculateHit(u, activeUnit, u.atk);
+                    }
+                }
+            }
         }
         return results;
     }
@@ -1343,6 +1355,30 @@
                         setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.5); }, 200); 
                     }
                     else spawnFloatingText(targetUnit, 'DODGED', '#d1d5db');
+
+                    // --- COUNTER MECHANIC ---
+                    if (targetUnit.hp > 0 && intent.hitResults.counter) {
+                        await new Promise(r => setTimeout(r, 200));
+                        if (activeUnit.hp > 0 && targetUnit.mesh && activeUnit.mesh) {
+                            spawnFloatingText(targetUnit, 'COUNTER!', '#f59e0b', targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
+                            const counterRes = intent.hitResults.counter;
+                            if (counterRes.isHit) {
+                                activeUnit.takeDamage(counterRes.finalDamage);
+                                spawnFloatingText(activeUnit, `-${counterRes.finalDamage}`, '#ef4444');
+                                tween(activeUnit.parts.torso.rotation, {x: -0.5}, 0.1);
+                                setTimeout(() => { if(activeUnit.mesh) tween(activeUnit.parts.torso.rotation, {x: 0}, 0.4); }, 200);
+                                let counterDir = new THREE.Vector3(targetUnit.mesh.position.x - activeUnit.mesh.position.x, 0, targetUnit.mesh.position.z - activeUnit.mesh.position.z).normalize();
+                                spawnSlashVFX(activeUnit.mesh.position.clone(), counterDir, targetUnit.team === 1 ? 0x3b82f6 : 0xef4444);
+                                tween(targetUnit.parts.armR.rotation, {x: -Math.PI/2}, 0.1, Easing.OutQuad);
+                                setTimeout(() => { if(targetUnit.parts.armR) tween(targetUnit.parts.armR.rotation, {x: 0}, 0.3); }, 200);
+                            } else {
+                                spawnFloatingText(activeUnit, 'DODGED', '#d1d5db');
+                            }
+                            await new Promise(r => setTimeout(r, 300));
+                        }
+                    }
+                    // ------------------------
+
                 } else {
                     vfx.spawnBurst(emptyTargetPos, 0x4b5563, 20, 3);
                 }
@@ -1408,6 +1444,30 @@
                         tween(targetUnit.mesh.position, {x: targetUnit.mesh.position.x - dir.z*0.5, z: targetUnit.mesh.position.z + dir.x*0.5}, 0.15, Easing.OutQuad); 
                         setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.mesh.position, {x: x*TILE_SCALE, z: z*TILE_SCALE}, 0.2, Easing.InQuad); }, 150);
                     }
+
+                    // --- COUNTER MECHANIC ---
+                    if (targetUnit.hp > 0 && intent.hitResults.counter) {
+                        await new Promise(r => setTimeout(r, 200));
+                        if (activeUnit.hp > 0 && targetUnit.mesh && activeUnit.mesh) {
+                            spawnFloatingText(targetUnit, 'COUNTER!', '#f59e0b', targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
+                            const counterRes = intent.hitResults.counter;
+                            if (counterRes.isHit) {
+                                activeUnit.takeDamage(counterRes.finalDamage);
+                                spawnFloatingText(activeUnit, `-${counterRes.finalDamage}`, '#ef4444');
+                                tween(activeUnit.parts.torso.rotation, {x: -0.5}, 0.1);
+                                setTimeout(() => { if(activeUnit.mesh) tween(activeUnit.parts.torso.rotation, {x: 0}, 0.4); }, 200);
+                                let counterDir = new THREE.Vector3(targetUnit.mesh.position.x - activeUnit.mesh.position.x, 0, targetUnit.mesh.position.z - activeUnit.mesh.position.z).normalize();
+                                spawnSlashVFX(activeUnit.mesh.position.clone(), counterDir, targetUnit.team === 1 ? 0x3b82f6 : 0xef4444);
+                                tween(targetUnit.parts.armR.rotation, {x: -Math.PI/2}, 0.1, Easing.OutQuad);
+                                setTimeout(() => { if(targetUnit.parts.armR) tween(targetUnit.parts.armR.rotation, {x: 0}, 0.3); }, 200);
+                            } else {
+                                spawnFloatingText(activeUnit, 'DODGED', '#d1d5db');
+                            }
+                            await new Promise(r => setTimeout(r, 300));
+                        }
+                    }
+                    // ------------------------
+
                 } else {
                     vfx.spawnBurst(emptyTargetPos, 0xcccccc, 10, 2);
                 }
@@ -1570,4 +1630,5 @@
 </script>
 </body>
 </html>
+
 
