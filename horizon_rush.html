@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,11 +40,11 @@
 
     <div id="songMenu" class="absolute top-4 right-4 pointer-events-auto glass-panel p-3 rounded-xl border border-white/20 flex flex-col gap-1 shadow-2xl" style="z-index: 60;">
         <label class="text-[10px] text-yellow-400 font-bold uppercase tracking-widest text-center">Soundtrack</label>
-        <select id="bgmSelect" class="bg-gray-900/90 text-white text-xs p-1.5 rounded border border-gray-700 outline-none cursor-pointer">
+        <select id="bgmSelect" class="bg-gray-900/90 text-white text-[16px] p-1.5 rounded border border-gray-700 outline-none cursor-pointer">
             <option value="">Off</option>
             <option value="What's That Sound- Sir Music.mp3">What's That Sound - Sir Music</option>
         </select>
-        <audio id="bgmAudio" loop></audio>
+        <audio id="bgmAudio" loop style="display: none;"></audio>
     </div>
 
     <div id="hud" class="overlay justify-between" style="display: none;">
@@ -1254,3 +1255,4 @@ Game.init();
 </script>
 </body>
 </html>
+
