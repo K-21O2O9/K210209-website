@@ -136,6 +136,7 @@
         <span class="text-sm font-black tracking-widest text-amber-400 uppercase">WILD CARD TRIGGERED</span>
         <span class="text-xs text-gray-300 mb-2">Choose how to focus this energy:</span>
         <div id="wildcard-options" class="grid grid-cols-2 gap-3"></div>
+        <button onclick="cancelWildCard()" class="mt-4 text-xs font-bold text-slate-400 hover:text-white transition uppercase tracking-widest">Cancel</button>
     </div>
 
     <!-- OVERLAY 1: MAIN MENU -->
@@ -771,6 +772,18 @@
 
     function generateUnitId() { return 'u_' + Math.random().toString(36).substr(2, 9); }
 
+    function generateAlternatingTurnQueue() {
+        let t1 = shuffleArray(units.filter(u => u.team === 1).map(u => u.id));
+        let t2 = shuffleArray(units.filter(u => u.team === 2).map(u => u.id));
+        let queue = [];
+        let maxLen = Math.max(t1.length, t2.length);
+        for (let i = 0; i < maxLen; i++) {
+            if (t1[i]) queue.push(t1[i]);
+            if (t2[i]) queue.push(t2[i]);
+        }
+        return queue;
+    }
+
     function startGameSession(isHost, mode = 'multi') {
         if(isHost) {
             const rosterDef = [
@@ -782,7 +795,7 @@
             rosterDef.forEach(r => syncData.push({ id: generateUnitId(), typeKey: Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k]===r.type), x: BOARD_SIZE - 1 - r.x, z: BOARD_SIZE - 1 - r.z, team: 2 }));
             
             syncBoardUnits(syncData);
-            turnQueue = shuffleArray(units.map(u => u.id));
+            turnQueue = generateAlternatingTurnQueue();
             currentTurnIndex = 0;
             
             broadcastEvent('GAME_START', { units: syncData, turnQueue, turnIndex: currentTurnIndex });
@@ -806,7 +819,7 @@
             let nextIndex = currentTurnIndex + 1;
             let nQueue = turnQueue;
             if (nextIndex >= nQueue.length) {
-                nQueue = shuffleArray(units.map(u => u.id));
+                nQueue = generateAlternatingTurnQueue();
                 nextIndex = 0;
             }
             broadcastEvent('NEW_TURN', { turnQueue: nQueue, turnIndex: nextIndex });
@@ -900,6 +913,12 @@
         }
 
         finalizeDieSelection(index, btnEl);
+    }
+
+    window.cancelWildCard = function() {
+        document.getElementById('wildcard-modal').classList.add('hidden');
+        Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+        selectedDieIndex = -1;
     }
 
     function finalizeDieSelection(index, btnEl) {
@@ -1144,8 +1163,12 @@
             let animData = {p: 0};
             tween(animData, {p: 1}, jumpTime, Easing.Linear, (e) => {
                 let cycle = Math.sin(e * Math.PI);
-                activeUnit.parts.legR.rotation.x = cycle * 0.8; activeUnit.parts.legL.rotation.x = -cycle * 0.8;
-                activeUnit.parts.armR.rotation.x = -cycle * 0.8; activeUnit.parts.armL.rotation.x = cycle * 0.8;
+                if(activeUnit.parts.legR) {
+                    activeUnit.parts.legR.rotation.x = cycle * 0.8; activeUnit.parts.legL.rotation.x = -cycle * 0.8;
+                }
+                if(activeUnit.parts.armR) {
+                    activeUnit.parts.armR.rotation.x = -cycle * 0.8; activeUnit.parts.armL.rotation.x = cycle * 0.8;
+                }
                 if(Math.random() > 0.6) vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 2, 0.5); // trail
             });
             tween(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, jumpTime, Easing.InOutQuad, () => activeUnit.updateUIPosition());
@@ -1159,8 +1182,12 @@
             triggerShake(0.5);
             vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 30, 4);
             tween(activeUnit.parts.torso.rotation, {x: 0}, 0.2, Easing.OutElastic);
-            tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1);
-            tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
+            if(activeUnit.parts.legR) {
+                tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1);
+            }
+            if(activeUnit.parts.armR) {
+                tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
+            }
             
             targetCamRadius = oldCamRadius;
             finishAction();
@@ -1172,15 +1199,23 @@
             let animData = {p: 0};
             tween(animData, {p: 1}, speed, Easing.Linear, (e) => {
                 let cycle = Math.sin(e * Math.PI * 6);
-                activeUnit.parts.legR.rotation.x = cycle * 0.5; activeUnit.parts.legL.rotation.x = -cycle * 0.5;
-                activeUnit.parts.armR.rotation.x = -cycle * 0.5; activeUnit.parts.armL.rotation.x = cycle * 0.5;
+                if (activeUnit.parts.legR) {
+                    activeUnit.parts.legR.rotation.x = cycle * 0.5; activeUnit.parts.legL.rotation.x = -cycle * 0.5;
+                }
+                if (activeUnit.parts.armR) {
+                    activeUnit.parts.armR.rotation.x = -cycle * 0.5; activeUnit.parts.armL.rotation.x = cycle * 0.5;
+                }
                 activeUnit.mesh.position.y = 0.2 + Math.abs(Math.sin(e * Math.PI * 6)) * 0.2;
             });
             await tweenAsync(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, speed, Easing.InOutQuad, () => activeUnit.updateUIPosition());
             
             tween(activeUnit.mesh.position, {y: 0.2}, 0.1);
-            tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1);
-            tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
+            if (activeUnit.parts.legR) {
+                tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1);
+            }
+            if (activeUnit.parts.armR) {
+                tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
+            }
             finishAction();
         } 
         else if (type === 'attack' || type === 'magic') {
@@ -1475,6 +1510,23 @@
                 let effActs = avail.d.id === 'wild' ? activeUnit.actions.filter(a => a !== 'wild') : [avail.d.id];
                 
                 for (let act of effActs) {
+                    // Shielding logic injected manually since it has no tile targets
+                    if (act === 'defend') {
+                        let score = 5; 
+                        if (activeUnit.hp < activeUnit.maxHp * 0.5) score += 20; // more likely to defend if weak
+                        score += Math.random();
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestIntent = {
+                                targetInfo: { type: 'defend' },
+                                dieIndex: avail.i,
+                                hitResults: null,
+                                morphedId: act
+                            };
+                        }
+                        continue; // skip the tile logic for defend
+                    }
+
                     showValidTargets(act); // Populates highlightMeshes based on this action
                     
                     for (let hl of highlightMeshes) {
@@ -1495,8 +1547,6 @@
                             }
                         } else if (hl.type === 'move' || hl.type === 'dash') {
                             score = 20 - distToNearest; // Prefer moving closer
-                        } else if (hl.type === 'defend') {
-                            score = 5; // Low priority fallback
                         }
 
                         // Add a tiny randomness so AI isn't perfectly deterministic
