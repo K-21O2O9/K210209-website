@@ -6,7 +6,8 @@
 
 <title>K210209♤ Studios</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- PREMIUM PIXEL & RETRO FONTS -->
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
 
 <!-- NEW: EmailJS CDN for the Auto-Mod Email Trigger -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -19,53 +20,103 @@
 
 <style>
 /* =========================================
-   1. GLOBAL STYLES & RESET
+   1. GLOBAL STYLES & RESET (PIXEL OVERRIDE)
 ========================================= */
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
+    /* STRICT RETRO RULE: No curves anywhere */
+    border-radius: 0 !important; 
+    /* Snappy, retro transitions */
+    transition: all 0.1s ease-in-out;
 }
 
 body{
-    font-family:'Inter',sans-serif;
-    background:#050505;
-    color:white;
+    font-family: 'VT323', monospace; /* Retro terminal font for body */
+    font-size: 1.3rem;
+    background: #050505;
+    color: #e0e0e0;
     overflow-x:hidden;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    /* Subtle phosphor glow on all text */
+    text-shadow: 0 0 2px rgba(200, 200, 200, 0.3);
 }
 
-/* SCROLLBAR */
+/* CINEMATIC CRT SCANLINES OVERLAY */
+body::after {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: 
+        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 4px, 3px 100%;
+    z-index: 99999;
+    pointer-events: none;
+}
+
+/* CINEMATIC VIGNETTE */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.9) 110%);
+    z-index: 99998;
+    pointer-events: none;
+}
+
+h1, h2, h3, h4, .logo, .hero-tag, th, .game-banner {
+    font-family: 'Silkscreen', cursive;
+    text-transform: uppercase;
+}
+
+/* CINEMATIC CHROMATIC ABERRATION TEXT SHADOW */
+.hero h1 span, .section-title span, .logo span {
+    color: #ff2d2d;
+    text-shadow: 3px 0 0 rgba(255,0,0,0.7), -3px 0 0 rgba(0,255,255,0.4), 0 0 10px rgba(255,0,0,0.5);
+    animation: textFlicker 3s infinite alternate;
+}
+
+@keyframes textFlicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; text-shadow: 3px 0 0 rgba(255,0,0,0.7), -3px 0 0 rgba(0,255,255,0.4), 0 0 10px rgba(255,0,0,0.5); }
+    20%, 24%, 55% { opacity: 0.7; text-shadow: none; }
+}
+
+/* SCROLLBAR - CHUNKY 8-BIT */
 ::-webkit-scrollbar{
-    width:10px;
+    width: 14px;
 }
 ::-webkit-scrollbar-track{
-    background:#0b0b0b;
+    background: #000;
+    border-left: 2px solid #222;
 }
 ::-webkit-scrollbar-thumb{
-    background:#8b0000;
-    border-radius:10px;
+    background: #8b0000;
+    border: 2px solid #000;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #ff3b3b;
 }
 
-/* BACKGROUND EFFECTS */
+/* BACKGROUND EFFECTS - RETRO PIXEL GRID */
 .bg-glow{
     position:fixed;
-    width:700px;
-    height:700px;
-    background:radial-gradient(circle, rgba(255,0,0,0.18) 0%, rgba(255,0,0,0) 70%);
-    top:-200px;
-    right:-150px;
-    z-index:-1;
+    width: 100vw; height: 100vh;
+    background-image:
+        linear-gradient(rgba(255, 0, 0, 0.15) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.15) 2px, transparent 2px);
+    background-size: 60px 60px;
+    background-position: center center;
+    top: 0; left: 0;
+    z-index: -3;
+    opacity: 0.4;
+    mask-image: radial-gradient(circle at center, black 10%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 10%, transparent 80%);
 }
 .bg-glow2{
-    position:fixed;
-    width:600px;
-    height:600px;
-    background:radial-gradient(circle, rgba(255,0,0,0.12) 0%, rgba(255,0,0,0) 70%);
-    bottom:-250px;
-    left:-150px;
-    z-index:-1;
+    display: none; /* Replaced by the global grid and vignette */
 }
 
 /* =========================================
@@ -79,9 +130,8 @@ nav{
     padding:22px 8%;
     position:sticky;
     top:0;
-    background:rgba(5,5,5,0.85);
-    backdrop-filter:blur(10px);
-    border-bottom:1px solid rgba(255,255,255,0.06);
+    background: #050505;
+    border-bottom: 4px solid #1a1a1a;
     z-index:998;
     gap: 30px; 
 }
@@ -89,54 +139,50 @@ nav{
 .menu-icon {
     font-size: 2rem;
     cursor: pointer;
-    color: #d4d4d4;
-    transition: 0.3s;
+    color: #fff;
+    text-shadow: 2px 2px 0 #ff3b3b;
     user-select: none;
 }
 .menu-icon:hover {
     color: #ff3b3b;
+    text-shadow: 2px 2px 0 #fff;
 }
 
 .logo{
-    font-size:1.5rem;
-    font-weight:800;
+    font-size:1.8rem;
+    font-weight:700;
     letter-spacing:1px;
     cursor: pointer;
-}
-.logo span{
-    color:#ff2d2d;
 }
 
 .side-menu {
     height: 100%;
     width: 0; 
     position: fixed;
-    z-index: 1000;
+    z-index: 100000; /* Above CRT overlay for usability */
     top: 0;
     left: 0;
-    background-color: rgba(10, 10, 10, 0.98);
-    backdrop-filter: blur(15px);
+    background-color: #050505;
     overflow-x: hidden;
-    transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     padding-top: 80px;
-    border-right: 1px solid rgba(255, 0, 0, 0.15);
-    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    border-right: 4px solid #ff3b3b;
+    box-shadow: 15px 0 0 rgba(0,0,0,0.8);
 }
 
 .side-menu a {
+    font-family: 'Silkscreen', cursive;
     padding: 20px 40px;
     text-decoration: none;
-    font-size: 1.5rem;
-    color: #d4d4d4;
+    font-size: 1.2rem;
+    color: #e0e0e0;
     display: block;
-    transition: 0.3s;
-    font-weight: 600;
-    letter-spacing: 1px;
+    border-bottom: 2px solid #1a1a1a;
 }
 .side-menu a:hover {
-    color: #ff3b3b;
-    background: rgba(255,0,0,0.05);
+    color: #050505;
+    background: #ff3b3b;
     padding-left: 50px; 
+    box-shadow: inset 4px 0 0 #fff;
 }
 .side-menu .close-btn {
     position: absolute;
@@ -144,11 +190,14 @@ nav{
     right: 25px;
     font-size: 3rem;
     padding: 0;
-    background: none;
+    border-bottom: none;
+    color: #ff3b3b;
 }
 .side-menu .close-btn:hover {
     background: none;
+    color: #fff;
     padding-left: 0;
+    box-shadow: none;
 }
 
 /* =========================================
@@ -156,37 +205,42 @@ nav{
 ========================================= */
 section{
     padding:90px 8%;
+    position: relative;
+    z-index: 1;
 }
 .section-title{
     font-size:2.5rem;
     margin-bottom:18px;
-    font-weight:800;
-}
-.section-title span{
-    color:#ff2d2d;
+    font-weight:700;
+    letter-spacing: 2px;
 }
 .section-sub{
-    color:#a3a3a3;
-    margin-bottom:50px;
-    line-height:1.7;
+    color: #a3a3a3;
+    margin-bottom: 50px;
+    font-size: 1.4rem;
+    line-height: 1.5;
 }
 
-/* Form Inputs globally used */
+/* Form Inputs globally used (Terminal Style) */
 .form-input {
     width: 100%;
-    background: #0a0a0a;
-    border: 1px solid rgba(255,255,255,0.1);
+    background: #000;
+    border: 2px solid #333;
     padding: 15px 20px;
-    border-radius: 14px;
-    color: white;
-    font-size: 1rem;
-    font-family: inherit;
-    transition: 0.3s;
+    color: #4ade80; /* Retro Terminal Green */
+    font-size: 1.5rem;
+    font-family: 'VT323', monospace;
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.8);
+}
+.form-input::placeholder {
+    color: #333;
 }
 .form-input:focus {
     outline: none;
     border-color: #ff3b3b;
-    background: #111;
+    color: #ff3b3b;
+    background: #0a0000;
+    box-shadow: 0 0 15px rgba(255,0,0,0.3);
 }
 
 /* =========================================
@@ -205,68 +259,78 @@ section{
 }
 .hero-tag{
     display:inline-block;
-    padding:8px 18px;
-    border:1px solid rgba(255,0,0,0.4);
-    border-radius:999px;
-    background:rgba(255,0,0,0.08);
-    color:#ff5555;
+    padding:10px 20px;
+    border: 2px solid #ff3b3b;
+    background: #0a0000;
+    color:#ff3b3b;
     margin-bottom:28px;
-    font-size:0.9rem;
-    font-weight:600;
+    font-size: 1rem;
+    box-shadow: 4px 4px 0 #8b0000;
 }
 .hero h1{
-    font-size:4.5rem;
-    line-height:1.1;
-    margin-bottom:24px;
-    font-weight:800;
-}
-.hero h1 span{
-    color:#ff2e2e;
+    font-size: 3.5rem;
+    line-height: 1.3;
+    margin-bottom: 24px;
 }
 .hero p{
     color:#b0b0b0;
-    font-size:1.1rem;
-    line-height:1.8;
-    margin-bottom:40px;
+    font-size: 1.5rem;
+    line-height: 1.6;
+    margin-bottom: 40px;
 }
 .hero-buttons{
     display:flex;
     justify-content:center;
-    gap:18px;
+    gap: 25px;
     flex-wrap:wrap;
 }
-.btn{
-    padding:15px 28px;
-    border-radius:14px;
-    font-weight:700;
-    text-decoration:none;
-    transition:0.3s;
+
+/* PIXEL BUTTONS */
+.btn {
+    padding: 16px 28px;
+    font-family: 'Silkscreen', cursive;
+    font-size: 1.1rem;
+    text-decoration: none;
     cursor: pointer;
+    border: 2px solid #ff3b3b;
+    position: relative;
+    box-shadow: 6px 6px 0 #8b0000;
 }
-.btn-primary{
-    background:linear-gradient(135deg,#ff1f1f,#8b0000);
-    color:white;
-    box-shadow:0 0 25px rgba(255,0,0,0.35);
-    border: none;
+.btn:active {
+    transform: translate(6px, 6px) !important;
+    box-shadow: 0 0 0 #8b0000 !important;
 }
-.btn-primary:hover{
-    transform:translateY(-3px);
+
+.btn-primary {
+    background: #8b0000;
+    color: white;
+    text-shadow: 2px 2px 0 #000;
 }
-.btn-secondary{
-    border:1px solid rgba(255,255,255,0.15);
-    color:white;
-    background:#111;
+.btn-primary:hover {
+    background: #ff3b3b;
+    color: #000;
+    text-shadow: none;
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0 #550000;
 }
-.btn-secondary:hover{
-    background:#1a1a1a;
+.btn-secondary {
+    background: #000;
+    color: #ff3b3b;
 }
+.btn-secondary:hover {
+    background: #1a0000;
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0 #8b0000;
+}
+
 .about-box{
-    background:linear-gradient(180deg,#111,#0b0b0b);
-    border:1px solid rgba(255,255,255,0.06);
-    padding:45px;
-    border-radius:28px;
-    line-height:1.9;
+    background: #080808;
+    border: 2px solid #222;
+    padding: 45px;
+    font-size: 1.4rem;
+    line-height:1.7;
     color:#b5b5b5;
+    box-shadow: -8px 8px 0 #111;
 }
 
 /* =========================================
@@ -275,60 +339,68 @@ section{
 .games-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-    gap:28px;
+    gap: 35px;
 }
 .game-card{
-    background:linear-gradient(180deg,#111,#0a0a0a);
-    border:1px solid rgba(255,255,255,0.06);
-    border-radius:24px;
-    overflow:hidden;
-    transition:0.35s;
+    background: #0a0a0a;
+    border: 2px solid #222;
+    box-shadow: 8px 8px 0 #050505;
     position:relative;
 }
 .game-card:hover{
-    transform:translateY(-8px);
-    border-color:rgba(255,0,0,0.35);
-    box-shadow:0 0 30px rgba(255,0,0,0.15);
+    border-color: #ff3b3b;
+    box-shadow: 12px 12px 0 rgba(139, 0, 0, 0.8);
+    transform: translate(-4px, -4px);
+    z-index: 2;
 }
 .game-banner{
-    height:190px;
-    background:linear-gradient(135deg,#2b0000,#660000,#0a0a0a);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:1.8rem;
-    font-weight:800;
-    letter-spacing:2px;
-    text-align:center;
+    height: 190px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    text-align: center;
     padding: 10px;
+    border-bottom: 4px solid #000;
+    color: white;
+    text-shadow: 3px 3px 0 #000;
 }
 .game-info{
-    padding:25px;
+    padding: 25px;
 }
 .game-info h3{
-    font-size:1.4rem;
-    margin-bottom:12px;
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    color: #fff;
 }
 .game-info p{
-    color:#a8a8a8;
-    line-height:1.7;
-    margin-bottom:22px;
+    color: #a8a8a8;
+    line-height: 1.4;
+    font-size: 1.2rem;
+    margin-bottom: 25px;
 }
 .download-btn{
-    display:inline-block;
-    padding:12px 22px;
-    background:#151515;
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:12px;
-    text-decoration:none;
-    color:white;
-    font-weight:600;
-    transition:0.3s;
-    cursor:pointer;
-    border:none;
+    display: inline-block;
+    padding: 12px 22px;
+    background: #000;
+    border: 2px solid #444;
+    color: #fff;
+    font-family: 'Silkscreen', cursive;
+    font-size: 0.85rem;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 #111;
 }
 .download-btn:hover{
-    background:#8b0000;
+    background: #8b0000;
+    border-color: #ff3b3b;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #550000;
+}
+.download-btn:active {
+    transform: translate(4px, 4px) !important;
+    box-shadow: 0 0 0 #000 !important;
 }
 
 /* =========================================
@@ -337,55 +409,51 @@ section{
 .contact-container {
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 35px;
     max-width: 800px;
 }
-.email-box {
-    background: linear-gradient(180deg,#111,#0b0b0b);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 22px;
+.email-box, .whatsapp-box {
+    background: #0a0a0a;
+    border: 2px solid #333;
     padding: 40px;
     text-align: center;
+    box-shadow: 6px 6px 0 #000;
 }
 .email-box h3 {
     color: white;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     margin-bottom: 15px;
 }
 .email-box a {
     color: #ff3b3b;
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.5rem;
     text-decoration: none;
-    transition: 0.3s;
+    text-shadow: 2px 2px 0 #000;
 }
 .email-box a:hover {
-    color: white;
+    color: #fff;
+    text-shadow: 2px 2px 0 #ff3b3b;
 }
-.whatsapp-box{
-    background:#101010;
-    border:1px solid rgba(255,255,255,0.06);
-    border-radius:22px;
-    padding:40px;
-    text-align:center;
+.whatsapp-box p {
+    font-size: 1.3rem;
+    color: #b0b0b0;
+    margin-bottom: 25px;
 }
-.whatsapp-box p{
-    color:#b0b0b0;
-    margin-bottom:25px;
-    line-height:1.7;
+.whatsapp-link {
+    display: inline-block;
+    padding: 16px 28px;
+    background: #000;
+    border: 2px solid #25D366;
+    color: #25D366;
+    font-family: 'Silkscreen', cursive;
+    text-decoration: none;
+    box-shadow: 4px 4px 0 #128C7E;
 }
-.whatsapp-link{
-    display:inline-block;
-    padding:14px 24px;
-    border-radius:14px;
-    background:linear-gradient(135deg,#25D366,#128C7E);
-    color:white;
-    text-decoration:none;
-    font-weight:700;
-    transition:0.3s;
-}
-.whatsapp-link:hover{
-    transform:translateY(-3px);
+.whatsapp-link:hover {
+    background: #25D366;
+    color: #000;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #128C7E;
 }
 
 /* =========================================
@@ -394,40 +462,36 @@ section{
 .devlog-container {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 30px;
     max-width: 900px;
 }
 .devlog-entry {
-    background: linear-gradient(180deg,#111,#0b0b0b);
-    border-left: 4px solid #ff2d2d;
-    border-right: 1px solid rgba(255,255,255,0.06);
-    border-top: 1px solid rgba(255,255,255,0.06);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    border-radius: 0 16px 16px 0;
+    background: #080808;
+    border: 2px solid #333;
+    border-left: 8px solid #ff2d2d;
     padding: 30px;
-    transition: 0.3s;
+    box-shadow: 6px 6px 0 #000;
 }
 .devlog-entry:hover {
-    background: #131313;
-    border-left-color: #ff5555;
+    background: #111;
+    border-color: #ff5555;
 }
 .devlog-date {
     color: #ff3b3b;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 2px;
-    margin-bottom: 12px;
+    font-family: 'Silkscreen', cursive;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
     display: block;
-    text-transform: uppercase;
 }
 .devlog-title {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
     color: white;
     margin-bottom: 15px;
 }
 .devlog-content {
     color: #b0b0b0;
-    line-height: 1.8;
+    font-size: 1.4rem;
+    line-height: 1.5;
 }
 
 /* =========================================
@@ -436,56 +500,51 @@ section{
 .guide-modal{
     display:none;
     position:fixed;
-    z-index:9999;
+    z-index: 100001; /* Above sidemenu */
     left:0;
     top:0;
     width:100%;
     height:100%;
-    overflow:auto;
-    background:rgba(0,0,0,0.82);
-    backdrop-filter:blur(8px);
-    padding:40px 20px;
+    background: rgba(0,0,0,0.9);
+    padding: 40px 20px;
 }
 .guide-content{
-    background:linear-gradient(180deg,#111,#090909);
+    background: #050505;
     margin:auto;
     max-width:900px;
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:28px;
-    padding:40px;
-    color:#d5d5d5;
-    line-height:1.9;
+    border: 4px solid #ff3b3b;
+    padding: 40px;
+    color: #d5d5d5;
     position:relative;
-    animation:fadeIn 0.25s ease;
+    box-shadow: 15px 15px 0 rgba(255, 0, 0, 0.3);
 }
 .guide-content h2{
-    color:#ff3b3b;
-    font-size:2.2rem;
-    margin-bottom:10px;
+    color: #ff3b3b;
+    font-size: 2rem;
+    margin-bottom: 10px;
+    text-shadow: 3px 3px 0 #550000;
 }
 .guide-content h3{
     color:white;
-    margin-bottom:20px;
+    margin-bottom: 25px;
 }
 .guide-body {
-    line-height: 1.9;
-    color: #d5d5d5;
-    margin-top: 15px;
+    font-size: 1.3rem;
+    line-height: 1.6;
+    color: #e0e0e0;
 }
 .close-guide{
     position:absolute;
-    right:25px;
-    top:20px;
-    font-size:2rem;
+    right: 20px;
+    top: 15px;
+    font-family: 'Silkscreen', cursive;
+    font-size: 2.5rem;
     cursor:pointer;
-    color:#ff3b3b;
+    color: #ff3b3b;
 }
 .close-guide:hover{
-    opacity:0.7;
-}
-@keyframes fadeIn{
-    from{ opacity:0; transform:translateY(15px); }
-    to{ opacity:1; transform:translateY(0); }
+    color: #fff;
+    text-shadow: 2px 2px 0 #ff3b3b;
 }
 
 /* =========================================
@@ -493,12 +552,11 @@ section{
 ========================================= */
 .account-container {
     max-width: 800px;
-    background: linear-gradient(180deg,#111,#0b0b0b);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 28px;
+    background: #080808;
+    border: 2px solid #222;
     padding: 50px;
+    box-shadow: 8px 8px 0 #000;
 }
-/* Expanded styling for the Admin panel to stop side-scrolling */
 .admin-db-container {
     max-width: 1400px !important;
     width: 95%;
@@ -511,33 +569,24 @@ section{
     margin: 35px 0;
 }
 .advantages-table tr {
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    transition: background 0.3s;
-}
-.advantages-table tr:hover {
-    background: rgba(255,255,255,0.015);
+    border-bottom: 2px dashed #333;
 }
 .advantages-table th {
     padding: 22px 20px 22px 0;
     text-align: left;
-    color: white;
-    font-weight: 600;
-    vertical-align: top;
+    color: #ff3b3b;
     width: 250px;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
 }
 .advantages-table th::before {
-    content: '◈'; 
-    color: #ff3b3b;
+    content: '►'; 
+    color: #fff;
     margin-right: 12px;
-    font-size: 1.1rem;
 }
 .advantages-table td {
     padding: 22px 0;
-    text-align: left;
-    color: #b0b0b0;
-    line-height: 1.7;
-    vertical-align: top;
+    color: #e0e0e0;
+    font-size: 1.3rem;
 }
 .profile-card {
     display: flex;
@@ -545,36 +594,36 @@ section{
     gap: 25px;
     margin-bottom: 40px;
     padding-bottom: 30px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 4px solid #1a1a1a;
 }
 .profile-card img {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    border: 2px solid #ff3b3b;
-    box-shadow: 0 0 15px rgba(255,0,0,0.2);
+    width: 100px;
+    height: 100px;
+    border: 4px solid #ff3b3b;
+    box-shadow: 6px 6px 0 #550000;
+    image-rendering: pixelated; /* Forces pixelated look if low res */
 }
 .profile-info h3 {
-    font-size: 1.8rem;
-    margin-bottom: 8px;
+    font-size: 2rem;
     color: white;
 }
 .profile-info p {
     color: #a3a3a3;
-    font-size: 1.1rem;
+    font-family: 'Silkscreen', cursive;
+    font-size: 0.9rem;
+    margin-top: 5px;
 }
 
 /* =========================================
-   10. CHAT / SUPPORT STYLING
+   10. CHAT / SUPPORT STYLING (TERMINAL VIBE)
 ========================================= */
 .forum-container {
     max-width: 900px;
-    background: linear-gradient(180deg,#111,#0b0b0b);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 28px;
-    overflow: hidden;
+    background: #050505;
+    border: 4px solid #333;
     height: 600px;
     max-height: 70vh; 
+    box-shadow: 10px 10px 0 #000;
 }
 
 #forumLoggedIn {
@@ -591,47 +640,44 @@ section{
     display: flex;
     flex-direction: column;
     gap: 20px;
-    min-height: 0; 
 }
 
 .message-bubble {
     display: flex;
     gap: 15px;
-    animation: fadeIn 0.3s ease;
 }
 .message-avatar {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,0,0,0.3);
-    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    border: 2px solid #555;
 }
 .message-content-wrapper {
-    background: #161616;
+    background: #111;
     padding: 15px 20px;
-    border-radius: 0 18px 18px 18px;
-    border: 1px solid rgba(255,255,255,0.04);
+    border: 2px solid #333;
     max-width: 80%;
+    box-shadow: 4px 4px 0 #000;
 }
 .message-header {
     display: flex;
     align-items: baseline;
     gap: 10px;
     margin-bottom: 8px;
+    border-bottom: 2px dashed #333;
+    padding-bottom: 5px;
 }
 .message-author {
-    color: #ff3b3b;
-    font-weight: 700;
-    font-size: 1rem;
+    color: #4ade80; /* System/User green */
+    font-family: 'Silkscreen', cursive;
+    font-size: 0.85rem;
 }
 .message-time {
     color: #666;
-    font-size: 0.8rem;
+    font-size: 1rem;
 }
 .message-text {
-    color: #d4d4d4;
-    line-height: 1.6;
-    font-size: 0.95rem;
+    color: #e0e0e0;
+    font-size: 1.4rem;
     word-break: break-word;
 }
 
@@ -639,117 +685,96 @@ section{
     flex-direction: row-reverse;
 }
 .message-bubble.own-message .message-content-wrapper {
-    border-radius: 18px 0 18px 18px;
-    background: rgba(139, 0, 0, 0.1);
-    border-color: rgba(255,0,0,0.15);
+    background: #1a0505;
+    border-color: #8b0000;
+    box-shadow: -4px 4px 0 #000;
+}
+.message-bubble.own-message .message-author {
+    color: #ff3b3b;
+}
+.message-bubble.own-message .message-avatar {
+    border-color: #ff3b3b;
 }
 .message-bubble.own-message .message-header {
     flex-direction: row-reverse;
+    border-bottom-color: #550000;
 }
 
 .forum-input-area {
     flex: 0 0 auto;
-    padding: 20px 30px;
-    background: #0a0a0a;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 20px;
+    background: #000;
+    border-top: 4px solid #333;
     display: flex;
     gap: 15px;
-    align-items: center;
 }
 .forum-input-area button {
     padding: 15px 30px;
-}
-
-.forum-logged-out-msg {
-    text-align: center;
-    padding: 60px 30px;
-}
-.forum-logged-out-msg h3 {
-    font-size: 1.8rem;
-    margin-bottom: 15px;
-}
-.forum-logged-out-msg p {
-    color: #a3a3a3;
-    margin-bottom: 25px;
 }
 
 /* =========================================
    11. FOOTER & MEDIA QUERIES
 ========================================= */
 footer{
-    margin-top:80px;
-    padding:35px 8%;
-    border-top:1px solid rgba(255,255,255,0.06);
-    display:flex;
-    justify-content:center;
-    align-items:center;
+    margin-top: 80px;
+    padding: 40px 8%;
+    border-top: 4px solid #1a1a1a;
+    background: #000;
     text-align:center;
 }
 footer p{
-    color:#8a8a8a;
+    font-family: 'Silkscreen', cursive;
+    color: #555;
+    font-size: 0.9rem;
 }
+
 @media(max-width:768px){
-    .hero h1{ font-size:3rem; }
-    .section-title{ font-size:2rem; }
-    .guide-content{ padding:28px; }
+    .hero h1{ font-size: 2.2rem; }
+    .section-title{ font-size: 1.8rem; }
+    .guide-content{ padding: 25px; }
     .account-container { padding: 30px; }
     .profile-card { flex-direction: column; text-align: center; }
     
-    .advantages-table, .advantages-table tbody, .advantages-table tr, .advantages-table th, .advantages-table td {
+    .advantages-table th, .advantages-table td {
         display: block;
         width: 100%;
     }
-    .advantages-table tr {
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .advantages-table tr:hover {
-        background: transparent;
-    }
-    .advantages-table th {
-        padding-bottom: 5px;
-        border-bottom: none;
-    }
-    .advantages-table td {
-        padding-top: 0;
-        padding-bottom: 25px;
-    }
+    .advantages-table th { padding-bottom: 5px; border-bottom: none; }
+    .advantages-table td { padding-top: 0; padding-bottom: 25px; }
     
     .forum-container { height: 80vh; max-height: none; }
-    .forum-messages { padding: 20px; }
-    .forum-input-area { padding: 15px 20px; flex-direction: column; }
-    .forum-input-area .form-input { width: 100%; }
-    .forum-input-area button { width: 100%; }
+    .forum-input-area { padding: 15px; flex-direction: column; }
 }
 </style>
 </head>
 
 <body>
 
-<!-- Background Elements -->
+<!-- Background Elements (Re-styled via CSS to pixel grid) -->
 <div class="bg-glow"></div>
 <div class="bg-glow2"></div>
 
 <!-- Sandwich Side Menu -->
 <div id="sideMenu" class="side-menu">
-    <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
-    <a href="javascript:void(0)" onclick="switchView('home')">Home</a>
-    <a href="javascript:void(0)" onclick="switchView('profile')">Profile</a>
-    <a href="javascript:void(0)" onclick="switchView('devlog')">Dev Log</a>
-    <a href="javascript:void(0)" onclick="switchView('games')">Games</a>
-    <a href="javascript:void(0)" onclick="switchView('rules')">Rules</a>
-    <a href="javascript:void(0)" onclick="switchView('forum')">Customer Care</a>
-    <a href="javascript:void(0)" onclick="switchView('audio')">Audio</a>
+    <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">X</a>
+    <a href="javascript:void(0)" onclick="switchView('home')">HOME</a>
+    <a href="javascript:void(0)" onclick="switchView('profile')">PROFILE</a>
+    <a href="javascript:void(0)" onclick="switchView('devlog')">DEV LOG</a>
+    <a href="javascript:void(0)" onclick="switchView('games')">GAMES</a>
+    <a href="javascript:void(0)" onclick="switchView('rules')">RULES</a>
+    <a href="javascript:void(0)" onclick="switchView('forum')">CUSTOMER CARE</a>
+    <a href="javascript:void(0)" onclick="switchView('audio')">AUDIO</a>
     
     <!-- Hidden Admin Section in Menu -->
-    <a href="javascript:void(0)" id="menuAdminLink" onclick="switchView('admin')" style="display:none; color:#f59e0b;">Admin Panel</a>
+    <a href="javascript:void(0)" id="menuAdminLink" onclick="switchView('admin')" style="display:none; color:#f59e0b;">ADMIN PANEL</a>
     
-    <a href="javascript:void(0)" id="menuAccountLink" onclick="switchView('account')" style="color: #ff3b3b;">My Account</a>
-    <a href="javascript:void(0)" onclick="switchView('contact')">Contact Info</a>
+    <a href="javascript:void(0)" id="menuAccountLink" onclick="switchView('account')" style="color: #ff3b3b; margin-top: 20px; border-top: 4px solid #333;">MY ACCOUNT</a>
+    <a href="javascript:void(0)" onclick="switchView('contact')">CONTACT INFO</a>
 </div>
 
 <!-- Sticky Navbar -->
 <nav>
-    <div class="menu-icon" onclick="openMenu()">&#9776;</div>
+    <div class="menu-icon" onclick="openMenu()">☰</div>
     <div class="logo" onclick="switchView('home')">K210209♤ <span>STUDIOS</span></div>
 </nav>
 
@@ -759,21 +784,21 @@ footer p{
 <div id="view-home">
     <section class="hero">
         <div class="hero-content">
-            <div class="hero-tag">Independent Game Development Studio</div>
-            <h1>Building <span>immersive</span><br>games & experiences.</h1>
+            <div class="hero-tag">INDIE DEV STUDIO v2.0</div>
+            <h1>BUILDING <span>IMMERSIVE</span><br>EXPERIENCES</h1>
             <p>
                 K210209♤ Studios creates unique single-player and multiplayer experiences
                 focused on strategy, survival, atmosphere, and innovation.
             </p>
             <div class="hero-buttons">
-                <button onclick="switchView('games')" class="btn btn-primary">Explore Games</button>
-                <a href="#about" class="btn btn-secondary">Learn More</a>
+                <button onclick="switchView('games')" class="btn btn-primary">EXPLORE GAMES</button>
+                <a href="#about" class="btn btn-secondary">LEARN MORE</a>
             </div>
         </div>
     </section>
 
     <section id="about">
-        <h2 class="section-title">About <span>K210209♤ Studios</span></h2>
+        <h2 class="section-title">ABOUT <span>K210209♤</span></h2>
         <div class="about-box">
             K210209♤ Studios is an independent game development studio focused on
             creating immersive and memorable experiences.
@@ -792,84 +817,85 @@ footer p{
 ======================================================== -->
 <div id="view-games" style="display: none;">
     <section id="games">
-        <h2 class="section-title">Featured <span>Games</span></h2>
+        <h2 class="section-title">FEATURED <span>TITLES</span></h2>
         <p class="section-sub">Explore current projects from K210209♤ Studios. Download available titles directly below.</p>
 
-        <!-- NEW: Logged out message for Games -->
-        <div id="gamesLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
-            <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
-            <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access and download our games.</p>
-            <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
+        <!-- Logged out message for Games -->
+        <div id="gamesLoggedOut" style="text-align:center; padding: 60px 30px; background: #080808; border: 2px solid #333; box-shadow: 8px 8px 0 #000; max-width: 800px; margin: 0 auto;">
+            <h3 style="font-size: 1.8rem; margin-bottom: 15px; font-family: 'Silkscreen';">ACCESS DENIED</h3>
+            <p style="color: #ff3b3b; font-size: 1.4rem; margin-bottom: 25px;">[ ERROR: Authentication Required to Download Data ]</p>
+            <button class="btn btn-primary" onclick="switchView('account')">INITIALIZE LOGIN</button>
         </div>
 
         <!-- Logged in state for Games -->
         <div id="gamesLoggedIn" style="display: none;">
             <div class="games-grid">
                 <div class="game-card">
-                    <div class="game-banner">SCOUNDREL</div>
+                    <!-- Inline gradients converted to sharp solid blocks via CSS override, keeping your structure -->
+                    <div class="game-banner" style="background: #330000;">SCOUNDREL</div>
                     <div class="game-info">
                         <h3>Scoundrel</h3>
                         <p>A dark fantasy dungeon-crawling card game focused on survival, tactical decisions, monsters, potions, and strategic risk management.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="Scoundrel.apk" class="download-btn" download>Download APK</a>
-                            <button class="download-btn" onclick="openGuide()">About Game</button>
+                            <a href="Scoundrel.apk" class="download-btn" download>DOWNLOAD .APK</a>
+                            <button class="download-btn" onclick="openGuide()">READ MANUAL</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg,#001a2b,#004466,#0a0a0a);">
+                    <div class="game-banner" style="background: #002244;">
                         DIMENSIONAL WARFARE
                     </div>
                     <div class="game-info">
                         <h3>Dimensional Warfare</h3>
                         <p>An intense 3D space shooter experience. Navigate through hostile dimensions, epic bosses. Do your best to survive waves of high-tech enemies.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="dimensionalwarfare.apk" class="download-btn" download>Download APK</a>
-                            <a href="DWF1.html" class="download-btn">Play Web Version</a>
-                            <button class="download-btn" onclick="openDWGuide()">About Game</button>
+                            <a href="dimensionalwarfare.apk" class="download-btn" download>DOWNLOAD .APK</a>
+                            <a href="DWF1.html" class="download-btn">BOOT WEB_APP</a>
+                            <button class="download-btn" onclick="openDWGuide()">READ MANUAL</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #ff4d94, #2a1132, #0a0a0a);">
+                    <div class="game-banner" style="background: #4a154b;">
                         MIRROR-VERSE
                     </div>
                     <div class="game-info">
                         <h3>Mirror-verse</h3>
                         <p>One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="https://mirror-verse.k210209-studios.workers.dev" class="download-btn" target="_blank" rel="noopener noreferrer">Play Web Version</a>
-                            <button class="download-btn" onclick="openMirrorVerseGuide()">About Game</button>
+                            <a href="https://mirror-verse.k210209-studios.workers.dev" class="download-btn" target="_blank" rel="noopener noreferrer">BOOT WEB_APP</a>
+                            <button class="download-btn" onclick="openMirrorVerseGuide()">READ MANUAL</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #e65c00, #F9D423, #0a0a0a);">
+                    <div class="game-banner" style="background: #cc5500;">
                         HORIZON RUSH
                     </div>
                     <div class="game-info">
                         <h3>Horizon Rush</h3>
                         <p>An adrenaline-fueled endless runner. Dodge obstacles, collect power-ups, and race towards the ever-expanding horizon in this fast-paced arcade experience.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="horizon_rush.html" class="download-btn">Play Web Version</a>
-                            <button class="download-btn" onclick="openHorizonRushGuide()">About Game</button>
+                            <a href="horizon_rush.html" class="download-btn">BOOT WEB_APP</a>
+                            <button class="download-btn" onclick="openHorizonRushGuide()">READ MANUAL</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #8b0000, #3a0000, #0a0a0a);">
+                    <div class="game-banner" style="background: #550000;">
                         BLOOD-BOUND
                     </div>
                     <div class="game-info">
                         <h3>Blood-Bound</h3>
-                        <p>This game is multiplayer only (2 players, connected on same wifi) it is a turn-based rpg game. the rules are simple, the commander is like the king on a chess board, if he is defeated, game over. There are various classes such as assassin, archer, mage and vanguard.</p>
+                        <p>This game is multiplayer only (2 players, connected on same wifi) it is a turn-based rpg game. The commander is like the king on a chess board, if he is defeated, game over. Various classes included.</p>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="Blood-bound.html" class="download-btn">Play Web Version</a>
-                            <button class="download-btn" onclick="openBloodBoundGuide()">About Game</button>
+                            <a href="Blood-bound.html" class="download-btn">BOOT WEB_APP</a>
+                            <button class="download-btn" onclick="openBloodBoundGuide()">READ MANUAL</button>
                         </div>
                     </div>
                 </div>
@@ -883,15 +909,15 @@ footer p{
 ======================================================== -->
 <div id="view-devlog" style="display: none;">
     <section id="dev-log">
-        <h2 class="section-title">Developer <span>Log</span></h2>
-        <p class="section-sub">Latest updates, patch notes, and behind-the-scenes development progress.</p>
+        <h2 class="section-title">SYSTEM <span>LOG</span></h2>
+        <p class="section-sub">Latest updates, patch notes, and behind-the-scenes data.</p>
 
         <div class="devlog-container">
             <div class="devlog-entry">
-                <span class="devlog-date">August 2, 2026</span>
-                <h3 class="devlog-title">Site Launch & Dev Log Added</h3>
+                <span class="devlog-date">TIMESTAMP: 2026-08-02</span>
+                <h3 class="devlog-title" style="font-family: 'Silkscreen';">SYSTEM INITIALIZED</h3>
                 <div class="devlog-content">
-                    <p>Welcome to the new K210209♤ Studios website! We've just implemented the new Developer Log system to keep everyone updated. Moving forward, we'll be posting news here as well.</p>
+                    <p>> Welcome to the new K210209♤ Studios mainframe.<br>> Developer Log subsystem online.<br>> Transmitting future patch notes and development broadcasts directly to this terminal.</p>
                 </div>
             </div>
         </div>
@@ -903,18 +929,18 @@ footer p{
 ======================================================== -->
 <div id="view-contact" style="display: none;">
     <section id="contact-info">
-        <h2 class="section-title">Contact <span>Info</span></h2>
-        <p class="section-sub">Get in touch for inquiries, support, or development news.</p>
+        <h2 class="section-title">COMMS <span>LINK</span></h2>
+        <p class="section-sub">Establish a direct connection for inquiries and support.</p>
 
         <div class="contact-container">
             <div class="email-box">
-                <h3>Studio Email</h3>
+                <h3 style="font-family: 'Silkscreen';">STUDIO EMAIL</h3>
                 <a href="mailto:k210209.studios@gmail.com">k210209.studios@gmail.com</a>
             </div>
 
             <div class="whatsapp-box">
-                <p>Follow the K210209♤_STUDIOS channel on WhatsApp for updates, development news, future releases, and announcements.</p>
-                <a class="whatsapp-link" href="https://whatsapp.com/channel/0029Vb7sWjABadmXSFsPxG1Y" target="_blank" rel="noopener noreferrer">Join WhatsApp Channel</a>
+                <p>Follow the K210209♤_STUDIOS channel on WhatsApp for broadcast updates and secure transmissions.</p>
+                <a class="whatsapp-link" href="https://whatsapp.com/channel/0029Vb7sWjABadmXSFsPxG1Y" target="_blank" rel="noopener noreferrer">CONNECT TO WHATSAPP</a>
             </div>
         </div>
     </section>
@@ -925,55 +951,54 @@ footer p{
 ======================================================== -->
 <div id="view-account" style="display: none;">
     <section id="account">
-        <h2 class="section-title">Studio <span>Account</span></h2>
-        <p class="section-sub">Manage your profile, cloud saves, and studio ecosystem access.</p>
+        <h2 class="section-title">USER <span>TERMINAL</span></h2>
+        <p class="section-sub">Manage your profile, cloud saves, and ecosystem access.</p>
 
         <div class="account-container">
             
             <div id="loggedOutState">
-                <h3 style="font-size: 1.8rem; margin-bottom: 10px;">Join the K210209 Ecosystem</h3>
-                <p style="color: #a3a3a3; font-size: 1.1rem; margin-bottom: 25px;">Sign in for free to elevate your gaming experience.</p>
+                <h3 style="font-size: 1.8rem; margin-bottom: 10px; font-family: 'Silkscreen'; color: #ff3b3b;">JOIN THE ECOSYSTEM</h3>
+                <p style="color: #a3a3a3; font-size: 1.4rem; margin-bottom: 25px;">Authenticate to elevate your gaming experience.</p>
                 
                 <table class="advantages-table" style="margin-bottom: 35px;">
                     <tbody>
                         <tr>
-                            <th>Cloud Synchronization</th>
+                            <th>CLOUD SYNC</th>
                             <td>Safely back up your game progress and transfer it seamlessly across all your devices.</td>
                         </tr>
                         <tr>
-                            <th>Early Access</th>
+                            <th>EARLY ACCESS</th>
                             <td>Get exclusive priority access to private beta builds and unreleased prototype projects.</td>
                         </tr>
                         <tr>
-                            <th>Community Recognition</th>
+                            <th>VERIFIED BADGE</th>
                             <td>Stand out with verified player badges in future dev logs and community features.</td>
                         </tr>
                         <tr>
-                            <th>Direct Dev Support</th>
+                            <th>DEV SUPPORT</th>
                             <td>Gain priority assistance for account issues and gameplay troubleshooting.</td>
                         </tr>
                     </tbody>
                 </table>
 
-                <!-- NEW: Email Registration / Login Box -->
-                <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 35px; border-radius: 16px;">
-                    <h4 style="margin-bottom: 20px; font-size: 1.2rem; color: white;">Email Login / Registration</h4>
+                <div style="background: #000; border: 2px solid #333; padding: 35px; box-shadow: inset 4px 4px 0 #050505;">
+                    <h4 style="margin-bottom: 20px; font-size: 1.2rem; color: white;">CREDENTIALS REQUIRED</h4>
                     
-                    <input type="email" id="authEmail" class="form-input" placeholder="Email Address" style="margin-bottom: 15px;" />
-                    <input type="password" id="authPassword" class="form-input" placeholder="Password" style="margin-bottom: 15px;" />
+                    <input type="email" id="authEmail" class="form-input" placeholder="EMAIL_ADDRESS" style="margin-bottom: 15px;" />
+                    <input type="password" id="authPassword" class="form-input" placeholder="PASSWORD" style="margin-bottom: 15px;" />
                     
-                    <div id="authMessage" style="margin-bottom: 20px; font-weight: 600; font-size: 0.95rem;"></div>
+                    <div id="authMessage" style="margin-bottom: 20px; font-weight: 600; font-size: 1.2rem; font-family: 'Silkscreen';"></div>
                     
                     <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                        <button class="btn btn-primary" onclick="signInWithEmail()" style="flex: 1; padding: 14px 20px;">Log In</button>
-                        <button class="btn btn-secondary" onclick="signUpWithEmail()" style="flex: 1; padding: 14px 20px;">Sign Up</button>
+                        <button class="btn btn-primary" onclick="signInWithEmail()" style="flex: 1;">EXECUTE LOGIN</button>
+                        <button class="btn btn-secondary" onclick="signUpWithEmail()" style="flex: 1;">REGISTER NEW</button>
                     </div>
                     
-                    <div style="text-align: center; margin: 30px 0; color: #666; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px;">— OR —</div>
+                    <div style="text-align: center; margin: 30px 0; color: #666; font-size: 1.2rem; font-weight: 600;">— OR —</div>
                     
-                    <button class="btn btn-secondary" onclick="signInWithGoogle()" style="width: 100%; display:flex; justify-content:center; align-items:center; gap:12px; font-size:1.05rem; padding: 14px 20px; background: #0a0a0a;">
-                        <img src="https://www.google.com/favicon.ico" alt="Google Logo" style="width:22px; border-radius:50%; background:white; padding:2px;" />
-                        Sign in with Google
+                    <button class="btn btn-secondary" onclick="signInWithGoogle()" style="width: 100%; display:flex; justify-content:center; align-items:center; gap:12px;">
+                        <img src="https://www.google.com/favicon.ico" alt="Google Logo" style="width:22px; background:white; padding:2px; border: 2px solid #333;" />
+                        GOOGLE AUTHENTICATION
                     </button>
                 </div>
             </div>
@@ -982,13 +1007,13 @@ footer p{
                 <div class="profile-card">
                     <img id="userAvatar" src="" alt="Player Avatar" />
                     <div class="profile-info">
-                        <h3 id="userName">Player Name</h3>
+                        <h3 id="userName" style="font-family: 'Silkscreen';">Player Name</h3>
                         <p id="userEmail">player@email.com</p>
                     </div>
                 </div>
                 
-                <p style="color: #a3a3a3; margin-bottom: 25px;">Your account is currently active. Your game progress and data are being synced automatically.</p>
-                <button class="btn btn-secondary" onclick="signOut()" style="border-color: #ff3b3b; color: #ff3b3b;">Securely Sign Out</button>
+                <p style="color: #4ade80; margin-bottom: 25px; font-size: 1.4rem;">> SYSTEM SECURE. DATA SYNC IN PROGRESS...</p>
+                <button class="btn btn-secondary" onclick="signOut()" style="border-color: #ff3b3b; color: #ff3b3b; box-shadow: 4px 4px 0 #550000;">TERMINATE SESSION</button>
             </div>
 
         </div>
@@ -996,41 +1021,41 @@ footer p{
 </div>
 
 <!-- =======================================================
-     VIEW 6: RULES (Reworked for Support)
+     VIEW 6: RULES 
 ======================================================== -->
 <div id="view-rules" style="display: none;">
     <section id="rules">
-        <h2 class="section-title">Customer Care <span>Guidelines</span></h2>
-        <p class="section-sub">All players must read and agree to these terms before opening a support ticket with K210209♤ Studios.</p>
+        <h2 class="section-title">SUPPORT <span>PROTOCOLS</span></h2>
+        <p class="section-sub">All users must agree to network terms before initiating a support link.</p>
 
         <div class="account-container">
-            <h3 style="color: #ff3b3b; font-size: 1.5rem; margin-bottom: 20px;">Support Ticket Rules</h3>
+            <h3 style="color: #ff3b3b; font-family: 'Silkscreen'; font-size: 1.5rem; margin-bottom: 20px;">COMMUNICATION DIRECTIVES</h3>
             
             <table class="advantages-table">
                 <tbody>
                     <tr>
-                        <th>1. Professional Conduct</th>
-                        <td>Our automated moderation system actively filters profanity and slurs. Attempting to bypass this filter in your support ticket will result in the ticket being flagged.</td>
+                        <th>01. CONDUCT</th>
+                        <td>Our auto-mod system filters profanity. Attempting to bypass the firewall will flag your ID.</td>
                     </tr>
                     <tr>
-                        <th>2. No External Links</th>
-                        <td>To protect our development team from malicious files, all external URLs and domain names are strictly blocked in the support chat.</td>
+                        <th>02. NO LINKS</th>
+                        <td>To protect our network, external URLs and domains are strictly blocked.</td>
                     </tr>
                     <tr>
-                        <th>3. Protect Personal Privacy</th>
-                        <td>Do not share passwords or sensitive personal information. Our system automatically censors phone numbers to protect your identity.</td>
+                        <th>03. PRIVACY</th>
+                        <td>Do not transmit passwords. The system automatically censors numerical patterns (phones).</td>
                     </tr>
                     <tr>
-                        <th>4. Respect the Dev Team</th>
-                        <td>We are here to help you, but harassment, toxicity, or threats toward K210209♤ Studios staff will lead to a permanent account ban.</td>
+                        <th>04. RESPECT</th>
+                        <td>Harassment or threats towards K210209♤ staff will trigger an immediate, permanent MAC ban.</td>
                     </tr>
                 </tbody>
             </table>
 
-            <div style="margin-top: 35px; padding: 25px; background: rgba(255,0,0,0.05); border-left: 4px solid #ff3b3b; border-radius: 12px;">
-                <p style="color: #d5d5d5; line-height: 1.6;"><strong>Notice:</strong> By proceeding to the customer care chat, you acknowledge that you have read and agree to follow these rules.</p>
+            <div style="margin-top: 35px; padding: 25px; background: #0a0000; border: 2px solid #ff3b3b;">
+                <p style="color: #d5d5d5; line-height: 1.6; font-size: 1.3rem;"><strong>> WARNING:</strong> Proceeding to customer care acknowledges full compliance with server rules.</p>
                 
-                <button class="btn btn-primary" onclick="switchView('forum')" style="margin-top: 20px; width: 100%;">I Agree — Open Ticket</button>
+                <button class="btn btn-primary" onclick="switchView('forum')" style="margin-top: 20px; width: 100%;">ACKNOWLEDGE & CONNECT</button>
             </div>
         </div>
     </section>
@@ -1041,35 +1066,35 @@ footer p{
 ======================================================== -->
 <div id="view-forum" style="display: none;">
     <section id="forum">
-        <h2 class="section-title">Customer <span>Care</span></h2>
-        <p class="section-sub">Connect securely with K210209♤ Studios staff. Your conversation is entirely private.</p>
+        <h2 class="section-title">SECURE <span>COMMS</span></h2>
+        <p class="section-sub">Direct encrypted channel to K210209♤ Studios staff.</p>
 
         <div class="forum-container">
             
-            <div id="forumLoggedOut" class="forum-logged-out-msg">
-                <h3>Authentication Required</h3>
-                <p>The customer care service is exclusive to registered members of the K210209 Ecosystem to prevent spam.</p>
-                <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
+            <div id="forumLoggedOut" class="forum-logged-out-msg" style="padding: 60px 30px; text-align: center;">
+                <h3 style="font-family: 'Silkscreen'; color: #ff3b3b; font-size: 2rem;">UNAUTHORIZED</h3>
+                <p style="font-size: 1.4rem; color: #777; margin: 20px 0;">Authentication required to establish secure line.</p>
+                <button class="btn btn-primary" onclick="switchView('account')">LOGIN OVERRIDE</button>
             </div>
 
             <div id="forumLoggedIn">
                 
                 <!-- Admin Ticket Management UI -->
-                <div id="adminTicketUI" style="display:none; padding: 15px 30px; background: #080808; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                    <label style="color:#ff3b3b; font-weight:700;">Admin View</label>
-                    <select id="adminTicketSelect" class="form-input" style="flex: 1; min-width: 200px;" onchange="switchAdminTicket()">
-                        <option value="">-- Select a Player to Support --</option>
+                <div id="adminTicketUI" style="display:none; padding: 15px 30px; background: #000; border-bottom: 4px solid #333; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <label style="color:#ff3b3b; font-weight:700; font-family: 'Silkscreen';">ADMIN_OVR</label>
+                    <select id="adminTicketSelect" class="form-input" style="flex: 1; min-width: 200px; padding: 10px;" onchange="switchAdminTicket()">
+                        <option value="">-- SELECT TICKET ID --</option>
                     </select>
-                    <button class="btn btn-secondary" style="padding: 12px 20px;" onclick="refreshAdminTickets()">↻ Refresh</button>
+                    <button class="btn btn-secondary" style="padding: 10px 20px;" onclick="refreshAdminTickets()">REFRESH</button>
                 </div>
 
                 <div class="forum-messages" id="chatBox">
-                    <div style="text-align:center; color:#666; margin-top:20px;">Loading your private chat...</div>
+                    <div style="text-align:center; color:#666; margin-top:20px; font-family:'Silkscreen';">> ESTABLISHING CONNECTION...</div>
                 </div>
 
                 <div class="forum-input-area">
                     <input type="text" id="chatInput" class="form-input" placeholder="Type your message to the dev team here..." onkeypress="handleEnter(event)" />
-                    <button id="sendChatBtn" class="btn btn-primary" onclick="sendForumMessage()">Send</button>
+                    <button id="sendChatBtn" class="btn btn-primary" onclick="sendForumMessage()">TRANSMIT</button>
                 </div>
             </div>
 
@@ -1082,23 +1107,23 @@ footer p{
 ======================================================== -->
 <div id="view-profile" style="display: none;">
     <section id="profile">
-        <h2 class="section-title">My <span>Profile</span></h2>
-        <p class="section-sub">Customize your display name.</p>
+        <h2 class="section-title">USER <span>PROFILE</span></h2>
+        <p class="section-sub">Configure display parameters.</p>
 
         <div class="account-container" style="max-width: 500px; margin: 0 auto;">
             
             <div id="profileLoggedOut" style="display:none; text-align:center;">
-                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Authentication Required</h3>
-                <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to edit your profile.</p>
-                <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
+                <h3 style="font-size: 1.5rem; margin-bottom: 10px; font-family:'Silkscreen'; color:#ff3b3b;">NO ACTIVE USER</h3>
+                <p style="color: #a3a3a3; margin-bottom: 25px; font-size:1.3rem;">Must authenticate to modify parameters.</p>
+                <button class="btn btn-primary" onclick="switchView('account')">INITIALIZE LOGIN</button>
             </div>
 
             <div id="profileLoggedIn" style="display:none;">
-                <label style="display:block; margin-bottom:10px; color:#a3a3a3; font-weight:600;">Display Name</label>
-                <input type="text" id="profileNameInput" class="form-input" placeholder="Enter display name" />
-                <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:20px; width:100%;">Save Changes</button>
+                <label style="display:block; margin-bottom:10px; color:#a3a3a3; font-family:'Silkscreen';">> ALIAS / CALLSIGN</label>
+                <input type="text" id="profileNameInput" class="form-input" placeholder="ENTER NEW ALIAS" />
+                <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:20px; width:100%;">WRITE TO DISK</button>
                 
-                <div id="profileStatus" style="margin-top:15px; color:#4ade80; text-align:center; display:none; font-weight:600;">Profile updated successfully!</div>
+                <div id="profileStatus" style="margin-top:15px; color:#4ade80; text-align:center; display:none; font-weight:700; font-family:'Silkscreen';">DATA SAVED SUCCESSFULLY</div>
             </div>
 
         </div>
@@ -1110,12 +1135,11 @@ footer p{
 ======================================================== -->
 <div id="view-admin" style="display: none;">
     <section id="admin-panel" style="padding-left: 2%; padding-right: 2%;">
-        <h2 class="section-title" style="text-align: center;">Admin <span>Database</span></h2>
-        <p class="section-sub" style="text-align: center;">Confidential overview of all registered K210209 Ecosystem users.</p>
+        <h2 class="section-title" style="text-align: center;">MAINFRAME <span>DB</span></h2>
+        <p class="section-sub" style="text-align: center;">Root access required. Confidential overview of ecosystem.</p>
 
-        <!-- Upgraded Wider Container specifically for the DB panel -->
         <div class="account-container admin-db-container">
-            <h3 style="color: #f59e0b; font-size: 1.5rem; margin-bottom: 20px;">Registered Player Accounts</h3>
+            <h3 style="color: #ff3b3b; font-family: 'Silkscreen'; font-size: 1.5rem; margin-bottom: 20px;">REGISTERED IDS</h3>
             <div id="adminUserList" style="max-height: 75vh; overflow-y: auto; padding-right: 15px;">
                 <!-- User data populated by JS -->
             </div>
@@ -1128,15 +1152,15 @@ footer p{
 ======================================================== -->
 <div id="view-audio" style="display: none;">
     <section id="audio-section">
-        <h2 class="section-title">Studio <span>Audio</span></h2>
-        <p class="section-sub">Listen to the official soundtrack playlist.</p>
+        <h2 class="section-title">STUDIO <span>AUDIO</span></h2>
+        <p class="section-sub">Access the official soundtrack archives.</p>
 
         <div class="account-container">
-            <h3 style="color: #ff3b3b; font-size: 1.5rem; margin-bottom: 20px;">Playlist</h3>
+            <h3 style="color: #ff3b3b; font-size: 1.5rem; margin-bottom: 20px; font-family: 'Silkscreen';">PLAYLIST</h3>
             
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <span style="color: #d4d4d4; font-weight: 600; font-size: 1.05rem;">1. Upbeat Rock Energy Workout by Infraction-Red Car</span>
-                <button id="audio-toggle-btn" class="btn btn-secondary" onclick="toggleMainAudio()" style="padding: 10px 20px;">Play</button>
+            <div style="background: #000; border: 2px solid #333; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: inset 2px 2px 5px #050505;">
+                <span style="color: #d4d4d4; font-size: 1.3rem;">TRACK_01: Upbeat Rock Energy Workout</span>
+                <button id="audio-toggle-btn" class="btn btn-secondary" onclick="toggleMainAudio()" style="padding: 10px 20px;">PLAY</button>
             </div>
             
             <audio id="main-audio-player" src="Upbeat Rock Energy Workout by Infraction-Red Car.mp3" preload="none" loop></audio>
@@ -1150,37 +1174,36 @@ footer p{
 ======================================================== -->
 <div id="guideModal" class="guide-modal">
     <div class="guide-content">
-        <span class="close-guide" onclick="closeGuide()">&times;</span>
-        <h2 id="modalTitle">Official Tutorial Guide</h2>
-        <h3 id="modalSubtitle">K210209♤ STUDIOS</h3>
+        <span class="close-guide" onclick="closeGuide()">X</span>
+        <h2 id="modalTitle">OFFICIAL MANUAL</h2>
+        <h3 id="modalSubtitle" style="font-family:'Silkscreen'; color:#4ade80;">K210209♤ STUDIOS</h3>
         <div id="guideBody" class="guide-body">
-            Tutorial content will appear here.
+            Data loading...
         </div>
     </div>
 </div>
 
 <div id="adminModal" class="guide-modal">
-    <div class="guide-content" style="max-width:400px; text-align:center;">
-        <span class="close-guide" onclick="closeAdminModal()">&times;</span>
-        <h2 style="font-size:1.5rem; margin-bottom:10px; color:white;">Moderate User</h2>
-        <p id="moderateUserName" style="color:#ff3b3b; margin-bottom:20px; font-weight:bold;"></p>
+    <div class="guide-content" style="max-width:400px; text-align:center; border-color:#ff3b3b; background:#000;">
+        <span class="close-guide" onclick="closeAdminModal()">X</span>
+        <h2 style="font-size:1.5rem; margin-bottom:10px; color:white;">MODERATE ID</h2>
+        <p id="moderateUserName" style="color:#ff3b3b; margin-bottom:20px; font-family:'Silkscreen';"></p>
         <div style="display:flex; flex-direction:column; gap:15px;">
             <select id="muteDuration" class="form-input">
-                <option value="1">Mute for 1 Hour</option>
-                <option value="24">Mute for 24 Hours</option>
-                <option value="168">Mute for 7 Days</option>
+                <option value="1">MUTE_1_HOUR</option>
+                <option value="24">MUTE_24_HOURS</option>
+                <option value="168">MUTE_7_DAYS</option>
             </select>
-            <button class="btn btn-secondary" onclick="applyMute()">Apply Mute</button>
-            <hr style="border-color:rgba(255,255,255,0.1); margin:5px 0;">
-            <button class="btn btn-primary" onclick="applyBan()" style="background:#8b0000;">PERMANENT BAN</button>
-            <!-- NEW: Unban option added here -->
-            <button class="btn btn-secondary" onclick="removeRestrictions()" style="border-color:#25D366; color:#25D366; background: rgba(37, 211, 102, 0.05); margin-top: 10px;">LIFT RESTRICTIONS (UNBAN)</button>
+            <button class="btn btn-secondary" onclick="applyMute()">EXECUTE MUTE</button>
+            <hr style="border-top:2px dashed #444; margin:5px 0;">
+            <button class="btn btn-primary" onclick="applyBan()">PERMANENT BAN</button>
+            <button class="btn btn-secondary" onclick="removeRestrictions()" style="border-color:#25D366; color:#25D366; margin-top: 10px;">LIFT RESTRICTIONS</button>
         </div>
     </div>
 </div>
 
 <footer>
-    <p>© 2026 K210209♤ Studios — All Rights Reserved</p>
+    <p>SYSTEM TIMESTAMP: 2026 // K210209♤ STUDIOS MAINFRAME // ALL RIGHTS RESERVED</p>
 </footer>
 
 <script>
@@ -1239,9 +1262,9 @@ async function openGuide() {
     modal.style.display = "block";
     
     setModalContent(
-        "Scoundrel · Official Tutorial", 
-        "K210209♤ STUDIOS | Loading Guide...",
-        '<div style="text-align:center; padding:20px;"><span style="color:#ff5555;">⟳</span> Loading Scoundrel tutorial content...</div>'
+        "SCOUNDREL_MANUAL", 
+        "K210209♤ // FETCHING DATA...",
+        '<div style="text-align:center; padding:20px; font-family:\'Silkscreen\';"><span style="color:#4ade80; animation: textFlicker 1s infinite;">> LOADING...</span></div>'
     );
     
     try {
@@ -1258,26 +1281,26 @@ async function openGuide() {
         const styledContent = `
             <div class="scoundrel-tutorial-wrapper">
                 ${finalContent}
-                <hr style="border-color:rgba(255,0,0,0.2); margin:24px 0 8px 0;">
-                <div style="font-size:0.85rem; color:#999; text-align:center;">📜 K210209♤ Studios · Scoundrel deep dive</div>
+                <hr style="border-top:2px dashed #444; margin:24px 0 8px 0;">
+                <div style="font-size:1.1rem; color:#777; text-align:center;">// END OF TRANSMISSION</div>
             </div>
         `;
         
-        setModalContent("Scoundrel · Dungeon Crawler Guide", "K210209♤ STUDIOS | Official Tutorial", styledContent);
+        setModalContent("SCOUNDREL_MANUAL", "K210209♤ // DECRYPTED", styledContent);
         
     } catch (error) {
         console.error("Failed to load Scoundrel tutorial:", error);
         setModalContent(
-            "Scoundrel · Guide Unavailable", 
-            "K210209♤ STUDIOS",
-            `<div style="border-left:4px solid #ff3b3b; background:#1a0a0a; padding:18px; border-radius:16px;">
-                <b>⚠️ Could not load Scoundreltutorial.html</b><br><br>
-                Make sure the file <code style="background:#222; padding:2px 6px; border-radius:8px;">Scoundreltutorial.html</code> exists in the same folder as this webpage.<br><br>
-                Meanwhile, here's the official Scoundrel essence:<br><br>
-                <b>◈ Core mechanics:</b> Dungeon delving, tactical card combat, risk/reward system.<br>
-                <b>◈ Survival:</b> Manage HP, weapons, armor and deadly room encounters.<br>
-                <b>◈ Strategy:</b> Every choice matters — one wrong move and your run ends.<br><br>
-                <i>Place your custom Scoundreltutorial.html file to see the full interactive manual.</i>
+            "SCOUNDREL_ERROR", 
+            "K210209♤ // FILE NOT FOUND",
+            `<div style="border-left:8px solid #ff3b3b; background:#1a0a0a; padding:18px; border:2px solid #333;">
+                <b style="color:#ff3b3b; font-family:'Silkscreen';">> SYS_ERROR: Scoundreltutorial.html Missing</b><br><br>
+                Make sure the file <code style="background:#000; padding:4px 8px; border:1px solid #ff3b3b; color:#ff3b3b;">Scoundreltutorial.html</code> exists in the root directory.<br><br>
+                <b>> OVERVIEW:</b><br>
+                <b>[ MECHANICS ]</b> Dungeon delving, tactical cards, risk management.<br>
+                <b>[ SURVIVAL ]</b> Manage HP, items, and lethal encounters.<br>
+                <b>[ TACTICS ]</b> Permadeath logic. Mistakes are fatal.<br><br>
+                <i>Awaiting external file placement...</i>
             </div>`
         );
     }
@@ -1287,71 +1310,70 @@ function openDWGuide() {
     document.getElementById("guideModal").style.display = "block";
     
     const dwContent = `
-        <div>
-            <b> 3D Space Shooter · Dimensional Warfare</b><br><br>
+        <div style="font-size: 1.4rem;">
+            <b style="color:#ff3b3b;">> DIMENSIONAL WARFARE</b><br><br>
             Experience fast-paced aerial combat in a futuristic setting. 
             Dimensional Warfare pushes your reflexes to the limit as you pilot 
             advanced spacecraft through treacherous cosmic environments.
             <br><br>
-            <b> Key Features</b><br><br>
-            • Dynamic 3D flight mechanics with zero-gravity drift.<br>
-            • Various enemy archetypes and epic boss encounters.<br>
-            • Upgradable weapon systems and dimensional rifts.<br>
-            • Unique "Dimensional Breach" ultimate ability.<br><br>
-            Master the dimensions, survive endless waves and secure the galaxy.<br><br>
-             <i>Optimized for mobile.</i>
-            <i>NOTE: enter the app in landscape mode to play web version<i>
+            <b style="color:#ff3b3b;">> FEATURES</b><br><br>
+            [+] Dynamic 3D flight mechanics.<br>
+            [+] Hostile architectures and boss entities.<br>
+            [+] Upgradable ordnance and rifts.<br>
+            [+] "Dimensional Breach" protocol.<br><br>
+            Survive endless waves and secure the galaxy.<br><br>
+            <i>Note: Engage landscape mode for web app boot sequence.</i>
             <br><br>
-            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Space Warfare Division</span>
+            <span style="color:#666;">// K210209♤ · SPACE DIV //</span>
         </div>
     `;
     
-    setModalContent("Dimensional Warfare", "K210209♤ STUDIOS | Tactical Space Shooter", dwContent);
+    setModalContent("DIMENSIONAL_WARFARE", "K210209♤ // TACTICAL ARCHIVE", dwContent);
 }
 
 function openMirrorVerseGuide() {
     document.getElementById("guideModal").style.display = "block";
     
     const content = `
-        <div>
-            <b>Spatial Puzzle Platformer · Mirror-verse</b><br><br>
-            One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer. Navigate asymmetrical realities to solve complex puzzles and progress.
+        <div style="font-size: 1.4rem;">
+            <b style="color:#ff3b3b;">> MIRROR-VERSE</b><br><br>
+            One mind. Two asymmetric realities. Control two avatars simultaneously with a single set of inputs in this mind-bending spatial puzzle protocol. Navigate asymmetrical realities to solve complex puzzles.
             <br><br>
-            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Puzzle Division</span>
+            <span style="color:#666;">// K210209♤ · PUZZLE DIV //</span>
         </div>
     `;
     
-    setModalContent("Mirror-verse", "K210209♤ STUDIOS | Puzzle Platformer", content);
+    setModalContent("MIRROR-VERSE", "K210209♤ // ARCHIVE", content);
 }
 
 function openHorizonRushGuide() {
     document.getElementById("guideModal").style.display = "block";
     
     const content = `
-        <div>
-            <b>Endless Runner · Horizon Rush</b><br><br>
-            An adrenaline-fueled endless runner. Dodge obstacles and race towards the ever-expanding horizon in this fast-paced arcade experience. Test your reflexes and aim for the highest score. 
+        <div style="font-size: 1.4rem;">
+            <b style="color:#ff3b3b;">> HORIZON RUSH</b><br><br>
+            An adrenaline-fueled runner protocol. Dodge obstacles and race towards the ever-expanding horizon in this fast-paced arcade simulation. Test reflexes and maximize score multiplier. 
             <br><br>
-            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Arcade Division</span>
+            <span style="color:#666;">// K210209♤ · ARCADE DIV //</span>
         </div>
     `;
     
-    setModalContent("Horizon Rush", "K210209♤ STUDIOS | Arcade Runner", content);
+    setModalContent("HORIZON_RUSH", "K210209♤ // ARCHIVE", content);
 }
 
 function openBloodBoundGuide() {
     document.getElementById("guideModal").style.display = "block";
     
     const content = `
-        <div>
-            <b>Action Survival · Blood-Bound</b><br><br>
-            An intense, Blood-bound experience. Step into the darkness and fight for your survival in this thrilling web-based title. Face challenging enemies and uncover the secrets of the dark.
+        <div style="font-size: 1.4rem;">
+            <b style="color:#ff3b3b;">> BLOOD-BOUND</b><br><br>
+            An intense multiplayer survival matrix. Step into the darkness and fight for survival in this turn-based simulation. Protect your commander unit at all costs.
             <br><br>
-            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Survival Division</span>
+            <span style="color:#666;">// K210209♤ · SURVIVAL DIV //</span>
         </div>
     `;
     
-    setModalContent("Blood-Bound", "K210209♤ STUDIOS | Survival Experience", content);
+    setModalContent("BLOOD-BOUND", "K210209♤ // ARCHIVE", content);
 }
 
 function closeGuide() {
@@ -1413,22 +1435,21 @@ async function signUpWithEmail() {
 
     if (!email || !password) {
         msg.style.color = "#ff3b3b";
-        msg.innerText = "Please enter both email and password.";
+        msg.innerText = "> ERR: MISSING PARAMETERS";
         return;
     }
 
-    msg.style.color = "white";
-    msg.innerText = "Creating account...";
+    msg.style.color = "#4ade80";
+    msg.innerText = "> EXECUTING REGISTRATION...";
 
     const { data, error } = await supabaseClient.auth.signUp({ email, password });
 
     if (error) {
         msg.style.color = "#ff3b3b";
-        msg.innerText = "Error: " + error.message;
+        msg.innerText = "> ERR: " + error.message;
     } else {
         msg.style.color = "#4ade80";
-        // Depending on your Supabase settings, users might need to check their email.
-        msg.innerText = "Success! Please check your email inbox to confirm your account.";
+        msg.innerText = "> SUCCESS: VERIFY INBOX TO INITIATE SYSTEM.";
     }
 }
 
@@ -1439,18 +1460,18 @@ async function signInWithEmail() {
 
     if (!email || !password) {
         msg.style.color = "#ff3b3b";
-        msg.innerText = "Please enter both email and password.";
+        msg.innerText = "> ERR: MISSING PARAMETERS";
         return;
     }
 
-    msg.style.color = "white";
-    msg.innerText = "Signing in...";
+    msg.style.color = "#4ade80";
+    msg.innerText = "> AUTHENTICATING...";
 
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
     if (error) {
         msg.style.color = "#ff3b3b";
-        msg.innerText = "Error: " + error.message;
+        msg.innerText = "> ERR: " + error.message;
     } else {
         msg.innerText = "";
     }
@@ -1502,9 +1523,9 @@ async function updateAuthUI(user) {
         loggedOutState.style.display = "none";
         loggedInState.style.display = "block";
         document.getElementById("userAvatar").src = meta.avatar_url || "https://www.gravatar.com/avatar/?d=mp";
-        document.getElementById("userName").textContent = meta.full_name || meta.name || "Player";
+        document.getElementById("userName").textContent = meta.full_name || meta.name || "PLAYER_UNKNOWN";
         document.getElementById("userEmail").textContent = user.email || "";
-        menuAccountLink.textContent = "My Account";
+        menuAccountLink.textContent = "MY ACCOUNT";
         
         profileLoggedOut.style.display = "none";
         profileLoggedIn.style.display = "block";
@@ -1549,7 +1570,7 @@ async function updateAuthUI(user) {
     } else {
         loggedOutState.style.display = "block";
         loggedInState.style.display = "none";
-        menuAccountLink.textContent = "Sign In / Register";
+        menuAccountLink.textContent = "LOGIN / REGISTER";
         menuAdminLink.style.display = "none";
         
         profileLoggedOut.style.display = "block";
@@ -1574,17 +1595,17 @@ async function updateAuthUI(user) {
 // ---------------------------
 async function loadAdminUserList() {
     const adminListContainer = document.getElementById("adminUserList");
-    adminListContainer.innerHTML = "<div style='text-align:center; padding: 40px;'><span style='color:#f59e0b; font-size: 1.5rem;'>⟳</span><br><br><span style='color:#a3a3a3;'>Decrypting player database...</span></div>";
+    adminListContainer.innerHTML = "<div style='text-align:center; padding: 40px; font-family:Silkscreen;'><span style='color:#4ade80; font-size: 1.5rem;'>> DECRYPTING DATABASE...</span></div>";
 
     const { data, error } = await supabaseClient.rpc('get_all_user_emails');
     
     if (error) {
-        adminListContainer.innerHTML = `<div style='color:#ff3b3b; padding: 20px; border: 1px solid rgba(255,59,59,0.3); background: rgba(255,0,0,0.05); border-radius: 16px;'><b>System Error:</b> ${error.message}</div>`;
+        adminListContainer.innerHTML = `<div style='color:#ff3b3b; padding: 20px; border: 2px solid #ff3b3b; background: #000;'><b>SYS_ERR:</b> ${error.message}</div>`;
         return;
     }
 
     if (!data || data.length === 0) {
-        adminListContainer.innerHTML = "<div style='padding: 20px; color: #a3a3a3; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;'>No registered users found in the ecosystem.</div>";
+        adminListContainer.innerHTML = "<div style='padding: 20px; color: #a3a3a3; text-align: center; border: 2px dashed #444;'>NO ACTIVE IDS FOUND.</div>";
         return;
     }
 
@@ -1593,35 +1614,32 @@ async function loadAdminUserList() {
     
     data.forEach(u => {
         const isUserAdmin = isAdmin(u.email);
-        const badgeColor = isUserAdmin ? "#ff3b3b" : "#f59e0b";
-        const badgeText = isUserAdmin ? "Staff" : "Player";
-        const badgeBg = isUserAdmin ? "rgba(255, 59, 59, 0.1)" : "rgba(245, 158, 11, 0.1)";
+        const badgeColor = isUserAdmin ? "#ff3b3b" : "#4ade80";
+        const badgeText = isUserAdmin ? "STAFF_OVR" : "USER_ID";
 
-        // Safely escape the name for the HTML inline function call
-        const safeNameForJS = escapeHTML(u.name || 'Anonymous').replace(/'/g, "\\'");
+        const safeNameForJS = escapeHTML(u.name || 'ANONYMOUS').replace(/'/g, "\\'");
 
         html += `
-        <div style="background: linear-gradient(145deg, #161616, #0d0d0d); border: 1px solid rgba(255,255,255,0.04); border-left: 3px solid ${badgeColor}; border-radius: 18px; padding: 22px; transition: 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                <h4 style="color: white; font-size: 1.25rem; margin: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%;">
-                    ${escapeHTML(u.name || 'Anonymous')}
+        <div style="background: #000; border: 2px solid ${badgeColor}; padding: 22px; box-shadow: 6px 6px 0 rgba(0,0,0,0.8); transition: 0.1s;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 2px dashed #333; padding-bottom: 10px;">
+                <h4 style="color: white; font-family: 'Silkscreen'; font-size: 1.2rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%;">
+                    ${escapeHTML(u.name || 'ANONYMOUS')}
                 </h4>
-                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; background: ${badgeBg}; color: ${badgeColor}; padding: 4px 10px; border-radius: 8px;">
+                <span style="font-size: 0.85rem; font-family: 'Silkscreen'; color: ${badgeColor}; border: 2px solid ${badgeColor}; padding: 4px 8px; background: #0a0000;">
                     ${badgeText}
                 </span>
             </div>
             
-            <p style="color: #a3a3a3; font-size: 0.95rem; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; word-break: break-all;">
-                <span style="opacity: 0.5;">✉️</span> ${escapeHTML(u.email)}
+            <p style="color: #a3a3a3; font-size: 1.2rem; margin-bottom: 18px; word-break: break-all;">
+                <span style="color:#666;">> </span>${escapeHTML(u.email)}
             </p>
             
-            <div style="background: #050505; padding: 10px 12px; border-radius: 10px; font-family: monospace; font-size: 0.75rem; color: #666; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center;">
-                <span>ID:</span>
-                <span style="color: #888;">${u.id}</span>
+            <div style="background: #050505; padding: 10px; font-family: monospace; font-size: 0.9rem; color: #666; border: 1px solid #333;">
+                <span style="color:#888;">UID: ${u.id}</span>
             </div>
 
-            <!-- NEW: Moderate button added to card so you can Unban from the database list directly -->
-            <button onclick="openAdminModal('${u.id}', '${safeNameForJS}')" style="margin-top: 15px; width: 100%; padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #d4d4d4; border-radius: 12px; cursor: pointer; transition: 0.3s; font-weight: 600;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">Moderate Player</button>
+            <!-- Moderate button added to card so you can Unban from the database list directly -->
+            <button onclick="openAdminModal('${u.id}', '${safeNameForJS}')" class="btn btn-secondary" style="margin-top: 15px; width: 100%; border-color: ${badgeColor}; color: ${badgeColor}; font-size: 1rem;">MODERATE ID</button>
         </div>`;
     });
     
@@ -1641,10 +1659,10 @@ async function checkGlobalBan() {
         
     if (data && data.length > 0) {
         document.body.innerHTML = `
-            <div style="display:flex; height:100vh; width:100%; align-items:center; justify-content:center; background:#050505; color:#ff3b3b; flex-direction:column; text-align:center; padding:20px;">
-                <h1 style="font-size:3rem; margin-bottom:10px; font-weight:800; letter-spacing:2px;">ACCOUNT BANNED</h1>
-                <p style="color:#a3a3a3; font-size:1.1rem; margin-bottom:30px; max-width:600px; line-height:1.7;">Your account (${GLOBAL_USER.email}) has been permanently banned from K210209♤ Studios for violating community guidelines.</p>
-                <button style="padding:15px 30px; background:#111; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:14px; cursor:pointer; font-weight:bold; transition:0.3s;" onclick="signOutAndReload()">Sign Out</button>
+            <div style="display:flex; height:100vh; width:100%; align-items:center; justify-content:center; background:#050505; color:#ff3b3b; flex-direction:column; text-align:center; padding:20px; font-family: 'VT323';">
+                <h1 style="font-size:4rem; margin-bottom:10px; font-family:'Silkscreen'; text-shadow: 4px 4px 0 #550000;">SYSTEM LOCKOUT</h1>
+                <p style="color:#a3a3a3; font-size:1.5rem; margin-bottom:30px; max-width:600px; line-height:1.7;">ID: ${GLOBAL_USER.email} has been permanently blacklisted from the K210209♤ Matrix due to violation of protocols.</p>
+                <button style="padding:15px 30px; background:#000; color:#ff3b3b; border:2px solid #ff3b3b; font-family:'Silkscreen'; cursor:pointer; font-weight:bold; box-shadow: 4px 4px 0 #550000;" onclick="signOutAndReload()">TERMINATE CONNECTION</button>
             </div>
         `;
         return true;
@@ -1661,7 +1679,9 @@ async function checkMuteStatus() {
     
     if (data && data.length > 0) {
         input.disabled = true;
-        input.placeholder = "You are currently muted from customer care.";
+        input.placeholder = "COMMS DISABLED FOR THIS TERMINAL.";
+        input.style.borderColor = "#ff3b3b";
+        input.style.color = "#ff3b3b";
         btn.disabled = true;
         btn.style.opacity = "0.5";
         return true;
@@ -1676,7 +1696,7 @@ async function checkMuteStatus() {
 
 function openAdminModal(userId, userName) {
     targetModerateUserId = userId;
-    document.getElementById("moderateUserName").innerText = "Target: " + userName;
+    document.getElementById("moderateUserName").innerText = "TARGET: " + userName;
     document.getElementById("adminModal").style.display = "block";
 }
 
@@ -1697,16 +1717,16 @@ async function applyMute() {
         expires_at: expires.toISOString()
     }]);
     
-    if(error) alert("Error applying mute: " + error.message);
+    if(error) alert("SYS_ERR: " + error.message);
     else { 
-        alert("Player has been successfully muted."); 
+        alert("> MUTE PROTOCOL INITIATED."); 
         closeAdminModal(); 
     }
 }
 
 async function applyBan() {
     if(!targetModerateUserId) return;
-    if(!confirm("WARNING: This will permanently ban the player from accessing the K210209 website and ecosystem. Proceed?")) return;
+    if(!confirm("WARNING: PERMANENT BLACKLIST WILL BE INITIATED. PROCEED?")) return;
     
     const {error} = await supabaseClient.from('user_restrictions').insert([{
         user_id: targetModerateUserId,
@@ -1714,32 +1734,31 @@ async function applyBan() {
         expires_at: null
     }]);
     
-    if(error) alert("Error applying ban: " + error.message);
+    if(error) alert("SYS_ERR: " + error.message);
     else { 
-        alert("Player permanently banned."); 
+        alert("> TARGET BLACKLISTED."); 
         closeAdminModal(); 
     }
 }
 
-// NEW: Allows you to UNBAN a player or remove a mute
 async function removeRestrictions() {
     if(!targetModerateUserId) return;
-    if(!confirm("Are you sure you want to lift all bans and mutes for this player?")) return;
+    if(!confirm("OVERRIDE SECURITY RESTRICTIONS FOR THIS ID?")) return;
 
     // Delete all restriction records matching the user_id
     const {error} = await supabaseClient.from('user_restrictions').delete().eq('user_id', targetModerateUserId);
     
-    if(error) alert("Error removing restrictions: " + error.message);
+    if(error) alert("SYS_ERR: " + error.message);
     else { 
-        alert("Success! Player restrictions lifted. The player is unbanned and unmuted."); 
+        alert("> RESTRICTIONS LIFTED."); 
         closeAdminModal(); 
     }
 }
 
 async function deleteMessage(msgId) {
-    if(!confirm("Are you sure you want to delete this message?")) return;
+    if(!confirm("DELETE LOG ENTRY?")) return;
     const {error} = await supabaseClient.from('forum_messages').delete().eq('id', msgId);
-    if(error) alert("Error deleting message: " + error.message);
+    if(error) alert("SYS_ERR: " + error.message);
 }
 
 
@@ -1749,7 +1768,7 @@ async function deleteMessage(msgId) {
 async function saveProfile() {
     const newName = document.getElementById("profileNameInput").value.trim();
     if(!newName) {
-        alert("Please enter a display name.");
+        alert("> MISSING ALIAS PARAMETER.");
         return;
     }
     
@@ -1758,7 +1777,7 @@ async function saveProfile() {
     });
     
     if(error) {
-        alert("Error updating profile: " + error.message);
+        alert("SYS_ERR: " + error.message);
     } else {
         const statusBox = document.getElementById("profileStatus");
         statusBox.style.display = "block";
@@ -1784,7 +1803,7 @@ async function refreshAdminTickets() {
     }
     
     const select = document.getElementById("adminTicketSelect");
-    select.innerHTML = '<option value="">-- Select a Player to Support --</option>';
+    select.innerHTML = '<option value="">-- SELECT ID --</option>';
     
     const uniqueUsers = {};
     data.forEach(msg => {
@@ -1809,7 +1828,7 @@ async function loadForumMessages() {
     const chatBox = document.getElementById("chatBox");
     
     if (!currentTicketId) {
-        chatBox.innerHTML = `<div style="text-align:center; color:#666; margin-top:20px;">No ticket selected. Select a player above.</div>`;
+        chatBox.innerHTML = `<div style="text-align:center; color:#666; margin-top:20px; font-family:'Silkscreen';">> AWAITING ID SELECTION...</div>`;
         return;
     }
     
@@ -1823,12 +1842,12 @@ async function loadForumMessages() {
         .limit(50); 
 
     if (error) {
-        chatBox.innerHTML = `<div style="text-align:center; color:#ff3b3b;">Error loading chat: ${error.message}</div>`;
+        chatBox.innerHTML = `<div style="text-align:center; color:#ff3b3b; font-family:'Silkscreen';">> SYS_ERR: ${error.message}</div>`;
         return;
     }
 
     if(data.length === 0) {
-        chatBox.innerHTML = `<div style="text-align:center; color:#666; margin-top:20px;">No messages yet. Send a message to open this ticket!</div>`;
+        chatBox.innerHTML = `<div style="text-align:center; color:#666; margin-top:20px; font-family:'Silkscreen';">> NO LOGS FOUND. INITIATE TRANSMISSION.</div>`;
     } else {
         data.forEach(msg => appendMessageToUI(msg));
         scrollToBottom();
@@ -1841,15 +1860,15 @@ async function sendForumMessage() {
     if (!content || !GLOBAL_USER) return;
     
     if (!currentTicketId) {
-        alert("Admin Warning: Please select a player ticket before sending a message.");
+        alert("SYS_ERR: TICKET ID REQUIRED.");
         return;
     }
     
     input.value = ""; 
     
     const meta = GLOBAL_USER.user_metadata || {};
-    const userNameRaw = meta.full_name || meta.name || "Anonymous Player";
-    const userName = isAdmin(GLOBAL_USER.email) ? "[DEV] " + userNameRaw : userNameRaw;
+    const userNameRaw = meta.full_name || meta.name || "UNKNOWN_ID";
+    const userName = isAdmin(GLOBAL_USER.email) ? "[SYS_ADMIN] " + userNameRaw : userNameRaw;
     
     let isFlagged = false;
     const originalMessage = content;
@@ -1862,14 +1881,14 @@ async function sendForumMessage() {
 
     const phoneRegex = /(?:\+?\d[\s\-\.\(\)\[\]_]*){7,}/g;
     if (phoneRegex.test(content)) {
-        content = content.replace(phoneRegex, "[PHONE BLOCKED]");
+        content = content.replace(phoneRegex, "[DATA BLOCKED]");
         isFlagged = true;
     }
 
     const badWords = ["fuck", "shit", "bitch", "ass", "asshole", "nigger", "nigga", "faggot", "slut", "whore", "cunt", "retard", "dick", "pussy", "bastard"]; 
     const badWordsPattern = new RegExp(`\\b(${badWords.join('|')})\\b`, 'gi');
     if (badWordsPattern.test(content)) {
-        content = content.replace(badWordsPattern, "[CENSORED]");
+        content = content.replace(badWordsPattern, "[DATA EXPUNGED]");
         isFlagged = true;
     }
 
@@ -1884,7 +1903,7 @@ async function sendForumMessage() {
         }]);
 
     if (error) {
-        alert("Failed to send message: " + error.message);
+        alert("SYS_ERR: " + error.message);
     } else if (isFlagged && !isAdmin(GLOBAL_USER.email)) {
         sendAutoModEmail(userName, GLOBAL_USER.email, originalMessage, content);
     }
@@ -1917,7 +1936,7 @@ function subscribeToForum() {
             if (payload.eventType === 'INSERT') {
                 if (payload.new.customer_id === currentTicketId) {
                     const chatBox = document.getElementById("chatBox");
-                    if(chatBox.innerHTML.includes("No messages yet")) {
+                    if(chatBox.innerHTML.includes("NO LOGS FOUND")) {
                         chatBox.innerHTML = "";
                     }
                     appendMessageToUI(payload.new);
@@ -1939,9 +1958,9 @@ function appendMessageToUI(msg) {
     let adminControls = '';
     if (GLOBAL_USER && isAdmin(GLOBAL_USER.email)) {
         adminControls = `
-            <div style="margin-top: 5px; font-size: 0.75rem; display: flex; gap: 10px;">
-                <span style="color: #ff5555; cursor: pointer; text-decoration:underline;" onclick="deleteMessage('${msg.id}')">Delete Message</span>
-                ${msg.user_id !== GLOBAL_USER.id ? `<span style="color: #f59e0b; cursor: pointer; text-decoration:underline;" onclick="openAdminModal('${msg.user_id}', '${escapeHTML(msg.user_name)}')">Moderate Player</span>` : ''}
+            <div style="margin-top: 10px; font-size: 0.9rem; display: flex; gap: 15px; font-family:'Silkscreen';">
+                <span style="color: #ff5555; cursor: pointer; border-bottom: 2px dashed #ff5555;" onclick="deleteMessage('${msg.id}')">[DEL]</span>
+                ${msg.user_id !== GLOBAL_USER.id ? `<span style="color: #f59e0b; cursor: pointer; border-bottom: 2px dashed #f59e0b;" onclick="openAdminModal('${msg.user_id}', '${escapeHTML(msg.user_name)}')">[MOD]</span>` : ''}
             </div>
         `;
     }
@@ -1955,9 +1974,9 @@ function appendMessageToUI(msg) {
         <div class="message-content-wrapper">
             <div class="message-header">
                 <span class="message-author">${escapeHTML(msg.user_name)}</span>
-                <span class="message-time">${time}</span>
+                <span class="message-time">[${time}]</span>
             </div>
-            <div class="message-text">${escapeHTML(msg.content)}</div>
+            <div class="message-text">> ${escapeHTML(msg.content)}</div>
             ${adminControls}
         </div>
     `;
@@ -1995,7 +2014,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 });
 </script>
 
-<!-- NEW CODE: Web Games Overlay with X button -->
+<!-- Web Games Overlay -->
 <style>
 #game-overlay {
     display: none;
@@ -2005,7 +2024,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     width: 100vw;
     height: 100vh;
     background: #000;
-    z-index: 10000;
+    z-index: 1000000;
 }
 #game-iframe {
     width: 100%;
@@ -2017,23 +2036,23 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     top: 15px;
     right: 20px;
     color: white;
-    font-family: monospace;
-    font-size: 1.2rem;
-    font-weight: bold;
+    font-family: 'Silkscreen', cursive;
+    font-size: 1.5rem;
     cursor: pointer;
-    background: rgba(0,0,0,0.5);
-    padding: 4px 10px;
-    border-radius: 8px;
+    background: #ff3b3b;
+    border: 2px solid #fff;
+    padding: 8px 16px;
     user-select: none;
-    transition: 0.3s;
-    z-index: 10001;
+    box-shadow: 4px 4px 0 #8b0000;
+    z-index: 1000001;
 }
-#game-close-btn:hover {
-    background: rgba(255,0,0,0.8);
+#game-close-btn:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 #8b0000;
 }
 </style>
 <div id="game-overlay">
-    <div id="game-close-btn" onclick="closeGameOverlay()">x</div>
+    <div id="game-close-btn" onclick="closeGameOverlay()">ABORT_GAME</div>
     <iframe id="game-iframe" src=""></iframe>
 </div>
 <script>
@@ -2044,12 +2063,12 @@ const audioToggleBtn = document.getElementById('audio-toggle-btn');
 function toggleMainAudio() {
     if (audioPlayer.paused) {
         audioPlayer.play();
-        audioToggleBtn.textContent = "Stop";
+        audioToggleBtn.textContent = "STOP";
         audioToggleBtn.classList.remove('btn-secondary');
         audioToggleBtn.classList.add('btn-primary');
     } else {
         audioPlayer.pause();
-        audioToggleBtn.textContent = "Play";
+        audioToggleBtn.textContent = "PLAY";
         audioToggleBtn.classList.remove('btn-primary');
         audioToggleBtn.classList.add('btn-secondary');
     }
@@ -2058,7 +2077,7 @@ function toggleMainAudio() {
 function stopAudio() {
     if (audioPlayer && !audioPlayer.paused) {
         audioPlayer.pause();
-        audioToggleBtn.textContent = "Play";
+        audioToggleBtn.textContent = "PLAY";
         audioToggleBtn.classList.remove('btn-primary');
         audioToggleBtn.classList.add('btn-secondary');
     }
@@ -2074,10 +2093,10 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("DOMContentLoaded", () => {
     const gameLinks = document.querySelectorAll('.download-btn');
     gameLinks.forEach(link => {
-        if (link.textContent.trim() === "Play Web Version") {
+        if (link.textContent.trim() === "BOOT WEB_APP") {
             link.addEventListener("click", function(e) {
                 e.preventDefault();
-                stopAudio(); // NEW: Stops the audio when a player enters the game overlay
+                stopAudio(); 
                 document.getElementById("game-iframe").src = this.href;
                 document.getElementById("game-overlay").style.display = "block";
             });
@@ -2095,3 +2114,4 @@ function closeGameOverlay() {
 </script>
 </body>
 </html>
+
