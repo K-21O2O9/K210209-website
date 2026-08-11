@@ -100,7 +100,7 @@
             <div class="flex items-center space-x-3 pointer-events-auto drop-shadow-lg">
                 <button id="toggle-names-btn" class="toggle-btn" aria-label="Toggle HP/Names">
                     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3-1.34-3-3-3z"/>
                     </svg>
                 </button>
                 <div>
@@ -154,28 +154,12 @@
 
             <!-- Primary Buttons -->
             <div id="menu-actions" class="space-y-3">
-                <button id="play-ai-btn" class="w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2 border border-blue-600/50">
-                    <i class="fa-solid fa-robot"></i> SINGLE PLAYER (AI)
+                <button id="play-pass-btn" class="w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2 border border-blue-600/50">
+                    <i class="fa-solid fa-users"></i> PASS & PLAY (LOCAL)
                 </button>
                 <button id="play-btn" class="w-full bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2 border border-red-600/50">
                     <i class="fa-solid fa-globe"></i> PLAY MULTIPLAYER
                 </button>
-            </div>
-
-            <!-- Single Player Submenu -->
-            <div id="ai-submenu" class="hidden space-y-3 pt-2">
-                <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">Select AI Difficulty</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    <button id="start-ai-normal" class="bg-blue-900/20 hover:bg-blue-900/40 border border-blue-800/40 text-blue-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
-                        <i class="fa-solid fa-user-shield text-2xl text-blue-500"></i>
-                        <span class="text-xs">NORMAL</span>
-                    </button>
-                    <button id="start-ai-hard" class="bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/40 text-rose-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
-                        <i class="fa-solid fa-skull text-2xl text-rose-500"></i>
-                        <span class="text-xs">HARD</span>
-                    </button>
-                </div>
-                <button id="back-to-menu-from-ai" class="text-xs text-slate-500 hover:text-slate-300 transition underline mt-4 block mx-auto">&larr; Back to Main Menu</button>
             </div>
 
             <!-- Play Submenu (Join / Create) -->
@@ -303,8 +287,7 @@
     let isLocalSimulator = true;
     let roomCode = null;
     let playerNumber = 1; // 1 = Blue (P1), 2 = Red (P2)
-    let isAIMode = false;
-    let aiDifficulty = 'normal';
+    let isPassAndPlay = false;
     
     function showNetToast(message, type = 'info') {
         const container = document.getElementById('net-toast-container');
@@ -369,7 +352,7 @@
 
     function broadcastEvent(eventType, payloadData) {
         const packet = { event: eventType, sender: playerNumber, data: payloadData };
-        if (isAIMode) return; // Ignore network if AI mode
+        if (isPassAndPlay) return; // Ignore network if Pass & Play mode
         if (isLocalSimulator) {
             localStorage.setItem('sim_event_' + roomCode, JSON.stringify({ packet, time: Date.now() }));
             return;
@@ -380,14 +363,14 @@
     }
 
     function handleSimulatorStorage(e) {
-        if (isAIMode) return;
+        if (isPassAndPlay) return;
         if (e.key === 'sim_event_' + roomCode && e.newValue) {
             try { handleRemoteEvent(JSON.parse(e.newValue).packet); } catch(err) {}
         }
     }
 
     function handleRemoteEvent(packet) {
-        if (!packet || packet.sender === playerNumber || isAIMode) return;
+        if (!packet || packet.sender === playerNumber || isPassAndPlay) return;
         const { event, data } = packet;
 
         switch (event) {
@@ -815,7 +798,7 @@
     }
 
     function requestAdvanceTurn() {
-        if (playerNumber === 1) { // Host resolves queue logic
+        if (playerNumber === 1 || isPassAndPlay) { // Host resolves queue logic
             let nextIndex = currentTurnIndex + 1;
             let nQueue = turnQueue;
             if (nextIndex >= nQueue.length) {
@@ -837,33 +820,37 @@
         state = 'PLAYER_TURN'; ap = 3;
         activeUnit = units.find(u => u.id === turnQueue[currentTurnIndex]);
 
-        if (!activeUnit) { if(playerNumber === 1) requestAdvanceTurn(); return; }
+        if (!activeUnit) { if(playerNumber === 1 || isPassAndPlay) requestAdvanceTurn(); return; }
 
         activeUnit.setDefending(false); clearHighlights(); updateAPUI();
 
-        const isMyTurn = (activeUnit.team === playerNumber);
+        const isMyTurn = isPassAndPlay || (activeUnit.team === playerNumber);
         
         document.getElementById('unit-name').innerText = activeUnit.name;
         
         if (isMyTurn) {
-            document.getElementById('turn-indicator').innerText = "YOUR TURN";
-            document.getElementById('turn-indicator').classList.replace('text-red-500', 'text-yellow-400');
+            document.getElementById('turn-indicator').innerText = isPassAndPlay ? `PLAYER ${activeUnit.team}'S TURN` : "YOUR TURN";
+            
+            if (isPassAndPlay && activeUnit.team === 2) {
+                document.getElementById('turn-indicator').classList.remove('text-yellow-400');
+                document.getElementById('turn-indicator').classList.add('text-red-500');
+            } else {
+                document.getElementById('turn-indicator').classList.remove('text-red-500');
+                document.getElementById('turn-indicator').classList.add('text-yellow-400');
+            }
+
             document.getElementById('unit-desc').innerText = "Select an action.";
             btnEndTurn.style.display = 'block'; btnEndTurn.innerText = "End Turn"; btnEndTurn.classList.remove('facing-mode');
-            showToast("Your Turn", '#facc15');
+            showToast(isPassAndPlay ? `Player ${activeUnit.team} Turn` : "Your Turn", activeUnit.team === 1 ? '#facc15' : '#ef4444');
             rollDice();
             broadcastEvent('SYNC_DICE', { dice: diceRolled });
         } else {
-            document.getElementById('turn-indicator').innerText = isAIMode ? "AI'S TURN" : "OPPONENT'S TURN";
+            document.getElementById('turn-indicator').innerText = "OPPONENT'S TURN";
             document.getElementById('turn-indicator').classList.replace('text-yellow-400', 'text-red-500');
             document.getElementById('unit-desc').innerText = "Enemy is acting...";
             btnEndTurn.style.display = 'none';
             showToast("Enemy Acts", '#ef4444');
             diceContainer.innerHTML = ''; 
-
-            if (isAIMode && activeUnit.team === 2) {
-                setTimeout(playAITurn, 800); // Trigger local AI Logic
-            }
         }
 
         tween(activeUnit.mesh.scale, {y: 1.3}, 0.15, Easing.OutQuad, null, () => tween(activeUnit.mesh.scale, {y: 1.0}, 0.15, Easing.InQuad));
@@ -904,7 +891,7 @@
     }
 
     function selectDie(index, btnEl) {
-        if (state !== 'PLAYER_TURN' || diceRolled[index].used || activeUnit.team !== playerNumber) return;
+        if (state !== 'PLAYER_TURN' || diceRolled[index].used || (!isPassAndPlay && activeUnit.team !== playerNumber)) return;
         
         const die = diceRolled[index];
         if (die.id === 'wild' && die.effectiveId === 'wild') {
@@ -1033,7 +1020,7 @@
             }
         }
 
-        if(state !== 'PLAYER_TURN' || selectedDieIndex === -1 || activeUnit.name !== 'Mage' || isDraggingCam || activeUnit.team !== playerNumber) return;
+        if(state !== 'PLAYER_TURN' || selectedDieIndex === -1 || activeUnit.name !== 'Mage' || isDraggingCam || (!isPassAndPlay && activeUnit.team !== playerNumber)) return;
         const die = diceRolled[selectedDieIndex];
         const actionType = die.effectiveId;
         if(actionType !== 'magic') return;
@@ -1061,7 +1048,7 @@
         if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return;
         if (Math.hypot(e.clientX - initialDownX, e.clientY - initialDownY) > 10 || isDraggingCam) { isDraggingCam = false; return; }
 
-        if((state !== 'PLAYER_TURN' && state !== 'CHOOSE_FACING') || activeUnit.team !== playerNumber) return;
+        if((state !== 'PLAYER_TURN' && state !== 'CHOOSE_FACING') || (!isPassAndPlay && activeUnit.team !== playerNumber)) return;
 
         mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
@@ -1479,117 +1466,20 @@
         const title = document.getElementById('gameover-title');
         const iconBg = document.getElementById('gameover-icon-bg');
         modal.classList.remove('hidden');
-        if (winnerNum === playerNumber) {
+        if (isPassAndPlay) {
+            title.textContent = `PLAYER ${winnerNum} WINS!`; 
+            title.className = winnerNum === 1 ? 'text-2xl font-black text-blue-400' : 'text-2xl font-black text-red-500';
+            document.getElementById('gameover-icon').className = 'fa-solid fa-trophy';
+            iconBg.className = winnerNum === 1 
+                ? 'w-20 h-20 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 mx-auto flex items-center justify-center text-4xl'
+                : 'w-20 h-20 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 mx-auto flex items-center justify-center text-4xl';
+        } else if (winnerNum === playerNumber) {
             title.textContent = 'VICTORY!'; title.className = 'text-2xl font-black text-emerald-400';
             iconBg.className = 'w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center text-4xl';
         } else {
             title.textContent = 'DEFEAT'; title.className = 'text-2xl font-black text-rose-500';
             document.getElementById('gameover-icon').className = 'fa-solid fa-skull';
             iconBg.className = 'w-20 h-20 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 mx-auto flex items-center justify-center text-4xl';
-        }
-    }
-
-    /** --- AI LOGIC --- **/
-    async function playAITurn() {
-        rollDice();
-        renderRemoteDice();
-        await new Promise(r => setTimeout(r, 1500)); // Initial think time
-
-        while (ap > 0 && state === 'PLAYER_TURN' && !checkWinCondition()) {
-            let available = diceRolled.map((d, i) => ({d, i})).filter(x => !x.d.used);
-            if (available.length === 0) break;
-
-            let bestIntent = null;
-            let bestScore = -Infinity;
-            let myEnemies = units.filter(u => u.team === 1 && u.hp > 0);
-            
-            if (myEnemies.length === 0) break;
-
-            // Simple heuristic evaluation
-            for (let avail of available) {
-                let effActs = avail.d.id === 'wild' ? activeUnit.actions.filter(a => a !== 'wild') : [avail.d.id];
-                
-                for (let act of effActs) {
-                    // Shielding logic injected manually since it has no tile targets
-                    if (act === 'defend') {
-                        let score = 5; 
-                        if (activeUnit.hp < activeUnit.maxHp * 0.5) score += 20; // more likely to defend if weak
-                        score += Math.random();
-                        if (score > bestScore) {
-                            bestScore = score;
-                            bestIntent = {
-                                targetInfo: { type: 'defend' },
-                                dieIndex: avail.i,
-                                hitResults: null,
-                                morphedId: act
-                            };
-                        }
-                        continue; // skip the tile logic for defend
-                    }
-
-                    showValidTargets(act); // Populates highlightMeshes based on this action
-                    
-                    for (let hl of highlightMeshes) {
-                        let score = 0;
-                        let distToNearest = Math.min(...myEnemies.map(e => Math.abs(e.x - hl.x) + Math.abs(e.z - hl.z)));
-
-                        if (hl.type === 'attack') {
-                            let results = generateHitResults(act, hl.x, hl.z);
-                            let dmg = Object.values(results).reduce((sum, res) => sum + (res.isHit ? res.finalDamage : 0), 0);
-                            score = 50 + dmg * 10;
-                            
-                            // Hard AI prioritizes finishing low HP targets
-                            if (aiDifficulty === 'hard') {
-                                Object.keys(results).forEach(id => {
-                                    let u = units.find(x => x.id === id);
-                                    if (u && u.hp <= results[id].finalDamage) score += 100;
-                                });
-                            }
-                        } else if (hl.type === 'move' || hl.type === 'dash') {
-                            score = 20 - distToNearest; // Prefer moving closer
-                        }
-
-                        // Add a tiny randomness so AI isn't perfectly deterministic
-                        score += Math.random(); 
-
-                        if (score > bestScore) {
-                            bestScore = score;
-                            bestIntent = {
-                                targetInfo: hl,
-                                dieIndex: avail.i,
-                                hitResults: hl.type === 'attack' ? generateHitResults(act, hl.x, hl.z) : null,
-                                morphedId: act
-                            };
-                        }
-                    }
-                }
-            }
-
-            clearHighlights();
-
-            if (bestIntent) {
-                diceRolled[bestIntent.dieIndex].effectiveId = bestIntent.morphedId;
-                selectedDieIndex = bestIntent.dieIndex;
-                const dieEl = diceContainer.children[bestIntent.dieIndex];
-                if(dieEl) {
-                    const d = ALL_DICE_FACES[bestIntent.morphedId];
-                    dieEl.innerHTML = `<span class="die-icon text-amber-300">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-amber-400 relative z-10">${d.name}</span>`;
-                    dieEl.classList.add('selected');
-                }
-                
-                await new Promise(r => setTimeout(r, 600)); // Pause before execution
-                await executeAction(bestIntent);
-            } else {
-                break; // No valid moves found
-            }
-        }
-
-        if (state === 'CHOOSE_FACING' && !checkWinCondition()) {
-            let nearest = units.filter(u => u.team === 1).sort((a,b) => 
-                (Math.abs(a.x - activeUnit.x) + Math.abs(a.z - activeUnit.z)) - (Math.abs(b.x - activeUnit.x) + Math.abs(b.z - activeUnit.z))
-            )[0];
-            if (nearest) activeUnit.lookAtTile(nearest.x, nearest.z);
-            endPlayerTurnPhase();
         }
     }
 
@@ -1631,26 +1521,15 @@
             document.getElementById('play-submenu').classList.add('hidden'); document.getElementById('menu-actions').classList.remove('hidden');
         });
 
-        // AI Modes
-        document.getElementById('play-ai-btn').addEventListener('click', () => {
-            document.getElementById('menu-actions').classList.add('hidden'); document.getElementById('ai-submenu').classList.remove('hidden');
-        });
-        document.getElementById('back-to-menu-from-ai').addEventListener('click', () => {
-            document.getElementById('ai-submenu').classList.add('hidden'); document.getElementById('menu-actions').classList.remove('hidden');
-        });
-
-        document.getElementById('start-ai-normal').addEventListener('click', () => {
-            aiDifficulty = 'normal'; isAIMode = true; playerNumber = 1; roomCode = 'AI_GAME';
-            startGameSession(true, 'ai');
-        });
-        document.getElementById('start-ai-hard').addEventListener('click', () => {
-            aiDifficulty = 'hard'; isAIMode = true; playerNumber = 1; roomCode = 'AI_GAME';
-            startGameSession(true, 'ai');
+        // Pass and Play Mode
+        document.getElementById('play-pass-btn').addEventListener('click', () => {
+            isPassAndPlay = true; playerNumber = 1; roomCode = 'LOCAL_GAME';
+            startGameSession(true, 'local');
         });
 
         // Multiplayer Create/Join
         document.getElementById('create-room-btn').addEventListener('click', () => {
-            playerNumber = 1; isAIMode = false;
+            playerNumber = 1; isPassAndPlay = false;
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
             setupRealtimeChannel(code);
             document.getElementById('lobby-code-display').textContent = code;
@@ -1660,7 +1539,7 @@
         document.getElementById('confirm-join-btn').addEventListener('click', () => {
             const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
             if (codeInput.length !== 6) return showNetToast('Please enter a valid 6-character room code.', 'error');
-            playerNumber = 2; isAIMode = false; setupRealtimeChannel(codeInput);
+            playerNumber = 2; isPassAndPlay = false; setupRealtimeChannel(codeInput);
         });
         
         document.getElementById('copy-code-btn').addEventListener('click', () => {
@@ -1691,5 +1570,4 @@
 </script>
 </body>
 </html>
-
 
