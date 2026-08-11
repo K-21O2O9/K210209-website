@@ -37,6 +37,15 @@
 
     <canvas id="gameCanvas"></canvas>
 
+    <div id="songMenu" class="absolute top-4 right-4 pointer-events-auto glass-panel p-3 rounded-xl border border-white/20 flex flex-col gap-1 shadow-2xl" style="z-index: 60;">
+        <label class="text-[10px] text-yellow-400 font-bold uppercase tracking-widest text-center">Soundtrack</label>
+        <select id="bgmSelect" class="bg-gray-900/90 text-white text-xs p-1.5 rounded border border-gray-700 outline-none cursor-pointer">
+            <option value="">Off</option>
+            <option value="What's That Sound- Sir Music.mp3">What's That Sound - Sir Music</option>
+        </select>
+        <audio id="bgmAudio" loop></audio>
+    </div>
+
     <div id="hud" class="overlay justify-between" style="display: none;">
         <div class="flex justify-between items-start p-5 md:p-8">
             <div class="text-white">
@@ -464,7 +473,7 @@ class Player {
 
     recordMove(move) {
         this.moveHistory.push(move);
-        if(this.moveHistory.length > 8) this.moveHistory.shift(); // Increased to 8 to store longer combos
+        if(this.moveHistory.length > 4) this.moveHistory.shift(); // Limited to 4 swipes max
     }
 
     update(dt, world) {
@@ -906,7 +915,7 @@ class World {
     }
 
     generateAhead(camX) {
-        while (this.lastX < camX + 3600) {
+        while (this.lastX < camX + 5500) {
             let gap = Math.random() * 180 + 110;
             let width = Math.random() * 520 + 400;
             
@@ -954,7 +963,7 @@ class World {
     draw(ctx, camX, camY) {
         for (let p of this.platforms) {
             let drawX = p.x - camX; let drawY = p.y - camY;
-            if (drawX > window.innerWidth + 300 || drawX + p.w < -300) continue;
+            if (drawX > (window.innerWidth / 0.55) + 300 || drawX + p.w < -300) continue;
 
             if (p.type === CONFIG.platformTypes.BUILDING) {
                 ctx.save();
@@ -1060,7 +1069,7 @@ const Game = {
         this.ctx = this.canvas.getContext('2d');
         this.resize(); 
         
-        AssetCache.init(Math.max(1200, window.innerWidth), Math.max(800, window.innerHeight));
+        AssetCache.init(Math.max(1200, window.innerWidth / 0.55), Math.max(800, window.innerHeight / 0.55));
         
         window.addEventListener('resize', () => this.resize());
         Input.init(); this.bindUI();
@@ -1070,8 +1079,10 @@ const Game = {
     },
 
     resize() { 
-        this.canvas.width = Math.max(1, window.innerWidth); 
-        this.canvas.height = Math.max(1, window.innerHeight); 
+        this.canvas.width = Math.max(1, window.innerWidth / 0.55); 
+        this.canvas.height = Math.max(1, window.innerHeight / 0.55); 
+        this.canvas.style.width = window.innerWidth + 'px';
+        this.canvas.style.height = window.innerHeight + 'px';
     },
 
     bindUI() {
@@ -1096,6 +1107,18 @@ const Game = {
             document.getElementById('gameOverModal').style.display = 'none'; 
             document.getElementById('mainMenu').style.display = 'flex'; 
             GAME_STATE = 'MENU'; 
+        });
+
+        const bgmSelect = document.getElementById('bgmSelect');
+        const bgmAudio = document.getElementById('bgmAudio');
+        bgmSelect.addEventListener('change', (e) => {
+            if (e.target.value) {
+                bgmAudio.src = e.target.value;
+                bgmAudio.play().catch(()=>{});
+            } else {
+                bgmAudio.pause();
+                bgmAudio.currentTime = 0;
+            }
         });
     },
 
@@ -1164,7 +1187,7 @@ const Game = {
         
         this.distance = Math.max(this.distance, this.player.x / 100);
         
-        let targetX = this.player.x - this.canvas.width * 0.35;
+        let targetX = this.player.x - this.canvas.width * 0.2;
         this.camX += (targetX - this.camX) * dt * 8;
         
         this.targetCamY = this.player.y - this.canvas.height * 0.5;
@@ -1231,5 +1254,3 @@ Game.init();
 </script>
 </body>
 </html>
-
-
