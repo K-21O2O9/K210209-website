@@ -286,7 +286,7 @@
     }
 
     function initSupabase() {
-        const url = localStorage.getItem('sb_url') || ''; const key = localStorage.getItem('sb_key') || '';
+        const url = localStorage.getItem('sb_url') || 'https://oqboqzcjsnhuvxecwonb.supabase.co'; const key = localStorage.getItem('sb_key') || 'sb_publishable_buFfG1jbB8kPnYlFl5UvNg_hHnV3xmH';
         const statusEl = document.getElementById('supabase-status');
         if (url && key && window.supabase) {
             try { supabaseClient = window.supabase.createClient(url, key); isLocalSimulator = false; statusEl.textContent = 'Connected (Live)'; statusEl.className = 'text-emerald-400 font-medium'; } 
@@ -1482,7 +1482,7 @@
         document.getElementById('leave-game-btn').addEventListener('click', () => { document.getElementById('confirm-modal').classList.remove('hidden'); document.getElementById('confirm-message').textContent = 'Leave match?'; });
         document.getElementById('confirm-yes-btn').addEventListener('click', () => { document.getElementById('confirm-modal').classList.add('hidden'); leaveGame(); });
         document.getElementById('confirm-no-btn').addEventListener('click', () => document.getElementById('confirm-modal').classList.add('hidden')); document.getElementById('quit-btn').addEventListener('click', leaveGame);
-        const sbModal = document.getElementById('supabase-modal'); const openSbModal = () => { document.getElementById('sb-url-input').value = localStorage.getItem('sb_url') || ''; document.getElementById('sb-key-input').value = localStorage.getItem('sb_key') || ''; sbModal.classList.remove('hidden'); };
+        const sbModal = document.getElementById('supabase-modal'); const openSbModal = () => { document.getElementById('sb-url-input').value = localStorage.getItem('sb_url') || 'https://oqboqzcjsnhuvxecwonb.supabase.co'; document.getElementById('sb-key-input').value = localStorage.getItem('sb_key') || 'sb_publishable_buFfG1jbB8kPnYlFl5UvNg_hHnV3xmH'; sbModal.classList.remove('hidden'); };
         document.getElementById('config-btn').addEventListener('click', openSbModal); document.getElementById('supabase-config-link').addEventListener('click', openSbModal); document.getElementById('close-supabase-btn').addEventListener('click', () => sbModal.classList.add('hidden'));
         document.getElementById('save-sb-btn').addEventListener('click', () => { localStorage.setItem('sb_url', document.getElementById('sb-url-input').value.trim()); localStorage.setItem('sb_key', document.getElementById('sb-key-input').value.trim()); initSupabase(); sbModal.classList.add('hidden'); showNetToast('Credentials saved.'); });
     });
