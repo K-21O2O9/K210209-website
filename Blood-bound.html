@@ -3,23 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BLOODBOUND - Premium Edition</title>
-    <!-- Tailwind for rapid UI layout -->
+    <title>BLOODBOUND - Ultimate Arena Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Three.js for 3D rendering -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #050505; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
-        #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; touch-action: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #020205; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+        #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; touch-action: none; background-color: #020205;}
         
-        .modal-blur { backdrop-filter: blur(8px); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .modal-blur { backdrop-filter: blur(12px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
 
         /* UI Layer */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
@@ -27,50 +23,42 @@
         
         /* Floating HP Bars */
         #hp-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-        .hp-bar { position: absolute; transform: translate(-50%, -100%); background: linear-gradient(180deg, rgba(30,30,30,0.95) 0%, rgba(10,10,10,0.95) 100%); border: 1px solid #555; border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px black; box-shadow: 0 4px 6px rgba(0,0,0,0.5); transition: opacity 0.3s, top 0.1s, left 0.1s; z-index: 10; }
-        .hp-fill { height: 5px; background: linear-gradient(90deg, #e11d48 0%, #f43f5e 100%); border-radius: 2px; margin-top: 3px; transition: width 0.3s; box-shadow: 0 0 5px rgba(225,29,72,0.6); }
+        .hp-bar { position: absolute; transform: translate(-50%, -100%); background: linear-gradient(180deg, rgba(20,20,25,0.95) 0%, rgba(5,5,8,0.95) 100%); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px black; box-shadow: 0 8px 16px rgba(0,0,0,0.7); transition: opacity 0.3s, top 0.1s, left 0.1s; z-index: 10; backdrop-filter: blur(4px); }
+        .hp-fill { height: 5px; background: linear-gradient(90deg, #e11d48 0%, #f43f5e 100%); border-radius: 2px; margin-top: 3px; transition: width 0.3s; box-shadow: 0 0 8px rgba(225,29,72,0.8); }
         
-        /* Dice animations & Beautiful Dark Fantasy Buttons */
         @keyframes roll { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
         .rolling { animation: roll 0.5s ease-out; }
         
         .die-btn { 
             width: 76px; height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #2a2a30 0%, #151518 100%); border: 2px solid #3f3f46; border-bottom-width: 4px;
-            border-radius: 16px; color: white; box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.8), 0 6px 12px rgba(0,0,0,0.6);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden;
+            background: linear-gradient(135deg, #1e1e24 0%, #0d0d10 100%); border: 2px solid #3f3f46; border-bottom-width: 4px;
+            border-radius: 16px; color: white; box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.8), 0 8px 16px rgba(0,0,0,0.6);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; cursor: pointer;
         }
         .die-btn::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.15); border-radius: 16px 16px 0 0; }
-        .die-btn:hover { border-color: #71717a; transform: translateY(-3px); box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 6px rgba(0,0,0,0.8), 0 8px 16px rgba(0,0,0,0.7); }
+        .die-btn:hover { border-color: #71717a; transform: translateY(-3px); box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 6px rgba(0,0,0,0.8), 0 12px 20px rgba(0,0,0,0.7); }
         .die-btn.selected { border-color: #fbbf24; background: linear-gradient(135deg, #4d3a08 0%, #241c04 100%); box-shadow: 0 0 20px rgba(251, 191, 36, 0.4), inset 0 0 15px rgba(251, 191, 36, 0.2), 0 10px 20px rgba(0,0,0,0.8); transform: translateY(-8px) scale(1.05); }
         .die-btn.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; transform: scale(0.9); border-bottom-width: 2px; margin-top: 2px;}
         
         .die-icon { font-size: 22px; font-weight: 900; letter-spacing: 1px; color: #e4e4e7; text-shadow: 0 2px 5px rgba(0,0,0,0.8); position: relative; z-index: 10; }
         .die-btn.selected .die-icon { color: #fef3c7; text-shadow: 0 0 15px rgba(251, 191, 36, 0.8); }
 
-        .fancy-action-btn { background: linear-gradient(to bottom, #7f1d1d, #450a0a); border: 2px solid #b91c1c; border-bottom-width: 4px; border-radius: 12px; box-shadow: inset 0 1px 0 rgba(255,100,100,0.3), 0 6px 12px rgba(0,0,0,0.6), 0 0 15px rgba(153, 27, 27, 0.3); color: #fca5a5; text-shadow: 0 2px 4px rgba(0,0,0,0.8); transition: all 0.15s ease; font-weight: 900; padding: 16px 24px; text-transform: uppercase; letter-spacing: 0.2em; width: 100%; }
+        .fancy-action-btn { background: linear-gradient(to bottom, #7f1d1d, #450a0a); border: 2px solid #b91c1c; border-bottom-width: 4px; border-radius: 12px; box-shadow: inset 0 1px 0 rgba(255,100,100,0.3), 0 6px 12px rgba(0,0,0,0.6), 0 0 15px rgba(153, 27, 27, 0.3); color: #fca5a5; text-shadow: 0 2px 4px rgba(0,0,0,0.8); transition: all 0.15s ease; font-weight: 900; padding: 16px 24px; text-transform: uppercase; letter-spacing: 0.2em; width: 100%; cursor: pointer;}
         .fancy-action-btn:hover { background: linear-gradient(to bottom, #991b1b, #450a0a); border-color: #ef4444; color: #fef2f2; box-shadow: inset 0 1px 0 rgba(255,100,100,0.4), 0 8px 16px rgba(0,0,0,0.7), 0 0 20px rgba(185, 28, 28, 0.5); }
         .fancy-action-btn:active { transform: translateY(2px); border-bottom-width: 2px; box-shadow: inset 0 3px 6px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.6); margin-top: 2px; margin-bottom: -2px; }
-        .fancy-action-btn.facing-mode { background: linear-gradient(to bottom, #047857, #064e3b); border-color: #10b981; color: #a7f3d0; box-shadow: inset 0 1px 0 rgba(100,255,150,0.3), 0 6px 12px rgba(0,0,0,0.6), 0 0 15px rgba(4, 120, 87, 0.3); }
+        .fancy-action-btn.facing-mode { background: linear-gradient(to bottom, #047857, #064e3b); border-color: #10b981; color: #a7f3d0; }
         .fancy-action-btn.facing-mode:hover { background: linear-gradient(to bottom, #059669, #064e3b); border-color: #34d399; color: #ffffff; }
-        .fancy-action-btn:disabled { opacity: 0.5; pointer-events: none; filter: grayscale(100%); }
-
-        .toggle-btn { background: linear-gradient(135deg, #2a2a30 0%, #151518 100%); border: 2px solid #3f3f46; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.6); transition: all 0.2s; cursor: pointer; }
-        .toggle-btn:active { transform: scale(0.9); }
-        .toggle-btn svg { width: 24px; height: 24px; fill: #d4d4d8; transition: fill 0.2s; }
-        .toggle-btn.off svg { fill: #ef4444; }
-
-        /* Notification Toast (Game) */
-        #toast { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(180deg, rgba(20,20,20,0.95) 0%, rgba(0,0,0,0.95) 100%); border: 2px solid #c2410c; padding: 15px 40px; border-radius: 12px; font-size: 24px; font-weight: 900; text-align: center; opacity: 0; transition: opacity 0.3s; text-transform: uppercase; letter-spacing: 3px; z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(194, 65, 12, 0.3); text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none;}
+        
+        .toggle-btn { background: linear-gradient(135deg, #1e1e24 0%, #0d0d10 100%); border: 2px solid #3f3f46; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.6); transition: all 0.2s; cursor: pointer; pointer-events: auto;}
+        
+        #toast { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(180deg, rgba(20,20,20,0.95) 0%, rgba(0,0,0,0.95) 100%); border: 2px solid #c2410c; padding: 15px 40px; border-radius: 12px; font-size: 24px; font-weight: 900; text-align: center; opacity: 0; transition: opacity 0.3s; text-transform: uppercase; letter-spacing: 3px; z-index: 50; pointer-events: none;}
     </style>
 </head>
 <body class="bg-slate-950">
 
-    <!-- Toast Notification Container (Network) -->
     <div id="net-toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- Top Status Bar (Multiplayer) -->
-    <header class="absolute top-0 w-full bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex justify-between items-center z-[60] shadow-lg pointer-events-auto">
+    <header id="main-header" class="absolute top-0 w-full bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex justify-between items-center z-[60] shadow-lg pointer-events-auto">
         <div class="flex items-center gap-3">
             <div class="font-black text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-400">
                 <i class="fa-solid fa-droplet text-red-500 mr-1.5"></i>BLOODBOUND
@@ -81,28 +69,18 @@
             </span>
         </div>
         <div class="flex items-center gap-2">
-            <button id="config-btn" class="text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 p-2 rounded-lg text-xs transition border border-slate-700" title="Supabase Credentials">
-                <i class="fa-solid fa-gear text-sm"></i>
-            </button>
-            <button id="leave-game-btn" class="hidden text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-rose-800/50 flex items-center gap-1.5">
-                <i class="fa-solid fa-right-from-bracket"></i> Leave
-            </button>
+            <button id="config-btn" class="text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 p-2 rounded-lg text-xs transition border border-slate-700"><i class="fa-solid fa-gear text-sm"></i></button>
+            <button id="leave-game-btn" class="hidden text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-rose-800/50 flex items-center gap-1.5"><i class="fa-solid fa-right-from-bracket"></i> Leave</button>
         </div>
     </header>
 
-    <!-- Main Game Area -->
     <canvas id="game-canvas"></canvas>
     <div id="hp-container"></div>
 
-    <!-- Gameplay UI Layer -->
     <div id="ui-layer" class="hidden pt-[60px]">
         <div class="w-full p-5 flex justify-between items-start bg-gradient-to-b from-black/95 via-black/70 to-transparent pointer-events-none">
             <div class="flex items-center space-x-3 pointer-events-auto drop-shadow-lg">
-                <button id="toggle-names-btn" class="toggle-btn" aria-label="Toggle HP/Names">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3-1.34-3-3-3z"/>
-                    </svg>
-                </button>
+                <button id="toggle-names-btn" class="toggle-btn" aria-label="Toggle HP/Names"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3-1.34-3-3-3z"/></svg></button>
                 <div>
                     <h1 class="text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-gray-100 to-gray-400 uppercase" style="font-family: serif; -webkit-text-stroke: 1px rgba(0,0,0,0.5);">Bloodbound</h1>
                     <div id="turn-indicator" class="text-sm text-yellow-400 font-extrabold tracking-widest mt-1 text-shadow">WAITING...</div>
@@ -116,75 +94,60 @@
 
         <div id="toast">Your Turn</div>
 
+        <!-- Attack Confirmation UI -->
+        <div id="confirm-attack-ui" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-900 border-2 border-red-500 rounded-2xl p-6 shadow-[0_0_40px_rgba(220,38,38,0.5)] z-50 pointer-events-auto text-center min-w-[280px]">
+            <h3 class="text-xl font-black text-white uppercase tracking-wider mb-1">Confirm Attack</h3>
+            <p class="text-xs text-gray-400 mb-6 font-medium">Commit to this target area?</p>
+            <div class="flex gap-4 justify-center">
+                <button id="btn-confirm-yes" class="bg-red-600 hover:bg-red-500 text-white px-6 py-2.5 rounded-lg font-bold transition shadow-lg flex-1">EXECUTE</button>
+                <button id="btn-confirm-no" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2.5 rounded-lg font-bold transition flex-1">CANCEL</button>
+            </div>
+        </div>
+
         <div class="w-full p-6 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-auto pb-8">
             <div id="unit-info" class="mb-5 text-center drop-shadow-md">
                 <h2 id="unit-name" class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 tracking-wide uppercase">Waiting</h2>
                 <p id="unit-desc" class="text-sm text-gray-300 font-medium">Waiting for players...</p>
             </div>
-
             <div class="flex justify-center space-x-5 mb-6" id="dice-container"></div>
-
             <div class="flex justify-between w-full max-w-md mx-auto">
                 <button id="btn-end-turn" class="fancy-action-btn" style="display: none;">End Turn</button>
             </div>
         </div>
     </div>
     
-    <!-- OVERLAY: WILDCARD CHOOSER -->
     <div id="wildcard-modal" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[100] bg-slate-900 border-2 border-amber-500 rounded-2xl p-6 shadow-[0_0_30px_rgba(245,158,11,0.4)] flex flex-col gap-4 pointer-events-auto text-center min-w-[300px]">
         <div class="text-3xl text-amber-500 animate-pulse"><i class="fa-solid fa-star"></i></div>
         <span class="text-sm font-black tracking-widest text-amber-400 uppercase">WILD CARD TRIGGERED</span>
-        <span class="text-xs text-gray-300 mb-2">Choose how to focus this energy:</span>
         <div id="wildcard-options" class="grid grid-cols-2 gap-3"></div>
         <button onclick="cancelWildCard()" class="mt-4 text-xs font-bold text-slate-400 hover:text-white transition uppercase tracking-widest">Cancel</button>
     </div>
 
-    <!-- OVERLAY 1: MAIN MENU -->
+    <!-- MAIN MENU -->
     <div id="main-menu" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="max-w-md w-full mx-4 bg-slate-900 border border-red-900 rounded-2xl p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
             <div class="absolute -right-12 -top-12 w-40 h-40 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
-            
             <div>
-                <div class="inline-flex p-3 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 mb-3 text-3xl">
-                    <i class="fa-solid fa-droplet"></i>
-                </div>
+                <div class="inline-flex p-3 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 mb-3 text-3xl"><i class="fa-solid fa-droplet"></i></div>
                 <h1 class="text-3xl font-extrabold tracking-tight text-white uppercase font-serif">Bloodbound</h1>
-                <p class="text-xs text-slate-400 mt-1">Strategic Dark Fantasy</p>
+                <p class="text-xs text-slate-400 mt-1">Strategic Dark Fantasy Arena</p>
             </div>
-
-            <!-- Primary Buttons -->
             <div id="menu-actions" class="space-y-3">
-                <button id="play-pass-btn" class="w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2 border border-blue-600/50">
-                    <i class="fa-solid fa-users"></i> PASS & PLAY (LOCAL)
-                </button>
-                <button id="play-btn" class="w-full bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2 border border-red-600/50">
-                    <i class="fa-solid fa-globe"></i> PLAY MULTIPLAYER
-                </button>
+                <button id="play-pass-btn" class="w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 text-sm flex items-center justify-center gap-2 border border-blue-600/50"><i class="fa-solid fa-users"></i> PASS & PLAY (LOCAL)</button>
+                <button id="play-btn" class="w-full bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 text-sm flex items-center justify-center gap-2 border border-red-600/50"><i class="fa-solid fa-globe"></i> PLAY MULTIPLAYER</button>
+                <button id="view-units-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 text-sm flex items-center justify-center gap-2 border border-slate-600"><i class="fa-solid fa-eye"></i> VIEW & CUSTOMIZE</button>
             </div>
-
-            <!-- Play Submenu (Join / Create) -->
             <div id="play-submenu" class="hidden space-y-4 pt-2">
                 <div class="grid grid-cols-2 gap-3">
-                    <button id="create-room-btn" class="bg-red-900/20 hover:bg-red-900/40 border border-red-800/40 text-red-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
-                        <i class="fa-solid fa-plus-circle text-2xl text-red-500"></i>
-                        <span class="text-xs">CREATE ROOM</span>
-                    </button>
-                    <button id="show-join-input-btn" class="bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/40 text-emerald-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2">
-                        <i class="fa-solid fa-right-to-bracket text-2xl text-emerald-500"></i>
-                        <span class="text-xs">JOIN ROOM</span>
-                    </button>
+                    <button id="create-room-btn" class="bg-red-900/20 hover:bg-red-900/40 border border-red-800/40 text-red-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2"><i class="fa-solid fa-plus-circle text-2xl text-red-500"></i><span class="text-xs">CREATE ROOM</span></button>
+                    <button id="show-join-input-btn" class="bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/40 text-emerald-200 hover:text-white font-bold p-4 rounded-xl transition text-center flex flex-col items-center gap-2"><i class="fa-solid fa-right-to-bracket text-2xl text-emerald-500"></i><span class="text-xs">JOIN ROOM</span></button>
                 </div>
-                <!-- Join Code Box -->
                 <div id="join-box" class="hidden space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <label class="block text-xs font-semibold text-slate-400 text-left">ENTER 6-CHAR ROOM CODE:</label>
-                    <div class="flex gap-2">
-                        <input id="room-code-input" type="text" maxlength="6" placeholder="X8Y2A9" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-center text-sm font-mono font-bold tracking-widest text-red-400 uppercase focus:outline-none focus:border-red-500">
-                        <button id="confirm-join-btn" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-lg text-xs transition">JOIN</button>
-                    </div>
+                    <div class="flex gap-2"><input id="room-code-input" type="text" maxlength="6" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-center text-sm font-mono font-bold text-red-400 uppercase"><button id="confirm-join-btn" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-lg text-xs">JOIN</button></div>
                 </div>
                 <button id="back-to-menu-btn" class="text-xs text-slate-500 hover:text-slate-300 transition underline">&larr; Back to Main Menu</button>
             </div>
-
             <div class="text-[11px] text-slate-500 border-t border-slate-800/80 pt-4 flex items-center justify-between">
                 <span>Network: <span id="supabase-status" class="text-amber-400 font-medium">Local Simulator</span></span>
                 <button id="supabase-config-link" class="text-blue-400 hover:underline">Change Keys</button>
@@ -192,181 +155,163 @@
         </div>
     </div>
 
-    <!-- OVERLAY 2: LOBBY -->
+    <!-- VIEW & CUSTOMIZE OVERLAY (CLEAN SPLIT SCREEN 1:2:1) -->
+    <div id="view-mode-ui" class="hidden fixed inset-0 z-[65] flex pointer-events-none w-full h-full">
+        
+        <!-- Left Side (25%): Customization Panel -->
+        <div class="w-[35%] sm:w-[30%] md:w-1/4 view-side-panel bg-black border-r border-slate-800 pointer-events-auto flex flex-col shadow-[20px_0_30px_rgba(0,0,0,0.9)] h-full z-10 overflow-hidden">
+            <div class="p-3 sm:p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/40">
+                <div class="w-full">
+                    <h2 id="view-class-name" class="text-base sm:text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500 uppercase tracking-widest truncate">Commander</h2>
+                    <p id="view-class-stats" class="text-[10px] sm:text-xs text-slate-400 mt-1 font-mono font-bold truncate">HP: 12 | ATK: 4 | RNG: 1</p>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-5 space-y-6">
+                <div>
+                    <h3 class="text-[9px] sm:text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center justify-between">
+                        <span>Battle Equipment</span>
+                        <div class="flex gap-1">
+                            <button id="view-prev-btn" class="w-6 h-6 sm:w-8 sm:h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-white transition flex items-center justify-center cursor-pointer"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <button id="view-next-btn" class="w-6 h-6 sm:w-8 sm:h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-white transition flex items-center justify-center cursor-pointer"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                        </div>
+                    </h3>
+                    <div id="cosmetics-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center (50%): 3D Interaction Space -->
+        <div class="flex-1 h-full relative pointer-events-none flex flex-col justify-end pb-8">
+            <div class="w-full text-center text-[10px] sm:text-xs text-slate-400 font-bold tracking-widest uppercase opacity-75 drop-shadow-lg pb-4" style="text-shadow: 0 2px 4px black;">
+                Drag to rotate &bull; Pinch/Scroll to zoom
+            </div>
+        </div>
+
+        <!-- Right Side (25%): Actions Panel -->
+        <div class="w-[35%] sm:w-[30%] md:w-1/4 view-side-panel bg-black border-l border-slate-800 pointer-events-auto flex flex-col shadow-[-20px_0_30px_rgba(0,0,0,0.9)] h-full z-10 overflow-hidden relative">
+            <div class="p-3 sm:p-5 border-b border-slate-800 flex justify-end items-center bg-slate-900/40">
+                <button id="exit-view-btn" class="w-8 h-8 sm:w-10 sm:h-10 bg-slate-800 hover:bg-rose-600 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-white rounded flex items-center justify-center text-sm transition-all shadow-xl z-20 cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+             <div class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-5 space-y-6">
+                <div>
+                    <h3 class="text-[9px] sm:text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Combat Stances</h3>
+                    <div id="animations-list" class="flex flex-col gap-2"></div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-800/60">
+                     <h3 class="text-[9px] sm:text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Preview Actions</h3>
+                     <div class="flex flex-col gap-2">
+                        <button id="test-walk-btn" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-2.5 sm:py-3 rounded font-bold text-[9px] sm:text-[11px] uppercase tracking-wider transition cursor-pointer"><i class="fa-solid fa-shoe-prints mr-2"></i>Walk</button>
+                        <button id="test-attack-btn" class="w-full bg-rose-900/40 hover:bg-rose-800/60 border border-rose-800/50 text-rose-300 py-2.5 sm:py-3 rounded font-bold text-[9px] sm:text-[11px] uppercase tracking-wider transition cursor-pointer"><i class="fa-solid fa-khanda mr-2"></i>Attack</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MISC OVERLAYS -->
     <div id="lobby-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="max-w-sm w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-center space-y-6">
-            <div class="w-16 h-16 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 mx-auto flex items-center justify-center text-2xl animate-spin">
-                <i class="fa-solid fa-spinner"></i>
-            </div>
-            <div>
-                <h2 class="text-xl font-bold text-white">Waiting for Opponent...</h2>
-                <p class="text-xs text-slate-400 mt-1">Share this room code with Player 2</p>
-            </div>
-            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
-                <span id="lobby-code-display" class="font-mono text-2xl font-black text-red-400 tracking-widest">------</span>
-                <button id="copy-code-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
-                    <i class="fa-regular fa-copy"></i> Copy
-                </button>
-            </div>
-            <div class="p-3 bg-slate-800/50 rounded-lg border border-slate-800 text-left text-xs space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="text-slate-400">Player 1 (Host - Blue):</span>
-                    <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Connected</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-slate-400">Player 2 (Red):</span>
-                    <span id="p2-status-text" class="text-amber-400 font-semibold animate-pulse">Waiting...</span>
-                </div>
-            </div>
-            <button id="cancel-lobby-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold py-2.5 rounded-lg border border-slate-700 text-xs transition">
-                Cancel & Return
-            </button>
+            <div class="w-16 h-16 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 mx-auto flex items-center justify-center text-2xl animate-spin"><i class="fa-solid fa-spinner"></i></div>
+            <div><h2 class="text-xl font-bold text-white">Waiting for Opponent...</h2></div>
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between"><span id="lobby-code-display" class="font-mono text-2xl font-black text-red-400 tracking-widest">------</span><button id="copy-code-btn" class="bg-slate-800 text-slate-200 text-xs px-3 py-1.5 rounded-lg border cursor-pointer">Copy</button></div>
+            <button id="cancel-lobby-btn" class="w-full bg-slate-800 text-rose-400 font-semibold py-2.5 rounded-lg border text-xs cursor-pointer">Cancel</button>
         </div>
     </div>
-
-    <!-- OVERLAY 3: GAME OVER -->
+    
     <div id="gameover-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center space-y-6">
-            <div id="gameover-icon-bg" class="w-20 h-20 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 mx-auto flex items-center justify-center text-4xl">
-                <i id="gameover-icon" class="fa-solid fa-trophy"></i>
-            </div>
-            <div>
-                <h2 id="gameover-title" class="text-2xl font-black text-white">VICTORY!</h2>
-                <p id="gameover-sub" class="text-xs text-slate-400 mt-1">Enemy Commander defeated.</p>
-            </div>
-            <div class="pt-2">
-                <button id="quit-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold py-3 rounded-xl border border-slate-700 transition text-xs">
-                    QUIT TO MENU
-                </button>
-            </div>
+            <div id="gameover-icon-bg" class="w-20 h-20 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 mx-auto flex items-center justify-center text-4xl"><i id="gameover-icon" class="fa-solid fa-trophy"></i></div>
+            <div><h2 id="gameover-title" class="text-2xl font-black text-white">VICTORY!</h2></div>
+            <div class="pt-2"><button id="quit-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 rounded-xl border text-xs cursor-pointer">QUIT TO MENU</button></div>
         </div>
     </div>
 
-    <!-- OVERLAY 4: SUPABASE CONFIG -->
     <div id="supabase-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="max-w-md w-full mx-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-database text-emerald-400"></i> Supabase Setup
-                </h3>
-                <button id="close-supabase-btn" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-400">Enter Supabase credentials. If empty, runs Local Broadcast Simulator.</p>
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3"><h3 class="text-base font-bold text-white"><i class="fa-solid fa-database text-emerald-400"></i> Supabase Setup</h3><button id="close-supabase-btn" class="text-slate-400 cursor-pointer"><i class="fa-solid fa-xmark"></i></button></div>
             <div class="space-y-3">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">URL</label>
-                    <input id="sb-url-input" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Anon Key</label>
-                    <input id="sb-key-input" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200">
-                </div>
+                <div><label class="block text-[11px] font-bold text-slate-300">URL</label><input id="sb-url-input" type="text" class="w-full bg-slate-950 border rounded-lg px-3 py-2 text-xs text-slate-200"></div>
+                <div><label class="block text-[11px] font-bold text-slate-300">Key</label><input id="sb-key-input" type="password" class="w-full bg-slate-950 border rounded-lg px-3 py-2 text-xs text-slate-200"></div>
             </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button id="save-sb-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition">Save Credentials</button>
-            </div>
+            <div class="flex justify-end pt-2"><button id="save-sb-btn" class="bg-blue-600 px-4 py-2 rounded-lg text-xs text-white font-bold cursor-pointer">Save</button></div>
         </div>
     </div>
 
-    <!-- OVERLAY 5: CONFIRM -->
     <div id="confirm-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 modal-blur">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 max-w-sm w-full mx-4">
             <h3 class="text-lg font-bold text-white text-center">Are you sure?</h3>
             <p id="confirm-message" class="text-sm text-slate-400 text-center"></p>
             <div class="flex justify-center gap-3 pt-2">
-                <button id="confirm-yes-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-semibold text-sm transition">Yes, Leave</button>
-                <button id="confirm-no-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition">Cancel</button>
+                <button id="confirm-yes-btn" class="bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold text-sm cursor-pointer">Yes</button>
+                <button id="confirm-no-btn" class="bg-slate-700 text-white px-4 py-2 rounded-lg font-semibold text-sm cursor-pointer">Cancel</button>
             </div>
         </div>
     </div>
 
 <script>
+    /** --- LOADOUTS & DATA --- **/
+    const COSMETIC_NAMES = ["None","Iron Halo","War Horns","Steel Wings","Gargoyle Wings","Arcane Orbs","Warlord Crown","Spiky Pauldrons","Visor Glow","Battle Banner","Combat Belt","Plague Mask","Skull Pauldron","Spiked Shield","Aura Base","Knight Helm"];
+    const ANIMATION_NAMES = {
+        'Commander': ["Heavy Slash", "Jump Strike", "Whirlwind Spin"],
+        'Vanguard': ["Shield Bash", "Shield Charge", "Ground Slam"],
+        'Assassin': ["Blink Strike", "Shadow Clone", "Fan of Knives"],
+        'Archer': ["Precision Shot", "Arrow Rain", "Power Shot"],
+        'Mage': ["Arcane Blast", "Kamehameha"] 
+    };
+    
+    let myLoadout = JSON.parse(localStorage.getItem('bb_loadout')) || {};
+    ['Commander', 'Vanguard', 'Assassin', 'Archer', 'Mage'].forEach(k => {
+        if (!myLoadout[k]) myLoadout[k] = { cosmetic: 0, animation: 0 };
+    });
+    let opponentLoadout = null;
+
+    function saveLoadout() { localStorage.setItem('bb_loadout', JSON.stringify(myLoadout)); }
+
     /** --- SUPABASE & NETWORK LOGIC --- **/
-    let supabaseClient = null;
-    let realtimeChannel = null;
-    let isLocalSimulator = true;
-    let roomCode = null;
-    let playerNumber = 1; // 1 = Blue (P1), 2 = Red (P2)
-    let isPassAndPlay = false;
+    let supabaseClient = null; let realtimeChannel = null; let isLocalSimulator = true;
+    let roomCode = null; let playerNumber = 1; let isPassAndPlay = false;
     
     function showNetToast(message, type = 'info') {
         const container = document.getElementById('net-toast-container');
         if (!container) return;
         const toast = document.createElement('div');
-        const colors = type === 'error' ? 'bg-rose-600 border-rose-500' : 'bg-slate-800 border-slate-700';
-        toast.className = `px-4 py-2 rounded-lg shadow-lg border text-white text-sm font-semibold transition-all duration-300 opacity-0 transform -translate-y-4 ${colors}`;
-        toast.textContent = message;
-        container.appendChild(toast);
+        toast.className = `px-4 py-2 rounded-lg shadow-lg border text-white text-sm font-semibold transition-all duration-300 opacity-0 transform -translate-y-4 ${type === 'error' ? 'bg-rose-600 border-rose-500' : 'bg-slate-800 border-slate-700'}`;
+        toast.textContent = message; container.appendChild(toast);
         requestAnimationFrame(() => toast.classList.remove('opacity-0', '-translate-y-4'));
-        setTimeout(() => {
-            toast.classList.add('opacity-0', '-translate-y-4');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        setTimeout(() => { toast.classList.add('opacity-0', '-translate-y-4'); setTimeout(() => toast.remove(), 300); }, 3000);
     }
 
     function initSupabase() {
-        const url = localStorage.getItem('sb_url') || 'https://oqboqzcjsnhuvxecwonb.supabase.co';
-        const key = localStorage.getItem('sb_key') || 'sb_publishable_buFfG1jbB8kPnYlFl5UvNg_hHnV3xmH';
+        const url = localStorage.getItem('sb_url') || ''; const key = localStorage.getItem('sb_key') || '';
         const statusEl = document.getElementById('supabase-status');
         if (url && key && window.supabase) {
-            try {
-                supabaseClient = window.supabase.createClient(url, key);
-                isLocalSimulator = false;
-                statusEl.textContent = 'Connected (Live)';
-                statusEl.className = 'text-emerald-400 font-medium';
-            } catch (e) {
-                isLocalSimulator = true;
-                statusEl.textContent = 'Local Simulator';
-                statusEl.className = 'text-amber-400 font-medium';
-            }
-        } else {
-            isLocalSimulator = true;
-            statusEl.textContent = 'Local Simulator';
-            statusEl.className = 'text-amber-400 font-medium';
-        }
+            try { supabaseClient = window.supabase.createClient(url, key); isLocalSimulator = false; statusEl.textContent = 'Connected (Live)'; statusEl.className = 'text-emerald-400 font-medium'; } 
+            catch (e) { isLocalSimulator = true; statusEl.textContent = 'Local Simulator'; statusEl.className = 'text-amber-400 font-medium'; }
+        } else { isLocalSimulator = true; statusEl.textContent = 'Local Simulator'; statusEl.className = 'text-amber-400 font-medium'; }
     }
 
     function setupRealtimeChannel(code) {
-        roomCode = code;
-        document.getElementById('current-room-code').textContent = code;
-        document.getElementById('room-badge').classList.remove('hidden');
-
-        if (isLocalSimulator) {
-            window.addEventListener('storage', handleSimulatorStorage);
-            return;
-        }
-
-        const channelName = `tactics_room_${code}`;
-        realtimeChannel = supabaseClient.channel(channelName, {
-            config: { broadcast: { self: false } }
-        });
-
-        realtimeChannel
-            .on('broadcast', { event: 'game_event' }, payload => handleRemoteEvent(payload.payload))
-            .subscribe((status) => {
-                if (status === 'SUBSCRIBED' && playerNumber === 2) {
-                    broadcastEvent('PLAYER_JOINED', { pNumber: 2 });
-                }
-            });
+        roomCode = code; document.getElementById('current-room-code').textContent = code; document.getElementById('room-badge').classList.remove('hidden');
+        if (isLocalSimulator) { window.addEventListener('storage', handleSimulatorStorage); return; }
+        realtimeChannel = supabaseClient.channel(`tactics_room_${code}`, { config: { broadcast: { self: false } } });
+        realtimeChannel.on('broadcast', { event: 'game_event' }, payload => handleRemoteEvent(payload.payload))
+            .subscribe((status) => { if (status === 'SUBSCRIBED' && playerNumber === 2) broadcastEvent('PLAYER_JOINED', { pNumber: 2, loadout: myLoadout }); });
     }
 
     function broadcastEvent(eventType, payloadData) {
         const packet = { event: eventType, sender: playerNumber, data: payloadData };
-        if (isPassAndPlay) return; // Ignore network if Pass & Play mode
-        if (isLocalSimulator) {
-            localStorage.setItem('sim_event_' + roomCode, JSON.stringify({ packet, time: Date.now() }));
-            return;
-        }
-        if (realtimeChannel) {
-            realtimeChannel.send({ type: 'broadcast', event: 'game_event', payload: packet });
-        }
+        if (isPassAndPlay) return; 
+        if (isLocalSimulator) { localStorage.setItem('sim_event_' + roomCode, JSON.stringify({ packet, time: Date.now() })); return; }
+        if (realtimeChannel) realtimeChannel.send({ type: 'broadcast', event: 'game_event', payload: packet });
     }
 
     function handleSimulatorStorage(e) {
         if (isPassAndPlay) return;
-        if (e.key === 'sim_event_' + roomCode && e.newValue) {
-            try { handleRemoteEvent(JSON.parse(e.newValue).packet); } catch(err) {}
-        }
+        if (e.key === 'sim_event_' + roomCode && e.newValue) { try { handleRemoteEvent(JSON.parse(e.newValue).packet); } catch(err) {} }
     }
 
     function handleRemoteEvent(packet) {
@@ -375,132 +320,144 @@
 
         switch (event) {
             case 'PLAYER_JOINED':
-                if (playerNumber === 1) {
-                    document.getElementById('lobby-modal').classList.add('hidden');
-                    startGameSession(true); 
-                }
+                if (playerNumber === 1) { opponentLoadout = data.loadout; document.getElementById('lobby-modal').classList.add('hidden'); startGameSession(true); }
                 break;
             case 'GAME_START':
                 if (playerNumber === 2) {
-                    syncBoardUnits(data.units);
-                    applyNewTurn(data.turnQueue, data.turnIndex);
-                    document.getElementById('lobby-modal').classList.add('hidden');
-                    document.getElementById('main-menu').classList.add('hidden');
-                    document.getElementById('ui-layer').classList.remove('hidden');
-                    document.getElementById('leave-game-btn').classList.remove('hidden');
+                    syncBoardUnits(data.units); applyNewTurn(data.turnQueue, data.turnIndex);
+                    document.getElementById('lobby-modal').classList.add('hidden'); document.getElementById('main-menu').classList.add('hidden');
+                    document.getElementById('ui-layer').classList.remove('hidden'); document.getElementById('leave-game-btn').classList.remove('hidden');
                 }
                 break;
-            case 'NEW_TURN':
-                applyNewTurn(data.turnQueue, data.turnIndex);
-                break;
-            case 'SYNC_DICE':
-                diceRolled = data.dice;
-                renderRemoteDice();
-                break;
+            case 'NEW_TURN': applyNewTurn(data.turnQueue, data.turnIndex); break;
+            case 'SYNC_DICE': diceRolled = data.dice; renderRemoteDice(); break;
             case 'SELECT_DIE':
-                selectedDieIndex = data.index;
-                Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
+                selectedDieIndex = data.index; Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
                 if(diceContainer.children[selectedDieIndex]) diceContainer.children[selectedDieIndex].classList.add('selected');
                 break;
             case 'ACTION_INTENT':
-                selectedDieIndex = data.dieIndex;
-                if(data.morphedId && diceRolled[selectedDieIndex]) diceRolled[selectedDieIndex].effectiveId = data.morphedId;
+                selectedDieIndex = data.dieIndex; if(data.morphedId && diceRolled[selectedDieIndex]) diceRolled[selectedDieIndex].effectiveId = data.morphedId;
                 executeAction(data);
                 break;
-            case 'SYNC_FACING':
-                if(activeUnit) { activeUnit.lookAtTile(data.x, data.z); }
-                break;
-            case 'TURN_ENDED':
-                if (playerNumber === 1) requestAdvanceTurn();
-                break;
-            case 'PLAYER_LEFT':
-                showNetToast('Opponent disconnected or left.', 'error');
-                leaveGame();
-                break;
+            case 'SYNC_FACING': if(activeUnit) activeUnit.lookAtTile(data.x, data.z); break;
+            case 'TURN_ENDED': if (playerNumber === 1) requestAdvanceTurn(); break;
+            case 'PLAYER_LEFT': showNetToast('Opponent disconnected or left.', 'error'); leaveGame(); break;
         }
     }
 
     function leaveGame() {
-        broadcastEvent('PLAYER_LEFT', {});
-        if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel);
-        window.removeEventListener('storage', handleSimulatorStorage);
-        location.reload(); 
+        broadcastEvent('PLAYER_LEFT', {}); if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel);
+        window.removeEventListener('storage', handleSimulatorStorage); location.reload(); 
     }
 
-    /** --- 3D ENGINE, UTILS, VISUALS --- **/
+    /** --- STUNNING 3D ARENA & LIGHTING ENGINE --- **/
     const ALL_DICE_FACES = {
-        'move': { id: 'move', abbr: 'MOV', name: 'MOVE' },
-        'attack': { id: 'attack', abbr: 'ATK', name: 'ATTACK' },
-        'magic': { id: 'magic', abbr: 'MAG', name: 'MAGIC' },
-        'dash': { id: 'dash', abbr: 'DSH', name: 'DASH' },
-        'defend': { id: 'defend', abbr: 'DEF', name: 'DEFEND' },
-        'wild': { id: 'wild', abbr: 'WLD', name: 'WILD' }
+        'move': { id: 'move', abbr: 'MOV', name: 'MOVE' }, 'attack': { id: 'attack', abbr: 'ATK', name: 'ATTACK' },
+        'magic': { id: 'magic', abbr: 'MAG', name: 'MAGIC' }, 'dash': { id: 'dash', abbr: 'DSH', name: 'DASH' },
+        'defend': { id: 'defend', abbr: 'DEF', name: 'DEFEND' }, 'wild': { id: 'wild', abbr: 'WLD', name: 'WILD' }
     };
 
     const Tweens = [];
     function tween(obj, props, duration, easing = (t)=>t, onUpdate = null, onComplete = null) {
-        const startProps = {}; for (let k in props) startProps[k] = obj[k];
+        const startProps = {}; for (let k in props) startProps[k] = obj[k] || 0;
         Tweens.push({ obj, startProps, targetProps: props, duration, elapsed: 0, easing, onUpdate, onComplete });
     }
-    function tweenAsync(obj, props, duration, easing = (t)=>t, onUpdate = null) {
-        return new Promise(resolve => tween(obj, props, duration, easing, onUpdate, resolve));
-    }
+    function tweenAsync(obj, props, duration, easing = (t)=>t, onUpdate = null) { return new Promise(r => tween(obj, props, duration, easing, onUpdate, r)); }
     function updateTweens(dt) {
         for (let i = Tweens.length - 1; i >= 0; i--) {
-            let t = Tweens[i];
-            t.elapsed += dt;
-            let progress = Math.min(t.elapsed / t.duration, 1);
-            let e = t.easing(progress);
+            let t = Tweens[i]; t.elapsed += dt; let progress = Math.min(t.elapsed / t.duration, 1); let e = t.easing(progress);
             for (let k in t.targetProps) t.obj[k] = t.startProps[k] + (t.targetProps[k] - t.startProps[k]) * e;
             if (t.onUpdate) t.onUpdate(e);
             if (progress >= 1) { if (t.onComplete) t.onComplete(); Tweens.splice(i, 1); }
         }
     }
     const Easing = { Linear: t=>t, OutQuad: t=>t*(2-t), InQuad: t=>t*t, InOutQuad: t=>t<0.5?2*t*t:-1+(4-2*t)*t, OutElastic: t => t===0?0:t===1?1:Math.pow(2,-10*t)*Math.sin((t*10-0.75)*((2*Math.PI)/3))+1 };
-    function shuffleArray(array) {
-        let arr = [...array];
-        for (let i = arr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-        return arr;
-    }
+    function shuffleArray(array) { let arr = [...array]; for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
 
-    const TILE_SCALE = 1.4;
-    const BOARD_SIZE = 8;
-    const CENTER_POS = ((BOARD_SIZE - 1) / 2) * TILE_SCALE;
-
+    const TILE_SCALE = 1.4; const BOARD_SIZE = 8; const CENTER_POS = ((BOARD_SIZE - 1) / 2) * TILE_SCALE;
     const canvas = document.getElementById('game-canvas');
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight); 
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x050508);
-    scene.fog = new THREE.Fog(0x050508, 15, 60);
+    const scene = new THREE.Scene(); 
+    scene.background = new THREE.Color(0x020205); 
+    scene.fog = new THREE.FogExp2(0x020205, 0.025);
 
-    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 150);
-    let targetCamTheta = Math.PI / 4, targetCamPhi = Math.PI / 3, targetCamRadius = 24;
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 150);
+    let targetCamTheta = Math.PI / 4, targetCamPhi = Math.PI / 3.2, targetCamRadius = 26;
     let camTheta = targetCamTheta, camPhi = targetCamPhi, camRadius = targetCamRadius;
     let cameraShake = { x: 0, y: 0, z: 0, intensity: 0 };
     
-    scene.add(new THREE.AmbientLight(0x202030, 2.0));
-    const dirLight = new THREE.DirectionalLight(0xfffaed, 3.0);
-    dirLight.position.set(CENTER_POS + 5, 20, CENTER_POS + 5);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
+    // Advanced Lighting Setup for Immersive Dark Fantasy Atmosphere
+    const ambientLight = new THREE.AmbientLight(0x1e1b4b, 1.8);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffedd5, 3.5); 
+    dirLight.position.set(CENTER_POS + 10, 25, CENTER_POS + 10); 
+    dirLight.castShadow = true; 
+    dirLight.shadow.mapSize.width = 2048; 
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.bias = -0.0005;
     scene.add(dirLight);
+
+    // Magical corner pillar braziers emitting dynamic lights
+    const brazierPositions = [
+        {x: -1.5 * TILE_SCALE, z: -1.5 * TILE_SCALE},
+        {x: (BOARD_SIZE + 0.5) * TILE_SCALE, z: -1.5 * TILE_SCALE},
+        {x: -1.5 * TILE_SCALE, z: (BOARD_SIZE + 0.5) * TILE_SCALE},
+        {x: (BOARD_SIZE + 0.5) * TILE_SCALE, z: (BOARD_SIZE + 0.5) * TILE_SCALE}
+    ];
+    brazierPositions.forEach(bp => {
+        const pLight = new THREE.PointLight(0xf97316, 2.5, 18);
+        pLight.position.set(bp.x, 1.5, bp.z);
+        scene.add(pLight);
+        
+        // Pillar structure
+        const pillarGeo = new THREE.CylinderGeometry(0.4, 0.6, 2.5, 8);
+        const pillarMat = new THREE.MeshStandardMaterial({color: 0x0f172a, roughness: 0.9, metalness: 0.2});
+        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+        pillar.position.set(bp.x, 1.25, bp.z);
+        pillar.castShadow = true;
+        scene.add(pillar);
+
+        const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8, 0, Math.PI*2, 0, Math.PI/2), pillarMat);
+        bowl.position.set(bp.x, 2.5, bp.z);
+        scene.add(bowl);
+    });
+
+    // Stunning Arena Floor Platform
+    const arenaPlatform = new THREE.Mesh(
+        new THREE.BoxGeometry((BOARD_SIZE + 1.6) * TILE_SCALE, 0.8, (BOARD_SIZE + 1.6) * TILE_SCALE),
+        new THREE.MeshStandardMaterial({color: 0x090d16, roughness: 0.8, metalness: 0.4})
+    );
+    arenaPlatform.position.set(CENTER_POS, -0.5, CENTER_POS);
+    arenaPlatform.receiveShadow = true;
+    scene.add(arenaPlatform);
+
+    // Ambient floating magic dust particles
+    const particleCount = 150;
+    const dustGeometry = new THREE.BufferGeometry();
+    const dustPositions = new Float32Array(particleCount * 3);
+    for(let i=0; i<particleCount*3; i+=3) {
+        dustPositions[i] = (Math.random() - 0.5) * 35;
+        dustPositions[i+1] = Math.random() * 8;
+        dustPositions[i+2] = (Math.random() - 0.5) * 35;
+    }
+    dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+    const dustMaterial = new THREE.PointsMaterial({color: 0x818cf8, size: 0.08, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending});
+    const dustParticles = new THREE.Points(dustGeometry, dustMaterial);
+    scene.add(dustParticles);
 
     class ParticleSystem {
         constructor() { this.particles = []; this.meshTemplate = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.1), new THREE.MeshBasicMaterial({color:0xff0000})); }
-        spawnBurst(pos, colorHex, count, speed = 1) {
+        spawnBurst(pos, colorHex, count, speed = 1, lifeMul = 1) {
             for(let i=0; i<count; i++) {
-                const p = this.meshTemplate.clone();
-                p.material = p.material.clone(); p.material.color.setHex(colorHex);
-                p.position.copy(pos);
-                scene.add(p);
-                this.particles.push({ mesh: p, vel: new THREE.Vector3((Math.random()-0.5)*speed, (Math.random()*0.5+0.5)*speed, (Math.random()-0.5)*speed), life: 1.0 });
+                const p = this.meshTemplate.clone(); p.material = p.material.clone(); p.material.color.setHex(colorHex);
+                p.position.copy(pos); scene.add(p);
+                this.particles.push({ mesh: p, vel: new THREE.Vector3((Math.random()-0.5)*speed, (Math.random()*0.5+0.5)*speed, (Math.random()-0.5)*speed), life: 1.0 * lifeMul });
             }
         }
         update(dt) {
@@ -512,166 +469,232 @@
     }
     const vfx = new ParticleSystem();
 
-    function spawnSlashVFX(pos, dir, colorHex) {
-        const geo = new THREE.PlaneGeometry(3, 0.5);
-        const mat = new THREE.MeshBasicMaterial({color: colorHex, transparent: true, opacity: 0.9, side: THREE.DoubleSide});
-        const slash = new THREE.Mesh(geo, mat);
-        slash.position.copy(pos).add(new THREE.Vector3(0, 1.2, 0));
-        slash.lookAt(pos.x + dir.x, pos.y + 1.2, pos.z + dir.z);
-        scene.add(slash);
-        tween(slash.scale, {x: 1.5, y: 0.1}, 0.25, Easing.OutQuad);
-        tween(slash.material, {opacity: 0}, 0.25, Easing.OutQuad, null, () => scene.remove(slash));
+    function spawnSlashVFX(pos, dir, colorHex, scaleMult=1) {
+        const slash = new THREE.Mesh(new THREE.PlaneGeometry(3*scaleMult, 0.5*scaleMult), new THREE.MeshBasicMaterial({color: colorHex, transparent: true, opacity: 0.9, side: THREE.DoubleSide}));
+        slash.position.copy(pos).add(new THREE.Vector3(0, 1.2, 0)); slash.lookAt(pos.x + dir.x, pos.y + 1.2, pos.z + dir.z); scene.add(slash);
+        tween(slash.scale, {x: 1.5, y: 0.1}, 0.25, Easing.OutQuad); tween(slash.material, {opacity: 0}, 0.25, Easing.OutQuad, null, () => scene.remove(slash));
+    }
+    function spawnShockwave(pos, colorHex) {
+        const wave = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.1, 8, 24), new THREE.MeshBasicMaterial({color: colorHex, transparent: true, opacity: 0.8}));
+        wave.rotation.x = Math.PI/2; wave.position.copy(pos); wave.position.y = 0.2; scene.add(wave);
+        tween(wave.scale, {x: 20, y:20, z:20}, 0.4, Easing.OutQuad); tween(wave.material, {opacity: 0}, 0.4, Easing.OutQuad, null, ()=>scene.remove(wave));
     }
 
     function triggerShake(intensity) { cameraShake.intensity = intensity; }
-    
     function spawnFloatingText(unit, text, color, emptyTargetPos = null) {
-        const el = document.createElement('div');
-        el.innerText = text;
+        const el = document.createElement('div'); el.innerText = text;
         Object.assign(el.style, { position: 'absolute', color: color, fontWeight: '900', fontSize: '24px', textShadow: '0px 2px 4px black, 0px 0px 8px rgba(0,0,0,0.8)', pointerEvents: 'none', zIndex: '100', transition: 'all 1s ease-out', opacity: '1' });
         let pos = emptyTargetPos ? emptyTargetPos.clone() : unit.mesh.position.clone(); pos.y += 2.5; pos.project(camera);
-        el.style.left = `${(pos.x * .5 + .5) * window.innerWidth}px`; el.style.top = `${(pos.y * -.5 + .5) * window.innerHeight}px`;
-        el.style.transform = 'translate(-50%, -50%) scale(0.5)';
+        el.style.left = `${(pos.x * .5 + .5) * window.innerWidth}px`; el.style.top = `${(pos.y * -.5 + .5) * window.innerHeight}px`; el.style.transform = 'translate(-50%, -50%) scale(0.5)';
         document.body.appendChild(el);
         setTimeout(() => el.style.transform = 'translate(-50%, -150%) scale(1.2)', 10);
         setTimeout(() => el.style.opacity = '0', 500); setTimeout(() => el.remove(), 1050);
     }
 
+    /** --- PREMIUM COSMETICS FACTORY --- **/
+    function buildCosmeticsMesh(id, baseColor) {
+        const g = new THREE.Group(); 
+        const matGlow = new THREE.MeshBasicMaterial({color: baseColor}); 
+        const matDark = new THREE.MeshStandardMaterial({color: 0x0f172a, roughness: 0.9}); 
+        const matGold = new THREE.MeshStandardMaterial({color: 0xfbbf24, metalness: 1.0, roughness: 0.2});
+        const matMetal = new THREE.MeshStandardMaterial({color: 0x94a3b8, metalness: 0.9, roughness: 0.3});
+        const matEnergy = new THREE.MeshBasicMaterial({color: 0x38bdf8, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending});
+
+        if(id===1) { // Radiant Halo
+            const m = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.03, 16, 32), matGold); m.rotation.x = Math.PI/2; m.position.y = 0.55; 
+            const glow = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.06, 16, 32), matEnergy); glow.rotation.x = Math.PI/2; glow.position.y = 0.55; g.add(glow);
+            g.add(m); 
+        } 
+        if(id===2) { // Demon Horns
+            [-0.18, 0.18].forEach(x => { 
+                const hornG = new THREE.Group();
+                const base = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.2, 8), matDark); base.position.y = 0.1;
+                const tip = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.2, 8), matGold); tip.position.y = 0.25; tip.rotation.x = 0.2;
+                hornG.add(base); hornG.add(tip);
+                hornG.position.set(x, 0.25, -0.05); hornG.rotation.x = -0.3; hornG.rotation.z = x>0?-0.4:0.4; g.add(hornG); 
+            }); 
+        }
+        if(id===3) { // Bladed Wings
+            [-1,1].forEach(x => { 
+                const m = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.4, 1.2, 3), matMetal); 
+                m.position.set(x*0.4, 0.5, -0.3); m.rotation.z = x * -0.5; m.rotation.x = 0.2; g.add(m); 
+            }); g.userData.attach = 'torso'; 
+        } 
+        if(id===4) { // Dragon Wings
+            [-1,1].forEach(x => { 
+                const m = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.0, 4), matDark); 
+                m.position.set(x*0.4, 0.4, -0.3); m.rotation.z = x * -0.8; m.scale.z = 0.1; g.add(m); 
+            }); g.userData.attach = 'torso'; 
+        }
+        if(id===5) { // Orbiting Sigils
+            [0,1,2].forEach(i => { 
+                const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.1, 0), matGlow); 
+                const shell = new THREE.Mesh(new THREE.OctahedronGeometry(0.15, 0), new THREE.MeshBasicMaterial({color: baseColor, transparent: true, opacity: 0.4, wireframe: true}));
+                m.add(shell);
+                m.position.set(Math.cos(i*2.1)*0.7, 0.4, Math.sin(i*2.1)*0.7); g.add(m); 
+            }); g.userData.animate = 'orbit'; g.userData.attach = 'torso'; 
+        }
+        if(id===6) { // Emperor Crown
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.22, 0.2, 12), matGold); m.position.y = 0.25; 
+            for(let i=0; i<6; i++){ const spike = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 4), matGold); spike.position.set(Math.cos(i*(Math.PI/3))*0.22, 0.1, Math.sin(i*(Math.PI/3))*0.22); m.add(spike); }
+            g.add(m); 
+        } 
+        if(id===7) { // Dread Pauldrons
+            [-1,1].forEach(x => { 
+                const p = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8, 0, Math.PI, 0, Math.PI), matDark); p.rotation.x = -Math.PI/2;
+                const spike = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 4), matMetal); spike.position.y = 0.2; p.add(spike);
+                p.position.set(x*0.35, 0.4, 0); p.rotation.z = x*-0.2; g.add(p); 
+            }); g.userData.attach = 'torso'; 
+        } 
+        if(id===8) { // Cyber Visor
+            const m = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.15), matDark); m.position.set(0, 0, 0.15); 
+            const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.05), matGlow); glow.position.set(0, 0, 0.08); m.add(glow);
+            g.add(m); 
+        } 
+        if(id===9) { // War Standard
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8), matMetal); pole.position.set(0, 0.8, -0.25);
+            const flag = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.0, 0.05), new THREE.MeshStandardMaterial({color: baseColor})); flag.position.set(0.25, 0.3, 0); pole.add(flag);
+            g.add(pole); g.userData.attach = 'torso'; 
+        } 
+        if(id===10) { // Utility Harness
+            const m = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.08, 8, 16), matDark); m.rotation.x = Math.PI/2; m.position.y = -0.2; 
+            [-1, 1].forEach(x => { const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.1), matDark); pouch.position.set(x*0.3, 0, 0.2); m.add(pouch); });
+            g.add(m); g.userData.attach = 'torso'; 
+        } 
+        if(id===11) { // Plague Mask
+            const m = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 8), matDark); m.rotation.x = Math.PI/2; m.position.set(0, 0, 0.36); g.add(m); 
+        } 
+        if(id===12) { // Beast Skull
+            const m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16, 0, Math.PI, 0, Math.PI), matMetal); m.position.set(0.3, 0.35, 0); m.rotation.z = -0.3; m.rotation.x = -Math.PI/2;
+            const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.3), matMetal); jaw.position.set(0, 0.1, 0.1); m.add(jaw);
+            g.add(m); g.userData.attach = 'torso'; 
+        } 
+        if(id===13) { // Aegis Shield
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.08, 6), matMetal); m.position.set(0, 0.2, -0.25); m.rotation.x = Math.PI/2; m.rotation.y = Math.PI/6;
+            const core = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.1, 6), matGlow); m.add(core);
+            g.add(m); g.userData.attach = 'torso'; 
+        } 
+        if(id===14) { // Power Ring
+            const m = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.8, 32), matEnergy); m.rotation.x = -Math.PI/2; m.position.y = -0.8; 
+            const inner = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.5, 32), matEnergy); m.add(inner);
+            g.add(m); g.userData.attach = 'torso'; 
+        } 
+        if(id===15) { // Paladin Helm
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.4, 16), matMetal); m.position.y = 0.2; 
+            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.15, 0.15), matGold); visor.position.set(0, 0.05, 0.15); m.add(visor);
+            const crest = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.4, 0.3), matGlow); crest.position.set(0, 0.3, -0.05); m.add(crest);
+            g.add(m); 
+        }
+        return g;
+    }
+
     /** --- BOARD & UNITS --- **/
     let tiles = [], tileMeshes = [], units = [];
-    const matTileDark = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.9, metalness: 0.1 });
-    const matTileLight = new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.9, metalness: 0.1 });
-    const matTileHighlight = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5, transparent: true, opacity: 0.5 });
-    const matTileAttack = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5, transparent: true, opacity: 0.5 });
-    const matTileAoE = new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.5, transparent: true, opacity: 0.6 });
-    const matTileFacing = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5, transparent: true, opacity: 0.6 });
-    const matTileActive = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, emissive: 0xa16207, emissiveIntensity: 0.5 });
+    const matTileDark = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8, metalness: 0.3 });
+    const matTileLight = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.3 });
+    const matTileHighlight = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, transparent: true, opacity: 0.6, emissive: 0x1d4ed8, emissiveIntensity: 0.4 });
+    const matTileAttack = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4, transparent: true, opacity: 0.6, emissive: 0x991b1b, emissiveIntensity: 0.4 });
+    const matTileAoE = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4, transparent: true, opacity: 0.7, emissive: 0xb45309, emissiveIntensity: 0.5 });
+    const matTileFacing = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4, transparent: true, opacity: 0.7, emissive: 0x047857, emissiveIntensity: 0.5 });
+    const matTileActive = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3, emissive: 0xa16207, emissiveIntensity: 0.7 });
+
+    let state = 'IDLE'; 
 
     const boardGroup = new THREE.Group();
     for (let x = 0; x < BOARD_SIZE; x++) {
         tiles[x] = [];
         for (let z = 0; z < BOARD_SIZE; z++) {
             const isLight = (x + z) % 2 === 0;
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.96 * TILE_SCALE, 0.2, 0.96 * TILE_SCALE), isLight ? matTileLight : matTileDark);
-            mesh.position.set(x * TILE_SCALE, 0, z * TILE_SCALE); mesh.receiveShadow = true;
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.94 * TILE_SCALE, 0.25, 0.94 * TILE_SCALE), isLight ? matTileLight : matTileDark);
+            mesh.position.set(x * TILE_SCALE, 0, z * TILE_SCALE); 
+            mesh.receiveShadow = true; 
+            mesh.castShadow = true;
             mesh.userData = { x, z, originalMat: mesh.material };
             boardGroup.add(mesh); tiles[x][z] = { mesh, unit: null }; tileMeshes.push(mesh);
         }
     }
     scene.add(boardGroup);
+    
+    // View Mode scene separation
+    const viewGroup = new THREE.Group(); viewGroup.visible = false; scene.add(viewGroup);
+    const viewLight = new THREE.PointLight(0xffedd5, 4.0, 30); viewLight.position.set(3 * TILE_SCALE, 5, 3 * TILE_SCALE + 4); viewGroup.add(viewLight);
 
     class Unit {
-        constructor(config, id, x, z, team) {
-            this.id = id; this.name = config.name; this.team = team;
-            this.maxHp = config.maxHp; this.hp = config.maxHp; this.atk = config.atk;
-            this.moveRange = config.moveRange; this.dashRange = config.dashRange;
-            this.atkRange = config.atkRange; this.actions = config.actions; this.accuracy = config.accuracy;
-            this.x = x; this.z = z; this.isDefending = false; this.hpForceVisible = false;
-
-            this.parts = {};
+        constructor(config, id, x, z, team, loadout) {
+            this.id = id; this.name = config.name; this.team = team; this.loadout = loadout || {cosmetic: 0, animation: 0};
+            this.maxHp = config.maxHp; this.hp = config.maxHp; this.atk = config.atk; this.moveRange = config.moveRange; this.dashRange = config.dashRange;
+            this.atkRange = config.atkRange; this.actions = config.actions; this.accuracy = config.accuracy; this.color1 = config.color1;
+            this.x = x; this.z = z; this.isDefending = false; this.hpForceVisible = false; this.parts = {};
+            
             this.mesh = this.buildRiggedHumanoid(team === 1 ? config.color1 : config.color2, team);
-            this.mesh.position.set(x * TILE_SCALE, 0.2, z * TILE_SCALE);
+            this.mesh.position.set(x * TILE_SCALE, 0.25, z * TILE_SCALE);
             scene.add(this.mesh);
             
-            this.shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.3, wireframe: true }));
-            this.shieldMesh.position.y = 0.8; this.shieldMesh.visible = false;
-            this.mesh.add(this.shieldMesh);
+            this.shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.35, wireframe: true }));
+            this.shieldMesh.position.y = 0.8; this.shieldMesh.visible = false; this.mesh.add(this.shieldMesh);
+
+            if(this.loadout.cosmetic > 0) {
+                const cosMesh = buildCosmeticsMesh(this.loadout.cosmetic, team===1 ? 0x60a5fa : 0xf87171);
+                if(cosMesh.userData.attach === 'torso') this.parts.torso.add(cosMesh); else this.parts.head.add(cosMesh);
+                this.activeCosmetic = cosMesh;
+            }
 
             this.uiEl = document.createElement('div'); this.uiEl.className = 'hp-bar';
             this.uiEl.innerHTML = `<div>${this.name}</div><div class="hp-fill" style="width:100%"></div>`;
             this.uiEl.style.opacity = namesVisible ? '1' : '0';
             document.getElementById('hp-container').appendChild(this.uiEl);
-
-            tiles[x][z].unit = this;
-            this.updateUIPosition();
-            // Facing each other initially: Z goes from 0 to 7.
-            this.mesh.rotation.y = team === 1 ? Math.PI : 0;
+            
+            if (x >= 0 && x < BOARD_SIZE && z >= 0 && z < BOARD_SIZE && state !== 'VIEW_MODE') {
+                tiles[x][z].unit = this;
+            }
+            this.updateUIPosition(); this.mesh.rotation.y = team === 1 ? Math.PI : 0;
         }
 
         buildRiggedHumanoid(colorHex, team) {
-            const group = new THREE.Group();
-            const isTeam1 = team === 1;
-            const matBody = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.6, metalness: 0.2 });
+            const group = new THREE.Group(); const isTeam1 = team === 1;
+            const matBody = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.5, metalness: 0.3 });
             const metalMat = new THREE.MeshStandardMaterial({ color: isTeam1 ? 0xe2e8f0 : 0x27272a, metalness: 0.9, roughness: 0.2 });
             const detailMat = new THREE.MeshStandardMaterial({ color: isTeam1 ? 0xfcd34d : 0x7f1d1d, metalness: 0.5, roughness: 0.5 });
-            const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
-            const leatherMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.8 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+            const leatherMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
 
-            // Torso Base
-            let torsoGeo = new THREE.BoxGeometry(0.5, 0.7, 0.35);
-            if (this.name === 'Mage') torsoGeo = new THREE.ConeGeometry(0.4, 0.9, 16);
-            if (this.name === 'Assassin') torsoGeo = new THREE.BoxGeometry(0.4, 0.7, 0.3);
+            let torsoGeo = new THREE.BoxGeometry(0.5, 0.7, 0.35); if (this.name === 'Mage') torsoGeo = new THREE.ConeGeometry(0.4, 0.9, 16); if (this.name === 'Assassin') torsoGeo = new THREE.BoxGeometry(0.4, 0.7, 0.3);
+            const torso = new THREE.Mesh(torsoGeo, this.name === 'Assassin' ? darkMat : matBody); torso.position.y = 0.85; torso.castShadow = true; torso.receiveShadow = true; group.add(torso); this.parts.torso = torso;
             
-            const torso = new THREE.Mesh(torsoGeo, this.name === 'Assassin' ? darkMat : matBody); 
-            torso.position.y = 0.85; torso.castShadow = true; group.add(torso); this.parts.torso = torso;
-            
-            // Legs (Skipped for Mage robe base)
             if (this.name !== 'Mage') {
                 const legR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.4, 0.18), this.name === 'Assassin' ? darkMat : matBody); legR.position.set(0.15, -0.55, 0); legR.castShadow = true; torso.add(legR); this.parts.legR = legR;
                 const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.4, 0.18), this.name === 'Assassin' ? darkMat : matBody); legL.position.set(-0.15, -0.55, 0); legL.castShadow = true; torso.add(legL); this.parts.legL = legL;
-            } else {
-                this.parts.legR = new THREE.Group(); this.parts.legL = new THREE.Group(); // Dummy for animation references
-                torso.position.y = 0.7; // Lower center for cone
-            }
+            } else { this.parts.legR = new THREE.Group(); this.parts.legL = new THREE.Group(); torso.position.y = 0.7; }
 
-            // Head
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), new THREE.MeshStandardMaterial({ color: 0xffdcb3, roughness: 0.4 })); 
-            head.position.y = this.name === 'Mage' ? 0.5 : 0.6; head.castShadow = true; torso.add(head); this.parts.head = head;
-            
-            if(this.name !== 'Assassin') {
-                const visor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: isTeam1 ? 0x38bdf8 : 0xf43f5e, emissive: isTeam1 ? 0x0284c7 : 0x9f1239 })); 
-                visor.position.set(0, 0, 0.15); head.add(visor);
-            } else {
-                // Assassin Hood
-                const hood = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.45, 0.4), darkMat);
-                hood.position.set(0, 0.05, -0.05); head.add(hood);
-                const voidFace = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.1), new THREE.MeshBasicMaterial({color: 0x000000}));
-                voidFace.position.set(0, 0, 0.16); head.add(voidFace);
-            }
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), new THREE.MeshStandardMaterial({ color: 0xffdcb3, roughness: 0.4 })); head.position.y = this.name === 'Mage' ? 0.5 : 0.6; head.castShadow = true; torso.add(head); this.parts.head = head;
+            if(this.name !== 'Assassin') { const visor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: isTeam1 ? 0x38bdf8 : 0xf43f5e, emissive: isTeam1 ? 0x0284c7 : 0x9f1239 })); visor.position.set(0, 0, 0.15); head.add(visor); } 
+            else { const hood = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.45, 0.4), darkMat); hood.position.set(0, 0.05, -0.05); head.add(hood); const voidFace = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.1), new THREE.MeshBasicMaterial({color: 0x000000})); voidFace.position.set(0, 0, 0.16); head.add(voidFace); }
 
-            // Arms
             const armMat = this.name === 'Assassin' ? darkMat : matBody;
-            const armRGroup = new THREE.Group(); armRGroup.position.set(0.35, 0.25, 0); 
-            const armR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), armMat); armR.position.y = -0.25; armR.castShadow = true; armRGroup.add(armR); torso.add(armRGroup); this.parts.armR = armRGroup;
-            const armLGroup = new THREE.Group(); armLGroup.position.set(-0.35, 0.25, 0); 
-            const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), armMat); armL.position.y = -0.25; armL.castShadow = true; armLGroup.add(armL); torso.add(armLGroup); this.parts.armL = armLGroup;
+            const armRGroup = new THREE.Group(); armRGroup.position.set(0.35, 0.25, 0); const armR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), armMat); armR.position.y = -0.25; armR.castShadow = true; armRGroup.add(armR); torso.add(armRGroup); this.parts.armR = armRGroup;
+            const armLGroup = new THREE.Group(); armLGroup.position.set(-0.35, 0.25, 0); const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.2), armMat); armL.position.y = -0.25; armL.castShadow = true; armLGroup.add(armL); torso.add(armLGroup); this.parts.armL = armLGroup;
 
-            // Distinct Class Gear
             if (this.name === 'Commander') {
-                // Pauldrons
-                const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16, 0, Math.PI*2, 0, Math.PI/2), detailMat);
-                pauldron.position.set(0, 0.25, 0); armLGroup.add(pauldron); armRGroup.add(pauldron.clone());
-                // Plume & Cape
+                const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16, 0, Math.PI*2, 0, Math.PI/2), detailMat); pauldron.position.set(0, 0.25, 0); armLGroup.add(pauldron); armRGroup.add(pauldron.clone());
                 const plume = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.35, 0.4), detailMat); plume.position.y = 0.3; head.add(plume);
                 const cape = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 0.05), new THREE.MeshStandardMaterial({color: isTeam1 ? 0x1d4ed8 : 0x7f1d1d})); cape.position.set(0, 0.05, -0.2); cape.rotation.x = 0.15; torso.add(cape);
-                // Big Sword
                 const sword = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.2, 0.3), metalMat); sword.position.set(0, -0.6, 0.2); sword.rotation.x = Math.PI / 2; armRGroup.add(sword);
             }
             else if (this.name === 'Vanguard') {
-                // Heavy Pauldrons
-                const pauldron = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.3, 8), metalMat);
-                pauldron.rotation.z = Math.PI/2; pauldron.position.set(0, 0.2, 0); armLGroup.add(pauldron); armRGroup.add(pauldron.clone());
-                // Spear & Tower Shield
-                const spear = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6), metalMat); spear.position.set(0, -0.4, 0.2); spear.rotation.x = Math.PI / 2; 
-                const tip = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 4), metalMat); tip.position.y = 0.9; spear.add(tip); armRGroup.add(spear);
+                const pauldron = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.3, 8), metalMat); pauldron.rotation.z = Math.PI/2; pauldron.position.set(0, 0.2, 0); armLGroup.add(pauldron); armRGroup.add(pauldron.clone());
+                const spear = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6), metalMat); spear.position.set(0, -0.4, 0.2); spear.rotation.x = Math.PI / 2; const tip = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 4), metalMat); tip.position.y = 0.9; spear.add(tip); armRGroup.add(spear);
                 const shieldBox = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.9, 0.6), metalMat); shieldBox.position.set(-0.25, -0.1, 0); armLGroup.add(shieldBox);
             }
             else if (this.name === 'Assassin') {
-                // Daggers
                 const dagger1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.1), metalMat); dagger1.position.set(0, -0.3, 0.2); dagger1.rotation.x = Math.PI / 2; armRGroup.add(dagger1);
-                const dagger2 = dagger1.clone(); dagger2.rotation.x = -Math.PI / 2; dagger2.position.set(0, -0.3, -0.2); armLGroup.add(dagger2); // reverse grip
+                const dagger2 = dagger1.clone(); dagger2.rotation.x = -Math.PI / 2; dagger2.position.set(0, -0.3, -0.2); armLGroup.add(dagger2);
             }
             else if (this.name === 'Archer') {
-                // Quiver
-                const quiver = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.6), leatherMat);
-                quiver.position.set(0.1, 0.1, -0.25); quiver.rotation.z = -Math.PI/6; quiver.rotation.x = -0.1; torso.add(quiver);
-                // Bow
+                const quiver = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.6), leatherMat); quiver.position.set(0.1, 0.1, -0.25); quiver.rotation.z = -Math.PI/6; quiver.rotation.x = -0.1; torso.add(quiver);
                 const bow = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.1, 0.1), leatherMat); bow.position.set(0, -0.2, 0.2); armLGroup.add(bow);
             }
             else if (this.name === 'Mage') {
-                // Pointy Hat
                 const hat = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 16), matBody); hat.position.y = 0.45; head.add(hat);
-                // Staff
                 const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4), leatherMat); staff.position.set(0, -0.3, 0.2); staff.rotation.x = Math.PI / 2;
                 const gem = new THREE.Mesh(new THREE.SphereGeometry(0.18), new THREE.MeshStandardMaterial({ color: isTeam1 ? 0x0ea5e9 : 0xf43f5e, emissive: isTeam1 ? 0x0ea5e9 : 0xf43f5e })); gem.position.y = 0.7; staff.add(gem); armRGroup.add(staff);
             }
@@ -679,37 +702,35 @@
         }
 
         updateUIPosition() {
+            if(!this.uiEl.parentElement) return;
             const pos = this.mesh.position.clone(); pos.y += 1.8; pos.project(camera);
             this.uiEl.style.left = `${(pos.x * .5 + .5) * window.innerWidth}px`; this.uiEl.style.top = `${(pos.y * -.5 + .5) * window.innerHeight}px`;
         }
         setDefending(val) { this.isDefending = val; this.shieldMesh.visible = val; }
         takeDamage(amount) {
             if(this.isDefending) { amount = Math.max(1, Math.floor(amount / 2)); vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0x3b82f6, 10, 2); }
-            this.hp = Math.max(0, this.hp - amount);
-            this.uiEl.querySelector('.hp-fill').style.width = `${(this.hp / this.maxHp) * 100}%`;
+            this.hp = Math.max(0, this.hp - amount); this.uiEl.querySelector('.hp-fill').style.width = `${(this.hp / this.maxHp) * 100}%`;
             this.hpForceVisible = true; this.uiEl.style.opacity = '1';
             if (this.hpForceTimeout) clearTimeout(this.hpForceTimeout);
             this.hpForceTimeout = setTimeout(() => { this.hpForceVisible = false; if (!namesVisible) this.uiEl.style.opacity = '0'; }, 2000);
-            vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0xe11d48, 20, 3);
-            triggerShake(0.2);
+            vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0xe11d48, 20, 3); triggerShake(0.2);
             const ogColor = this.parts.torso.material.color.getHex(); this.parts.torso.material.color.setHex(0xff0000);
             setTimeout(() => { if(this.hp>0 && this.mesh) this.parts.torso.material.color.setHex(ogColor); }, 150);
             if (this.hp <= 0) this.die();
         }
         die() {
-            tiles[this.x][this.z].unit = null; this.uiEl.style.opacity = '0';
+            if (this.x >= 0 && this.z >= 0 && state !== 'VIEW_MODE') tiles[this.x][this.z].unit = null; 
+            this.uiEl.style.opacity = '0';
             tween(this.parts.torso.rotation, {x: -Math.PI/2}, 0.4, Easing.OutQuad);
             setTimeout(() => {
                 vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.2, 0)), 0xff0000, 60, 6);
                 tween(this.mesh.position, {y: -2}, 0.5, Easing.InQuad, null, () => {
-                    scene.remove(this.mesh); this.uiEl.remove();
-                    units = units.filter(u => u !== this); triggerShake(0.4); checkWinCondition();
+                    scene.remove(this.mesh); this.uiEl.remove(); units = units.filter(u => u !== this); triggerShake(0.4); checkWinCondition();
                 });
             }, 400);
         }
         lookAtTile(tx, tz) {
-            const dx = (tx * TILE_SCALE) - this.mesh.position.x; const dz = (tz * TILE_SCALE) - this.mesh.position.z;
-            if(dx === 0 && dz === 0) return; 
+            const dx = (tx * TILE_SCALE) - this.mesh.position.x; const dz = (tz * TILE_SCALE) - this.mesh.position.z; if(dx === 0 && dz === 0) return; 
             let angle = Math.atan2(dx, dz); let diff = angle - this.mesh.rotation.y;
             while(diff < -Math.PI) diff += Math.PI * 2; while(diff > Math.PI) diff -= Math.PI * 2;
             tween(this.mesh.rotation, { y: this.mesh.rotation.y + diff }, 0.2, Easing.OutQuad);
@@ -719,30 +740,24 @@
     const UNIT_TYPES = {
         commander: { name: 'Commander', maxHp: 12, atk: 4, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.95, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x2563eb, color2: 0xdc2626 },
         vanguard: { name: 'Vanguard', maxHp: 15, atk: 3, moveRange: 2, dashRange: 4, atkRange: 1, accuracy: 0.90, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x3b82f6, color2: 0xef4444 },
-        assassin: { name: 'Assassin', maxHp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x1f2937, color2: 0x111827 }, // Dark colors for assassins
+        assassin: { name: 'Assassin', maxHp: 8, atk: 5, moveRange: 3, dashRange: 5, atkRange: 1, accuracy: 0.98, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x1f2937, color2: 0x111827 },
         archer: { name: 'Archer', maxHp: 8, atk: 3, moveRange: 2, dashRange: 4, atkRange: 4, accuracy: 0.92, actions: ['move', 'dash', 'attack', 'defend', 'wild'], color1: 0x10b981, color2: 0xf87171 },
         mage: { name: 'Mage', maxHp: 6, atk: 4, moveRange: 2, dashRange: 4, atkRange: 3, accuracy: 0.85, actions: ['move', 'dash', 'magic', 'defend', 'wild'], color1: 0x0ea5e9, color2: 0xfca5a5 }
     };
 
     /** --- MULTIPLAYER GAME LOOP & TURNS --- **/
-    let state = 'IDLE'; 
     let ap = 0; let diceRolled = []; let activeUnit = null; let selectedDieIndex = -1; let highlightMeshes = [];
-    let turnQueue = []; let currentTurnIndex = 0;
-    
-    let namesVisible = true;
+    let turnQueue = []; let currentTurnIndex = 0; let namesVisible = true;
+
     document.getElementById('toggle-names-btn').addEventListener('click', () => {
-        namesVisible = !namesVisible;
-        document.getElementById('toggle-names-btn').classList.toggle('off', !namesVisible);
+        namesVisible = !namesVisible; document.getElementById('toggle-names-btn').classList.toggle('off', !namesVisible);
         units.forEach(u => { if (!u.hpForceVisible) u.uiEl.style.opacity = namesVisible ? '1' : '0'; });
     });
 
-    const apContainer = document.getElementById('ap-container');
-    const diceContainer = document.getElementById('dice-container');
-    const btnEndTurn = document.getElementById('btn-end-turn');
+    const apContainer = document.getElementById('ap-container'); const diceContainer = document.getElementById('dice-container'); const btnEndTurn = document.getElementById('btn-end-turn');
     
     function showToast(msg, color = 'white') {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.color = color; t.style.opacity = 1; t.style.transform = 'translate(-50%, -50%) scale(1.1)';
+        const t = document.getElementById('toast'); t.innerText = msg; t.style.color = color; t.style.opacity = 1; t.style.transform = 'translate(-50%, -50%) scale(1.1)';
         setTimeout(() => { t.style.opacity = 0; t.style.transform = 'translate(-50%, -50%) scale(1)'; }, 1500);
     }
     function updateAPUI() {
@@ -754,214 +769,128 @@
     }
 
     function generateUnitId() { return 'u_' + Math.random().toString(36).substr(2, 9); }
-
     function generateAlternatingTurnQueue() {
-        let t1 = shuffleArray(units.filter(u => u.team === 1).map(u => u.id));
-        let t2 = shuffleArray(units.filter(u => u.team === 2).map(u => u.id));
-        let queue = [];
-        let maxLen = Math.max(t1.length, t2.length);
-        for (let i = 0; i < maxLen; i++) {
-            if (t1[i]) queue.push(t1[i]);
-            if (t2[i]) queue.push(t2[i]);
-        }
+        let t1 = shuffleArray(units.filter(u => u.team === 1).map(u => u.id)); let t2 = shuffleArray(units.filter(u => u.team === 2).map(u => u.id));
+        let queue = []; let maxLen = Math.max(t1.length, t2.length);
+        for (let i = 0; i < maxLen; i++) { if (t1[i]) queue.push(t1[i]); if (t2[i]) queue.push(t2[i]); }
         return queue;
     }
 
-    function startGameSession(isHost, mode = 'multi') {
+    function startGameSession(isHost) {
         if(isHost) {
             const rosterDef = [
                 { type: UNIT_TYPES.commander, x: 3, z: 7 }, { type: UNIT_TYPES.vanguard, x: 2, z: 6 }, { type: UNIT_TYPES.vanguard, x: 4, z: 6 },
                 { type: UNIT_TYPES.assassin, x: 1, z: 7 }, { type: UNIT_TYPES.archer, x: 5, z: 7 }, { type: UNIT_TYPES.mage, x: 4, z: 7 }
             ];
             const syncData = [];
-            rosterDef.forEach(r => syncData.push({ id: generateUnitId(), typeKey: Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k]===r.type), x: r.x, z: r.z, team: 1 }));
-            rosterDef.forEach(r => syncData.push({ id: generateUnitId(), typeKey: Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k]===r.type), x: BOARD_SIZE - 1 - r.x, z: BOARD_SIZE - 1 - r.z, team: 2 }));
+            rosterDef.forEach(r => syncData.push({ id: generateUnitId(), typeKey: Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k]===r.type), x: r.x, z: r.z, team: 1, loadout: myLoadout[r.type.name] }));
+            rosterDef.forEach(r => syncData.push({ id: generateUnitId(), typeKey: Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k]===r.type), x: BOARD_SIZE - 1 - r.x, z: BOARD_SIZE - 1 - r.z, team: 2, loadout: (opponentLoadout || myLoadout)[r.type.name] }));
             
-            syncBoardUnits(syncData);
-            turnQueue = generateAlternatingTurnQueue();
-            currentTurnIndex = 0;
-            
+            syncBoardUnits(syncData); turnQueue = generateAlternatingTurnQueue(); currentTurnIndex = 0;
             broadcastEvent('GAME_START', { units: syncData, turnQueue, turnIndex: currentTurnIndex });
             
-            document.getElementById('main-menu').classList.add('hidden');
-            document.getElementById('ui-layer').classList.remove('hidden');
-            document.getElementById('leave-game-btn').classList.remove('hidden');
+            document.getElementById('main-menu').classList.add('hidden'); document.getElementById('ui-layer').classList.remove('hidden'); document.getElementById('leave-game-btn').classList.remove('hidden');
             applyNewTurn(turnQueue, currentTurnIndex);
         }
     }
 
     function syncBoardUnits(unitConfigs) {
-        units.forEach(u => { scene.remove(u.mesh); u.uiEl.remove(); });
-        units = [];
+        units.forEach(u => { scene.remove(u.mesh); u.uiEl.remove(); }); units = [];
         for(let tx=0; tx<BOARD_SIZE; tx++) for(let tz=0; tz<BOARD_SIZE; tz++) tiles[tx][tz].unit = null;
-        unitConfigs.forEach(c => units.push(new Unit(UNIT_TYPES[c.typeKey], c.id, c.x, c.z, c.team)));
+        unitConfigs.forEach(c => units.push(new Unit(UNIT_TYPES[c.typeKey], c.id, c.x, c.z, c.team, c.loadout)));
     }
 
     function requestAdvanceTurn() {
-        if (playerNumber === 1 || isPassAndPlay) { // Host resolves queue logic
-            let nextIndex = currentTurnIndex + 1;
-            let nQueue = turnQueue;
-            if (nextIndex >= nQueue.length) {
-                nQueue = generateAlternatingTurnQueue();
-                nextIndex = 0;
-            }
-            broadcastEvent('NEW_TURN', { turnQueue: nQueue, turnIndex: nextIndex });
-            applyNewTurn(nQueue, nextIndex);
+        if (playerNumber === 1 || isPassAndPlay) {
+            let nextIndex = currentTurnIndex + 1; let nQueue = turnQueue;
+            if (nextIndex >= nQueue.length) { nQueue = generateAlternatingTurnQueue(); nextIndex = 0; }
+            broadcastEvent('NEW_TURN', { turnQueue: nQueue, turnIndex: nextIndex }); applyNewTurn(nQueue, nextIndex);
         }
     }
 
-    function applyNewTurn(queue, index) {
-        turnQueue = queue; currentTurnIndex = index;
-        startTurn();
-    }
+    function applyNewTurn(queue, index) { turnQueue = queue; currentTurnIndex = index; startTurn(); }
 
     function startTurn() {
         if (checkWinCondition()) return;
-        state = 'PLAYER_TURN'; ap = 3;
-        activeUnit = units.find(u => u.id === turnQueue[currentTurnIndex]);
-
+        state = 'PLAYER_TURN'; ap = 3; activeUnit = units.find(u => u.id === turnQueue[currentTurnIndex]);
         if (!activeUnit) { if(playerNumber === 1 || isPassAndPlay) requestAdvanceTurn(); return; }
 
         activeUnit.setDefending(false); clearHighlights(); updateAPUI();
-
         const isMyTurn = isPassAndPlay || (activeUnit.team === playerNumber);
-        
         document.getElementById('unit-name').innerText = activeUnit.name;
         
         if (isMyTurn) {
             document.getElementById('turn-indicator').innerText = isPassAndPlay ? `PLAYER ${activeUnit.team}'S TURN` : "YOUR TURN";
-            
-            if (isPassAndPlay && activeUnit.team === 2) {
-                document.getElementById('turn-indicator').classList.remove('text-yellow-400');
-                document.getElementById('turn-indicator').classList.add('text-red-500');
-            } else {
-                document.getElementById('turn-indicator').classList.remove('text-red-500');
-                document.getElementById('turn-indicator').classList.add('text-yellow-400');
-            }
-
-            document.getElementById('unit-desc').innerText = "Select an action.";
-            btnEndTurn.style.display = 'block'; btnEndTurn.innerText = "End Turn"; btnEndTurn.classList.remove('facing-mode');
+            document.getElementById('turn-indicator').className = `text-sm font-extrabold tracking-widest mt-1 text-shadow ${isPassAndPlay && activeUnit.team === 2 ? 'text-red-500' : 'text-yellow-400'}`;
+            document.getElementById('unit-desc').innerText = "Select an action."; btnEndTurn.style.display = 'block'; btnEndTurn.innerText = "End Turn"; btnEndTurn.classList.remove('facing-mode');
             showToast(isPassAndPlay ? `Player ${activeUnit.team} Turn` : "Your Turn", activeUnit.team === 1 ? '#facc15' : '#ef4444');
-            rollDice();
-            broadcastEvent('SYNC_DICE', { dice: diceRolled });
+            rollDice(); broadcastEvent('SYNC_DICE', { dice: diceRolled });
         } else {
-            document.getElementById('turn-indicator').innerText = "OPPONENT'S TURN";
-            document.getElementById('turn-indicator').classList.replace('text-yellow-400', 'text-red-500');
-            document.getElementById('unit-desc').innerText = "Enemy is acting...";
-            btnEndTurn.style.display = 'none';
-            showToast("Enemy Acts", '#ef4444');
-            diceContainer.innerHTML = ''; 
+            document.getElementById('turn-indicator').innerText = "OPPONENT'S TURN"; document.getElementById('turn-indicator').classList.replace('text-yellow-400', 'text-red-500');
+            document.getElementById('unit-desc').innerText = "Enemy is acting..."; btnEndTurn.style.display = 'none'; showToast("Enemy Acts", '#ef4444'); diceContainer.innerHTML = ''; 
         }
-
         tween(activeUnit.mesh.scale, {y: 1.3}, 0.15, Easing.OutQuad, null, () => tween(activeUnit.mesh.scale, {y: 1.0}, 0.15, Easing.InQuad));
     }
 
     function rollDice() {
         diceRolled = []; diceContainer.innerHTML = '';
-        const movActs = activeUnit.actions.filter(a => a === 'move' || a === 'dash');
-        const offActs = activeUnit.actions.filter(a => a === 'attack' || a === 'magic');
-        const utilActs = activeUnit.actions.filter(a => a === 'defend' || a === 'wild');
+        const movActs = activeUnit.actions.filter(a => a === 'move' || a === 'dash'); const offActs = activeUnit.actions.filter(a => a === 'attack' || a === 'magic'); const utilActs = activeUnit.actions.filter(a => a === 'defend' || a === 'wild');
         const gen = [];
-        if(movActs.length) gen.push(movActs[Math.floor(Math.random() * movActs.length)]);
-        if(offActs.length) gen.push(offActs[Math.floor(Math.random() * offActs.length)]);
-        if(utilActs.length) gen.push(utilActs[Math.floor(Math.random() * utilActs.length)]);
+        if(movActs.length) gen.push(movActs[Math.floor(Math.random() * movActs.length)]); if(offActs.length) gen.push(offActs[Math.floor(Math.random() * offActs.length)]); if(utilActs.length) gen.push(utilActs[Math.floor(Math.random() * utilActs.length)]);
         while(gen.length < 3) gen.push(activeUnit.actions[Math.floor(Math.random() * activeUnit.actions.length)]);
         shuffleArray(gen);
-        
         for(let i=0; i<3; i++) {
             const d = ALL_DICE_FACES[gen[i]]; diceRolled.push({ ...d, used: false, effectiveId: d.id });
-            const btn = document.createElement('button');
-            btn.className = `die-btn rolling`;
+            const btn = document.createElement('button'); btn.className = `die-btn rolling`;
             btn.innerHTML = `<span class="die-icon">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-gray-200 relative z-10">${d.name}</span>`;
-            btn.onclick = () => selectDie(i, btn);
-            diceContainer.appendChild(btn);
-            setTimeout(() => btn.classList.remove('rolling'), 500);
+            btn.onclick = () => selectDie(i, btn); diceContainer.appendChild(btn); setTimeout(() => btn.classList.remove('rolling'), 500);
         }
     }
 
     function renderRemoteDice() {
         diceContainer.innerHTML = '';
         diceRolled.forEach((d, i) => {
-            const btn = document.createElement('button');
-            const displayObj = ALL_DICE_FACES[d.effectiveId || d.id];
-            btn.className = `die-btn pointer-events-none ${d.used ? 'used' : ''}`;
-            btn.innerHTML = `<span class="die-icon">${displayObj.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-gray-200 relative z-10">${displayObj.name}</span>`;
-            diceContainer.appendChild(btn);
+            const displayObj = ALL_DICE_FACES[d.effectiveId || d.id]; const btn = document.createElement('button'); btn.className = `die-btn pointer-events-none ${d.used ? 'used' : ''}`;
+            btn.innerHTML = `<span class="die-icon">${displayObj.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-gray-200 relative z-10">${displayObj.name}</span>`; diceContainer.appendChild(btn);
         });
     }
 
     function selectDie(index, btnEl) {
         if (state !== 'PLAYER_TURN' || diceRolled[index].used || (!isPassAndPlay && activeUnit.team !== playerNumber)) return;
-        
         const die = diceRolled[index];
-        if (die.id === 'wild' && die.effectiveId === 'wild') {
-            openWildCardMenu(index, btnEl);
-            return;
-        }
-
+        if (die.id === 'wild' && die.effectiveId === 'wild') { openWildCardMenu(index, btnEl); return; }
         finalizeDieSelection(index, btnEl);
     }
 
-    window.cancelWildCard = function() {
-        document.getElementById('wildcard-modal').classList.add('hidden');
-        Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
-        selectedDieIndex = -1;
-    }
+    window.cancelWildCard = function() { document.getElementById('wildcard-modal').classList.add('hidden'); Array.from(diceContainer.children).forEach(c => c.classList.remove('selected')); selectedDieIndex = -1; }
 
     function finalizeDieSelection(index, btnEl) {
-        selectedDieIndex = index;
-        Array.from(diceContainer.children).forEach(c => c.classList.remove('selected'));
-        if(btnEl) btnEl.classList.add('selected');
-        
+        selectedDieIndex = index; Array.from(diceContainer.children).forEach(c => c.classList.remove('selected')); if(btnEl) btnEl.classList.add('selected');
         broadcastEvent('SELECT_DIE', { index });
-
-        const die = diceRolled[index];
-        const actionType = die.effectiveId;
-
-        if(actionType === 'defend') {
-            const intent = { targetInfo: { type: 'defend' }, dieIndex: index };
-            broadcastEvent('ACTION_INTENT', intent);
-            executeAction(intent);
-            return;
-        }
+        const die = diceRolled[index]; const actionType = die.effectiveId;
+        if(actionType === 'defend') { const intent = { targetInfo: { type: 'defend' }, dieIndex: index }; broadcastEvent('ACTION_INTENT', intent); executeAction(intent); return; }
         showValidTargets(actionType);
     }
 
     function openWildCardMenu(dieIndex, btnEl) {
-        const modal = document.getElementById('wildcard-modal');
-        const optsContainer = document.getElementById('wildcard-options');
-        optsContainer.innerHTML = '';
-        
+        const modal = document.getElementById('wildcard-modal'); const optsContainer = document.getElementById('wildcard-options'); optsContainer.innerHTML = '';
         activeUnit.actions.filter(a => a !== 'wild').forEach(act => {
-            const d = ALL_DICE_FACES[act];
-            const b = document.createElement('button');
-            b.className = "flex flex-col items-center p-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition transform hover:-translate-y-1";
+            const d = ALL_DICE_FACES[act]; const b = document.createElement('button');
+            b.className = "flex flex-col items-center p-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl transition transform hover:-translate-y-1 cursor-pointer";
             b.innerHTML = `<span class="text-xl font-bold text-gray-200">${d.abbr}</span><span class="text-[10px] text-amber-400 mt-1">${d.name}</span>`;
-            b.onclick = () => {
-                modal.classList.add('hidden');
-                diceRolled[dieIndex].effectiveId = act;
-                // Update Button visually locally
-                btnEl.innerHTML = `<span class="die-icon text-amber-300">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-amber-400 relative z-10">${d.name}</span>`;
-                finalizeDieSelection(dieIndex, btnEl);
-            };
+            b.onclick = () => { modal.classList.add('hidden'); diceRolled[dieIndex].effectiveId = act; btnEl.innerHTML = `<span class="die-icon text-amber-300">${d.abbr}</span><span class="text-[10px] font-black tracking-wider mt-1 text-amber-400 relative z-10">${d.name}</span>`; finalizeDieSelection(dieIndex, btnEl); };
             optsContainer.appendChild(b);
         });
         modal.classList.remove('hidden');
     }
 
-    function clearHighlights() {
-        tileMeshes.forEach(m => m.material = (activeUnit && m.userData.x === activeUnit.x && m.userData.z === activeUnit.z) ? matTileActive : m.userData.originalMat);
-        highlightMeshes = [];
-    }
+    function clearHighlights() { tileMeshes.forEach(m => m.material = (activeUnit && m.userData.x === activeUnit.x && m.userData.z === activeUnit.z) ? matTileActive : m.userData.originalMat); highlightMeshes = []; }
 
     function showValidTargets(actionType) {
         clearHighlights();
         const isMove = actionType === 'move', isDash = actionType === 'dash', isAttack = actionType === 'attack' || actionType === 'magic';
-        let maxRange = 0;
-        if (isDash) maxRange = Math.max(maxRange, activeUnit.dashRange); if (isMove) maxRange = Math.max(maxRange, activeUnit.moveRange);
-
-        let distMap = {};
-        for(let ix = 0; ix < BOARD_SIZE; ix++) { distMap[ix] = {}; for(let iz = 0; iz < BOARD_SIZE; iz++) distMap[ix][iz] = 999; }
+        let maxRange = 0; if (isDash) maxRange = Math.max(maxRange, activeUnit.dashRange); if (isMove) maxRange = Math.max(maxRange, activeUnit.moveRange);
+        let distMap = {}; for(let ix = 0; ix < BOARD_SIZE; ix++) { distMap[ix] = {}; for(let iz = 0; iz < BOARD_SIZE; iz++) distMap[ix][iz] = 999; }
         if (isMove || isDash) {
             let queue = [{x: activeUnit.x, z: activeUnit.z, d: 0}]; distMap[activeUnit.x][activeUnit.z] = 0;
             while(queue.length > 0) {
@@ -969,121 +898,102 @@
                 [[0,1],[0,-1],[1,0],[-1,0]].forEach(dir => {
                     let nx = x + dir[0], nz = z + dir[1];
                     if (nx >= 0 && nx < BOARD_SIZE && nz >= 0 && nz < BOARD_SIZE) {
-                        let tile = tiles[nx][nz];
-                        if ((!tile.unit || tile.unit.team === activeUnit.team) && d + 1 < distMap[nx][nz]) { // Allow passing through allies
-                            distMap[nx][nz] = d + 1; queue.push({x: nx, z: nz, d: d + 1});
-                        }
+                        let tile = tiles[nx][nz]; if ((!tile.unit || tile.unit.team === activeUnit.team) && d + 1 < distMap[nx][nz]) { distMap[nx][nz] = d + 1; queue.push({x: nx, z: nz, d: d + 1}); }
                     }
                 });
             }
         }
         for (let x = 0; x < BOARD_SIZE; x++) {
             for (let z = 0; z < BOARD_SIZE; z++) {
-                const manhattanDist = Math.abs(x - activeUnit.x) + Math.abs(z - activeUnit.z), pathDist = distMap[x][z], tile = tiles[x][z];
-                let highlighted = false;
+                const manhattanDist = Math.abs(x - activeUnit.x) + Math.abs(z - activeUnit.z), pathDist = distMap[x][z], tile = tiles[x][z]; let highlighted = false;
                 if (isDash && pathDist <= activeUnit.dashRange && pathDist > 0 && !tile.unit) { tile.mesh.material = matTileHighlight; highlightMeshes.push({x, z, type: 'dash'}); highlighted = true; }
                 else if (!highlighted && isMove && pathDist <= activeUnit.moveRange && pathDist > 0 && !tile.unit) { tile.mesh.material = matTileHighlight; highlightMeshes.push({x, z, type: 'move'}); }
                 const canTarget = !tile.unit || tile.unit.team !== activeUnit.team;
                 if (isAttack && manhattanDist <= activeUnit.atkRange && manhattanDist > 0 && canTarget) {
-                    if (actionType === 'magic' && activeUnit.name !== 'Mage') continue;
-                    if (actionType === 'attack' && activeUnit.name === 'Mage') continue;
+                    if (actionType === 'magic' && activeUnit.name !== 'Mage') continue; if (actionType === 'attack' && activeUnit.name === 'Mage') continue;
                     tile.mesh.material = matTileAttack; highlightMeshes.push({x, z, type: 'attack'});
                 }
             }
         }
     }
 
-    /** --- INPUT & CAMERA --- **/
+    /** --- FLAWLESS 360 PAN, ROTATE, ZOOM, & SWIPE CONTROLS --- **/
     const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2();
     const activePointers = {}; let initialPinchDist = -1, initialDownX = 0, initialDownY = 0, isDraggingCam = false;
 
     window.addEventListener('pointerdown', e => {
-        if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return;
+        if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas') && state !== 'VIEW_MODE') return;
         activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
         if (Object.keys(activePointers).length === 1) { initialDownX = e.clientX; initialDownY = e.clientY; isDraggingCam = false; }
     });
 
     window.addEventListener('pointermove', e => {
         if(activePointers[e.pointerId]) {
-            const prev = activePointers[e.pointerId]; const deltaX = e.clientX - prev.x, deltaY = e.clientY - prev.y;
-            activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+            const prev = activePointers[e.pointerId]; const deltaX = e.clientX - prev.x, deltaY = e.clientY - prev.y; activePointers[e.pointerId] = { x: e.clientX, y: e.clientY };
             const pointerIds = Object.keys(activePointers);
-            if (pointerIds.length === 1 && e.buttons === 1 && !e.target.closest('#ui-layer')) {
-                if(Math.hypot(e.clientX - initialDownX, e.clientY - initialDownY) > 5) isDraggingCam = true;
-                targetCamTheta -= deltaX * 0.01; targetCamPhi = Math.max(0.1, Math.min(Math.PI/2 - 0.05, targetCamPhi - deltaY * 0.01)); return;
-            } else if (pointerIds.length === 2 && !e.target.closest('#ui-layer')) {
-                isDraggingCam = true;
-                const p1 = activePointers[pointerIds[0]], p2 = activePointers[pointerIds[1]];
+            
+            if (pointerIds.length === 1 && !e.target.closest('#ui-layer') && !e.target.closest('.view-side-panel')) {
+                if(Math.hypot(e.clientX - initialDownX, e.clientY - initialDownY) > 4) isDraggingCam = true;
+                if(state === 'VIEW_MODE' && dummyUnit) { dummyUnit.mesh.rotation.y += deltaX * 0.01; return; }
+                targetCamTheta -= deltaX * 0.008; 
+                targetCamPhi = Math.max(0.15, Math.min(Math.PI/2 - 0.05, targetCamPhi - deltaY * 0.008)); 
+                return;
+            } else if (pointerIds.length === 2 && !e.target.closest('#ui-layer') && !e.target.closest('.view-side-panel')) {
+                isDraggingCam = true; 
+                const p1 = activePointers[pointerIds[0]], p2 = activePointers[pointerIds[1]]; 
                 const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-                if (initialPinchDist > 0) targetCamRadius = Math.max(8, Math.min(45, targetCamRadius + (initialPinchDist - dist) * 0.05));
-                initialPinchDist = dist; return;
+                if (initialPinchDist > 0) targetCamRadius = Math.max(6, Math.min(45, targetCamRadius + (initialPinchDist - dist) * 0.04)); 
+                initialPinchDist = dist; 
+                return;
             }
         }
-
+        
         if(state !== 'PLAYER_TURN' || selectedDieIndex === -1 || activeUnit.name !== 'Mage' || isDraggingCam || (!isPassAndPlay && activeUnit.team !== playerNumber)) return;
-        const die = diceRolled[selectedDieIndex];
-        const actionType = die.effectiveId;
-        if(actionType !== 'magic') return;
+        const die = diceRolled[selectedDieIndex]; const actionType = die.effectiveId; if(actionType !== 'magic') return;
 
-        mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera);
-
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1; raycaster.setFromCamera(mouse, camera);
         highlightMeshes.forEach(h => tiles[h.x][h.z].mesh.material = h.type === 'attack' ? matTileAttack : matTileHighlight);
         for(let tx=0; tx<BOARD_SIZE; tx++) for(let tz=0; tz<BOARD_SIZE; tz++) if(tiles[tx][tz].mesh.material === matTileAoE) tiles[tx][tz].mesh.material = (activeUnit && tx===activeUnit.x && tz===activeUnit.z) ? matTileActive : tiles[tx][tz].mesh.userData.originalMat;
-
         const tileIntersects = raycaster.intersectObjects(tileMeshes);
         if (tileIntersects.length > 0) {
             const {x, z} = tileIntersects[0].object.userData;
             if (highlightMeshes.find(h => h.x === x && h.z === z && h.type === 'attack')) {
-                [{x,z}, {x:x+1,z}, {x:x-1,z}, {x,z:z+1}, {x,z:z-1}].forEach(p => {
-                    if(p.x >= 0 && p.x < BOARD_SIZE && p.z >= 0 && p.z < BOARD_SIZE) tiles[p.x][p.z].mesh.material = matTileAoE;
-                });
+                [{x,z}, {x:x+1,z}, {x:x-1,z}, {x,z:z+1}, {x,z:z-1}].forEach(p => { if(p.x >= 0 && p.x < BOARD_SIZE && p.z >= 0 && p.z < BOARD_SIZE) tiles[p.x][p.z].mesh.material = matTileAoE; });
                 tiles[x][z].mesh.material = matTileAttack;
             }
         }
     });
 
     window.addEventListener('pointerup', e => {
-        delete activePointers[e.pointerId]; if (Object.keys(activePointers).length < 2) initialPinchDist = -1;
-        if(e.target.closest('#ui-layer') && !e.target.closest('#game-canvas')) return;
-        if (Math.hypot(e.clientX - initialDownX, e.clientY - initialDownY) > 10 || isDraggingCam) { isDraggingCam = false; return; }
-
-        if((state !== 'PLAYER_TURN' && state !== 'CHOOSE_FACING') || (!isPassAndPlay && activeUnit.team !== playerNumber)) return;
-
-        mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera);
-
-        if(state === 'CHOOSE_FACING') {
-            const tileIntersects = raycaster.intersectObjects(tileMeshes);
-            if (tileIntersects.length > 0) {
-                const {x, z} = tileIntersects[0].object.userData;
-                if (highlightMeshes.find(h => h.x === x && h.z === z && h.type === 'face')) {
-                    activeUnit.lookAtTile(x, z);
-                    broadcastEvent('SYNC_FACING', { x, z });
-                    endPlayerTurnPhase();
+        delete activePointers[e.pointerId]; initialPinchDist = -1;
+        if(Object.keys(activePointers).length === 0 && !isDraggingCam && !e.target.closest('#ui-layer') && !e.target.closest('.view-side-panel')) {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera); const intersects = raycaster.intersectObjects(tileMeshes);
+            if (intersects.length > 0) {
+                const {x, z} = intersects[0].object.userData;
+                const match = highlightMeshes.find(h => h.x === x && h.z === z);
+                if (match && (state === 'PLAYER_TURN' || state === 'CHOOSE_FACING')) {
+                    if (state === 'CHOOSE_FACING') { activeUnit.lookAtTile(x, z); broadcastEvent('SYNC_FACING', {x, z}); endPlayerTurnPhase(); }
+                    else {
+                        const die = diceRolled[selectedDieIndex]; const actionType = die.effectiveId;
+                        if (actionType === 'attack' && activeUnit.name !== 'Mage') {
+                            const intent = { targetInfo: { x, z }, dieIndex: selectedDieIndex, hitResults: generateHitResults(actionType, x, z) };
+                            broadcastEvent('ACTION_INTENT', intent); executeAction(intent);
+                        } else if (actionType === 'magic') {
+                            const intent = { targetInfo: { x, z }, dieIndex: selectedDieIndex, hitResults: generateHitResults(actionType, x, z) };
+                            broadcastEvent('ACTION_INTENT', intent); executeAction(intent);
+                        } else {
+                            const intent = { targetInfo: { x, z }, dieIndex: selectedDieIndex };
+                            broadcastEvent('ACTION_INTENT', intent); executeAction(intent);
+                        }
+                    }
                 }
-            }
-            return;
-        }
-
-        const tileIntersects = raycaster.intersectObjects(tileMeshes);
-        if (tileIntersects.length > 0) {
-            const {x, z} = tileIntersects[0].object.userData;
-            const highlight = highlightMeshes.find(h => h.x === x && h.z === z);
-            if (highlight && selectedDieIndex !== -1) {
-                const actionType = diceRolled[selectedDieIndex].effectiveId;
-                const hitResults = generateHitResults(actionType, highlight.x, highlight.z);
-                const intent = { targetInfo: highlight, dieIndex: selectedDieIndex, hitResults, morphedId: diceRolled[selectedDieIndex].effectiveId };
-                broadcastEvent('ACTION_INTENT', intent);
-                executeAction(intent);
-            } else {
-                clearHighlights(); Array.from(diceContainer.children).forEach(c => c.classList.remove('selected')); selectedDieIndex = -1;
             }
         }
     });
     
     window.addEventListener('pointercancel', e => { delete activePointers[e.pointerId]; initialPinchDist = -1; isDraggingCam = false; });
-    window.addEventListener('wheel', e => { if(!e.target.closest('#ui-layer')) targetCamRadius = Math.max(8, Math.min(45, targetCamRadius + e.deltaY * 0.02)); });
+    window.addEventListener('wheel', e => { if(!e.target.closest('#ui-layer') && !e.target.closest('.view-side-panel')) targetCamRadius = Math.max(6, Math.min(45, targetCamRadius + e.deltaY * 0.025)); });
 
     /** --- COMBAT EXECUTIONS (DETERMINISTIC) --- **/
     function calculateHit(attacker, target, baseDamage) {
@@ -1091,12 +1001,8 @@
         const toAttacker = new THREE.Vector3(attacker.x - target.x, 0, attacker.z - target.z).normalize();
         if(toAttacker.lengthSq() < 0.01) toAttacker.copy(targetForward).negate();
         const dot = targetForward.dot(toAttacker);
-        
         let hitChance = attacker.accuracy, damageMult = 1.0;
-        if (dot > 0.5) { hitChance = Math.min(attacker.accuracy * 0.85, 1.0); damageMult = 0.95; }
-        else if (dot < -0.5) { hitChance = 1.0; damageMult = 1.15; }
-        else { hitChance = Math.min(attacker.accuracy * 0.90, 1.0); damageMult = 1.05; }
-        
+        if (dot > 0.5) { hitChance = Math.min(attacker.accuracy * 0.85, 1.0); damageMult = 0.95; } else if (dot < -0.5) { hitChance = 1.0; damageMult = 1.15; } else { hitChance = Math.min(attacker.accuracy * 0.90, 1.0); damageMult = 1.05; }
         return { isHit: Math.random() <= hitChance, finalDamage: Math.max(1, Math.round(baseDamage * damageMult)) };
     }
 
@@ -1104,531 +1010,483 @@
         const results = {};
         if (actionType === 'magic') {
             [{tx, tz}, {tx: tx+1, tz}, {tx: tx-1, tz}, {tx, tz: tz+1}, {tx, tz: tz-1}].forEach(t => {
-                if(t.tx >= 0 && t.tx < BOARD_SIZE && t.tz >= 0 && t.tz < BOARD_SIZE) {
-                    let u = tiles[t.tx][t.tz].unit;
-                    if (u && u.team !== activeUnit.team) results[u.id] = calculateHit(activeUnit, u, activeUnit.atk);
-                }
+                if(t.tx >= 0 && t.tx < BOARD_SIZE && t.tz >= 0 && t.tz < BOARD_SIZE) { let u = tiles[t.tx][t.tz].unit; if (u && u.team !== activeUnit.team) results[u.id] = calculateHit(activeUnit, u, activeUnit.atk); }
             });
         } else {
             let u = tiles[tx][tz].unit;
             if (u && u.team !== activeUnit.team) {
                 results[u.id] = calculateHit(activeUnit, u, activeUnit.atk);
-                
-                // Pre-calculate 65% counter logic for sync across clients
-                const canTargetCounter = ['Assassin', 'Vanguard', 'Commander'].includes(u.name);
-                const canActiveBeCountered = ['Vanguard', 'Commander'].includes(activeUnit.name); // Assassin cannot be countered
-                
-                if (canTargetCounter && canActiveBeCountered) {
-                    if (Math.random() < 0.65) {
-                        results.counter = calculateHit(u, activeUnit, u.atk);
-                    }
-                }
+                const canTargetCounter = ['Assassin', 'Vanguard', 'Commander'].includes(u.name); const canActiveBeCountered = ['Vanguard', 'Commander'].includes(activeUnit.name);
+                if (canTargetCounter && canActiveBeCountered) { if (Math.random() < 0.65) results.counter = calculateHit(u, activeUnit, u.atk); }
             }
         }
         return results;
     }
 
-    async function executeAction(intent) {
-        state = 'ACTION_ANIMATING'; clearHighlights();
-        const {x, z} = intent.targetInfo;
-        const die = diceRolled[intent.dieIndex]; die.used = true;
-        const type = die.effectiveId;
-        
-        const dieEl = diceContainer.children[intent.dieIndex];
-        if(dieEl) { dieEl.classList.add('used'); dieEl.classList.remove('selected'); }
-        ap--; updateAPUI();
-
-        if (type === 'defend') {
-            activeUnit.setDefending(true);
-            await tweenAsync(activeUnit.mesh.scale, {y: 1.2}, 0.1, Easing.OutQuad);
-            await tweenAsync(activeUnit.mesh.scale, {y: 1.0}, 0.1, Easing.InQuad);
-            finishAction(); return;
-        }
-
-        activeUnit.lookAtTile(x, z);
-
-        if (type === 'dash') {
-            tiles[activeUnit.x][activeUnit.z].unit = null; activeUnit.x = x; activeUnit.z = z; tiles[x][z].unit = activeUnit;
-            const oldCamRadius = targetCamRadius;
-            
-            // Cinematic Zoom & Tension
-            targetCamRadius = Math.max(8, targetCamRadius - 10);
-            triggerShake(0.05);
-            tween(activeUnit.parts.torso.rotation, {x: 0.5}, 0.3, Easing.OutQuad);
-            await tweenAsync(activeUnit.mesh.position, {y: 0.1}, 0.3, Easing.OutQuad); // crouch
-            
-            // Slow Motion Arc Launch
-            const jumpTime = 0.8; 
-            let animData = {p: 0};
-            tween(animData, {p: 1}, jumpTime, Easing.Linear, (e) => {
-                let cycle = Math.sin(e * Math.PI);
-                if(activeUnit.parts.legR) {
-                    activeUnit.parts.legR.rotation.x = cycle * 0.8; activeUnit.parts.legL.rotation.x = -cycle * 0.8;
-                }
-                if(activeUnit.parts.armR) {
-                    activeUnit.parts.armR.rotation.x = -cycle * 0.8; activeUnit.parts.armL.rotation.x = cycle * 0.8;
-                }
-                if(Math.random() > 0.6) vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 2, 0.5); // trail
-            });
-            tween(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, jumpTime, Easing.InOutQuad, () => activeUnit.updateUIPosition());
-            await tweenAsync(activeUnit.mesh.position, { y: 3.0 }, jumpTime/2, Easing.OutQuad);
-            
-            // Apex & Descent
-            tween(activeUnit.parts.torso.rotation, {x: -0.3}, jumpTime/2);
-            await tweenAsync(activeUnit.mesh.position, { y: 0.2 }, jumpTime/2, Easing.InQuad);
-            
-            // Impact
-            triggerShake(0.5);
-            vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 30, 4);
-            tween(activeUnit.parts.torso.rotation, {x: 0}, 0.2, Easing.OutElastic);
-            if(activeUnit.parts.legR) {
-                tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1);
+    async function executeAction(intent, isTest = false) {
+        let x, z;
+        if (!isTest) {
+            state = 'ACTION_ANIMATING'; clearHighlights();
+            x = intent.targetInfo.x; z = intent.targetInfo.z;
+            const die = diceRolled[intent.dieIndex]; die.used = true; const type = die.effectiveId;
+            const dieEl = diceContainer.children[intent.dieIndex]; if(dieEl) { dieEl.classList.add('used'); dieEl.classList.remove('selected'); }
+            ap--; updateAPUI();
+            if (type === 'defend') {
+                activeUnit.setDefending(true); await tweenAsync(activeUnit.mesh.scale, {y: 1.2}, 0.1, Easing.OutQuad); await tweenAsync(activeUnit.mesh.scale, {y: 1.0}, 0.1, Easing.InQuad); finishAction(); return;
             }
-            if(activeUnit.parts.armR) {
-                tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
-            }
-            
-            targetCamRadius = oldCamRadius;
-            finishAction();
-        }
-        else if (type === 'move') {
-            tiles[activeUnit.x][activeUnit.z].unit = null; activeUnit.x = x; activeUnit.z = z; tiles[x][z].unit = activeUnit;
-            const speed = 0.5;
-            
-            let animData = {p: 0};
-            tween(animData, {p: 1}, speed, Easing.Linear, (e) => {
-                let cycle = Math.sin(e * Math.PI * 6);
-                if (activeUnit.parts.legR) {
-                    activeUnit.parts.legR.rotation.x = cycle * 0.5; activeUnit.parts.legL.rotation.x = -cycle * 0.5;
-                }
-                if (activeUnit.parts.armR) {
-                    activeUnit.parts.armR.rotation.x = -cycle * 0.5; activeUnit.parts.armL.rotation.x = cycle * 0.5;
-                }
-                activeUnit.mesh.position.y = 0.2 + Math.abs(Math.sin(e * Math.PI * 6)) * 0.2;
-            });
-            await tweenAsync(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, speed, Easing.InOutQuad, () => activeUnit.updateUIPosition());
-            
-            tween(activeUnit.mesh.position, {y: 0.2}, 0.1);
-            if (activeUnit.parts.legR) {
-                tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1);
-            }
-            if (activeUnit.parts.armR) {
-                tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
-            }
-            finishAction();
-        } 
-        else if (type === 'attack' || type === 'magic') {
-            const targetUnit = tiles[x][z].unit;
-            let dir = new THREE.Vector3(activeUnit.x - x, 0, activeUnit.z - z).normalize();
-            let startPos = { x: activeUnit.mesh.position.x, z: activeUnit.mesh.position.z };
-            let emptyTargetPos = new THREE.Vector3(x * TILE_SCALE, 0.2, z * TILE_SCALE);
-
-            if (activeUnit.name === 'Archer') {
-                let oldCamRadius = targetCamRadius;
-                targetCamRadius = Math.max(12, targetCamRadius - 4); // Smoother, less aggressive shift
-                
-                // Wind up bow slowly
-                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2.2, y: Math.PI/4 }, 0.6, Easing.OutQuad);
-                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2.2 }, 0.6, Easing.OutQuad);
-                
-                // Draw string with tension
-                await tweenAsync(activeUnit.parts.armR.position, { z: -0.4 }, 1.0, Easing.OutQuad);
-                triggerShake(0.02); // Shaking from tension
-                await new Promise(r => setTimeout(r, 400)); // Held breath pause
-                
-                const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.8), new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0x444444, metalness: 0.8}));
-                arrow.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 1.2, 0));
-                arrow.lookAt(targetUnit ? targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)) : emptyTargetPos); arrow.rotateX(Math.PI/2); scene.add(arrow);
-                
-                // Release!
-                tween(activeUnit.parts.armR.position, { z: 0 }, 0.05); 
-                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2.5 }, 0.1); 
-                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2.5, y: Math.PI/6 }, 0.1); 
-
-                await tweenAsync(arrow.position, {x: x * TILE_SCALE, z: z * TILE_SCALE}, 0.15, Easing.InQuad); scene.remove(arrow);
-                triggerShake(0.4); // Impact shake
-
-                if (targetUnit && intent.hitResults[targetUnit.id]) {
-                    const res = intent.hitResults[targetUnit.id];
-                    if(res.isHit) { targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: -0.3}, 0.1); setTimeout(() => tween(targetUnit.parts.torso.rotation, {x: 0}, 0.2), 100); }
-                    else spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
+            activeUnit.lookAtTile(x, z);
+            if (type === 'dash' || type === 'move') {
+                tiles[activeUnit.x][activeUnit.z].unit = null; activeUnit.x = x; activeUnit.z = z; tiles[x][z].unit = activeUnit;
+                if(type === 'dash') {
+                    const oldCamRadius = targetCamRadius; targetCamRadius = Math.max(8, targetCamRadius - 10); triggerShake(0.05);
+                    tween(activeUnit.parts.torso.rotation, {x: 0.5}, 0.3, Easing.OutQuad); await tweenAsync(activeUnit.mesh.position, {y: 0.25}, 0.3, Easing.OutQuad);
+                    const jumpTime = 0.8; let animData = {p: 0};
+                    tween(animData, {p: 1}, jumpTime, Easing.Linear, (e) => {
+                        let cycle = Math.sin(e * Math.PI);
+                        if(activeUnit.parts.legR) { activeUnit.parts.legR.rotation.x = cycle * 0.8; activeUnit.parts.legL.rotation.x = -cycle * 0.8; }
+                        if(activeUnit.parts.armR) { activeUnit.parts.armR.rotation.x = -cycle * 0.8; activeUnit.parts.armL.rotation.x = cycle * 0.8; }
+                        if(Math.random() > 0.6) vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 2, 0.5);
+                    });
+                    tween(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, jumpTime, Easing.InOutQuad, () => activeUnit.updateUIPosition());
+                    await tweenAsync(activeUnit.mesh.position, { y: 3.2 }, jumpTime/2, Easing.OutQuad);
+                    tween(activeUnit.parts.torso.rotation, {x: -0.3}, jumpTime/2); await tweenAsync(activeUnit.mesh.position, { y: 0.25 }, jumpTime/2, Easing.InQuad);
+                    triggerShake(0.5); vfx.spawnBurst(activeUnit.mesh.position, activeUnit.team===1?0x3b82f6:0xef4444, 30, 4);
+                    tween(activeUnit.parts.torso.rotation, {x: 0}, 0.2, Easing.OutElastic);
+                    if(activeUnit.parts.legR) { tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1); }
+                    if(activeUnit.parts.armR) { tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1); }
+                    targetCamRadius = oldCamRadius; finishAction();
                 } else {
-                    vfx.spawnBurst(emptyTargetPos, 0xcccccc, 10, 2);
+                    let animData = {p: 0};
+                    tween(animData, {p: 1}, 0.5, Easing.Linear, (e) => {
+                        let cycle = Math.sin(e * Math.PI * 6);
+                        if (activeUnit.parts.legR) { activeUnit.parts.legR.rotation.x = cycle * 0.5; activeUnit.parts.legL.rotation.x = -cycle * 0.5; }
+                        if (activeUnit.parts.armR) { activeUnit.parts.armR.rotation.x = -cycle * 0.5; activeUnit.parts.armL.rotation.x = cycle * 0.5; }
+                        activeUnit.mesh.position.y = 0.25 + Math.abs(Math.sin(e * Math.PI * 6)) * 0.2;
+                    });
+                    await tweenAsync(activeUnit.mesh.position, { x: x * TILE_SCALE, z: z * TILE_SCALE }, 0.5, Easing.InOutQuad, () => activeUnit.updateUIPosition());
+                    tween(activeUnit.mesh.position, {y: 0.25}, 0.1);
+                    if (activeUnit.parts.legR) { tween(activeUnit.parts.legR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.legL.rotation, {x: 0}, 0.1); }
+                    if (activeUnit.parts.armR) { tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1); }
+                    finishAction();
                 }
-                
-                // Reset
-                tween(activeUnit.parts.armR.position, { z: 0 }, 0.2); tween(activeUnit.parts.armR.rotation, { x: 0 }, 0.3); tween(activeUnit.parts.armL.rotation, { x: 0, y: 0 }, 0.3);
-                targetCamRadius = oldCamRadius;
-                finishAction();
-            } 
-            else if (activeUnit.name === 'Mage') {
-                let oldCamRadius = targetCamRadius, oldCamPhi = targetCamPhi;
-                targetCamRadius = Math.max(10, targetCamRadius - 8); 
-                targetCamPhi = Math.PI / 2.5; // Look up slightly
-                
-                // Levitate Mage
-                tween(activeUnit.mesh.position, { y: 2.0 }, 1.0, Easing.OutQuad);
-                tween(activeUnit.parts.torso.rotation, { x: -0.2 }, 1.0, Easing.OutQuad);
-                tween(activeUnit.parts.armL.rotation, { x: -Math.PI }, 1.0, Easing.OutQuad); // Both arms up
-                await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI }, 1.0, Easing.OutQuad);
-                
-                const spell = new THREE.Mesh(new THREE.SphereGeometry(0.5), new THREE.MeshBasicMaterial({color: 0x0ea5e9, transparent: true, opacity: 0.9}));
-                spell.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 3.5, 0)); scene.add(spell);
-                
-                // Gather energy
-                triggerShake(0.15);
-                tween(spell.rotation, {y: Math.PI*8}, 1.2, Easing.InQuad); 
-                tween(spell.scale, {x: 3, y: 3, z: 3}, 1.2, Easing.InQuad);
-                
-                let gatherInterval = setInterval(() => {
-                    if(spell.parent) vfx.spawnBurst(spell.position, 0x0ea5e9, 5, -1); // particles suck inwards
-                }, 100);
-                await new Promise(r => setTimeout(r, 1200));
-                clearInterval(gatherInterval);
-                
-                // Cast!
-                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2 }, 0.1);
-                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.1);
-                tween(spell.scale, {x: 0.6, y: 0.6, z: 0.6}, 0.1);
-                
-                // Follow spell
-                targetCamRadius = 14;
-                await tweenAsync(spell.position, {x: x * TILE_SCALE, y: 0.2, z: z * TILE_SCALE}, 0.25, Easing.InQuad); scene.remove(spell);
+                return;
+            }
+        }
 
-                // AoE Explosion
-                triggerShake(0.9);
+        let animStyle = activeUnit.loadout.animation || 0;
+        if(activeUnit.name === 'Mage') animStyle = Math.random() > 0.5 ? 1 : 0;
+        if(isTest) animStyle = myLoadout[activeUnit.name].animation;
+
+        let targetUnit = isTest ? null : tiles[x][z].unit;
+        let startPos = { x: activeUnit.mesh.position.x, z: activeUnit.mesh.position.z };
+        let targetPos = isTest ? {x: startPos.x, y: 0.25, z: startPos.z - 2*TILE_SCALE} : {x: x * TILE_SCALE, y:0.25, z: z * TILE_SCALE};
+        let dir = new THREE.Vector3(startPos.x - targetPos.x, 0, startPos.z - targetPos.z).normalize();
+        let emptyTargetPos = new THREE.Vector3(targetPos.x, 0.25, targetPos.z);
+        let oldCamRadius = targetCamRadius;
+
+        if (activeUnit.name === 'Archer') {
+            targetCamRadius = Math.max(12, targetCamRadius - 4);
+            if(animStyle === 0) {
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2.2, y: Math.PI/4 }, 0.6, Easing.OutQuad); tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2.2 }, 0.6, Easing.OutQuad);
+                await tweenAsync(activeUnit.parts.armR.position, { z: -0.4 }, 1.0, Easing.OutQuad); triggerShake(0.02); await new Promise(r => setTimeout(r, 400));
+                const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.8), new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0x444444, metalness: 0.8}));
+                arrow.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 1.2, 0)); arrow.lookAt(targetUnit ? targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)) : emptyTargetPos); arrow.rotateX(Math.PI/2); scene.add(arrow);
+                tween(activeUnit.parts.armR.position, { z: 0 }, 0.05); tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2.5 }, 0.1); tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2.5, y: Math.PI/6 }, 0.1); 
+                await tweenAsync(arrow.position, targetPos, 0.15, Easing.InQuad); scene.remove(arrow); triggerShake(0.4);
+            } else if (animStyle === 1) { 
+                tween(activeUnit.parts.torso.rotation, {x: -0.5}, 0.5); tween(activeUnit.parts.armL.rotation, { x: -Math.PI/1.5, y: 0 }, 0.5); tween(activeUnit.parts.armR.rotation, { x: -Math.PI/1.5 }, 0.5);
+                await tweenAsync(activeUnit.parts.armR.position, { z: -0.4 }, 0.5);
+                tween(activeUnit.parts.armR.position, { z: 0 }, 0.05);
+                for(let i=0; i<5; i++) {
+                    const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.8), new THREE.MeshStandardMaterial({color: 0xffffff}));
+                    arrow.position.set(targetPos.x + (Math.random()-0.5), 10 + i*1.5, targetPos.z + (Math.random()-0.5)); arrow.rotation.x = Math.PI; scene.add(arrow);
+                    tween(arrow.position, {y: 0.25}, 0.4 + i*0.1, Easing.InQuad, null, () => { scene.remove(arrow); triggerShake(0.1); vfx.spawnBurst(arrow.position, 0xdddddd, 5, 1); });
+                }
+                await new Promise(r => setTimeout(r, 1200));
+            } else { 
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2.2, y: Math.PI/4 }, 0.8, Easing.OutQuad); tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2.2 }, 0.8, Easing.OutQuad);
+                await tweenAsync(activeUnit.parts.armR.position, { z: -0.6 }, 1.5, Easing.OutQuad); triggerShake(0.1);
+                vfx.spawnBurst(activeUnit.mesh.position.clone().add(new THREE.Vector3(0,1,0)), 0x3b82f6, 20, 2); await new Promise(r => setTimeout(r, 200));
+                const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2), new THREE.MeshStandardMaterial({color: 0x3b82f6, emissive: 0x3b82f6}));
+                arrow.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 1.2, 0)); arrow.lookAt(targetUnit ? targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)) : emptyTargetPos); arrow.rotateX(Math.PI/2); scene.add(arrow);
+                tween(activeUnit.parts.armR.position, { z: 0 }, 0.05);
+                await tweenAsync(arrow.position, targetPos, 0.1, Easing.Linear); scene.remove(arrow); triggerShake(0.8); vfx.spawnBurst(emptyTargetPos, 0x3b82f6, 40, 5);
+            }
+            if (!isTest && targetUnit && intent.hitResults[targetUnit.id]) {
+                const res = intent.hitResults[targetUnit.id];
+                if(res.isHit) { targetUnit.takeDamage(res.finalDamage * (animStyle===2?1.5:1)); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: -0.3}, 0.1); setTimeout(() => {if(targetUnit.mesh)tween(targetUnit.parts.torso.rotation, {x: 0}, 0.2);}, 100); }
+                else spawnFloatingText(targetUnit, 'MISSED', '#d1d5db');
+            } else if (!isTest) vfx.spawnBurst(emptyTargetPos, 0xcccccc, 10, 2);
+            tween(activeUnit.parts.armR.position, { z: 0 }, 0.2); tween(activeUnit.parts.armR.rotation, { x: 0 }, 0.3); tween(activeUnit.parts.armL.rotation, { x: 0, y: 0 }, 0.3); tween(activeUnit.parts.torso.rotation, {x:0}, 0.3);
+            targetCamRadius = oldCamRadius; if(!isTest) finishAction();
+        } 
+        else if (activeUnit.name === 'Mage') {
+            targetCamRadius = Math.max(10, targetCamRadius - 8); 
+            if(animStyle === 0) {
+                targetCamPhi = Math.PI / 2.5; tween(activeUnit.mesh.position, { y: 2.0 }, 1.0, Easing.OutQuad); tween(activeUnit.parts.torso.rotation, { x: -0.2 }, 1.0);
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI }, 1.0); await tweenAsync(activeUnit.parts.armR.rotation, { x: -Math.PI }, 1.0);
+                const spell = new THREE.Mesh(new THREE.SphereGeometry(0.5), new THREE.MeshBasicMaterial({color: 0x0ea5e9, transparent: true, opacity: 0.9})); spell.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(0, 3.5, 0)); scene.add(spell);
+                triggerShake(0.15); tween(spell.rotation, {y: Math.PI*8}, 1.2, Easing.InQuad); tween(spell.scale, {x: 3, y: 3, z: 3}, 1.2, Easing.InQuad);
+                let gi = setInterval(() => { if(spell.parent) vfx.spawnBurst(spell.position, 0x0ea5e9, 5, -1); }, 100); await new Promise(r => setTimeout(r, 1200)); clearInterval(gi);
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2 }, 0.1); tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.1); tween(spell.scale, {x: 0.6, y: 0.6, z: 0.6}, 0.1);
+                await tweenAsync(spell.position, {x: targetPos.x, y: 0.25, z: targetPos.z}, 0.25, Easing.InQuad); scene.remove(spell); triggerShake(0.9);
+            } else {
+                tween(activeUnit.mesh.position, { y: 1.0 }, 0.5, Easing.OutQuad);
+                tween(activeUnit.parts.torso.rotation, { y: -Math.PI/4, x: 0.2 }, 0.5); 
+                tween(activeUnit.parts.armR.rotation, { x: 0.5, y: -0.5, z: 0.2 }, 0.5); 
+                await tweenAsync(activeUnit.parts.armL.rotation, { x: 0.8, y: 0.5, z: -0.2 }, 0.5); 
+
+                const spell = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial({color: 0x3b82f6, transparent: true, opacity: 0.9}));
+                spell.position.set(-0.3, -0.2, 0.3); 
+                activeUnit.parts.torso.add(spell); 
+
+                tween(spell.scale, {x: 3, y: 3, z: 3}, 1.2, Easing.InQuad);
+                let kiInterval = setInterval(() => {
+                    if(spell.parent) {
+                        let wp = new THREE.Vector3(); spell.getWorldPosition(wp);
+                        vfx.spawnBurst(wp, 0x60a5fa, 3, -2); 
+                    }
+                }, 100);
+                triggerShake(0.05);
+                await new Promise(r => setTimeout(r, 1200));
+                clearInterval(kiInterval);
+
+                let wp = new THREE.Vector3(); spell.getWorldPosition(wp);
+                activeUnit.parts.torso.remove(spell);
+                scene.add(spell);
+                spell.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(-dir.x*1.5, 1.2, -dir.z*1.5)); 
+                
+                tween(activeUnit.parts.torso.rotation, { y: Math.PI/8, x: 0.3 }, 0.1); 
+                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2, y: 0.2, z: -0.1 }, 0.1); 
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/2, y: -0.2, z: 0.1 }, 0.1);
+
+                const dist = Math.hypot(targetPos.x - startPos.x, targetPos.z - startPos.z);
+                const beamCore = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, dist), new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 1.0}));
+                const beamGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, dist), new THREE.MeshBasicMaterial({color: 0x3b82f6, transparent: true, opacity: 0.6}));
+                
+                const beamGroup = new THREE.Group();
+                beamGroup.add(beamCore); beamGroup.add(beamGlow);
+                beamGroup.position.copy(activeUnit.mesh.position).add(new THREE.Vector3(-dir.x*(dist/2 + 0.5), 1.2, -dir.z*(dist/2 + 0.5)));
+                beamGroup.lookAt(targetPos.x, activeUnit.mesh.position.y + 1.2, targetPos.z);
+                beamGroup.rotation.x = Math.PI/2;
+                scene.add(beamGroup);
+
+                triggerShake(1.2);
+                tween(spell.scale, {x: 0.1, y: 0.1, z: 0.1}, 0.2);
+                tween(beamCore.scale, {x: 1.5, z: 1.5}, 0.1, Easing.OutQuad, null, () => tween(beamCore.scale, {x: 0.1, z: 0.1}, 0.4));
+                tween(beamGlow.scale, {x: 2.0, z: 2.0}, 0.1, Easing.OutQuad, null, () => tween(beamGlow.scale, {x: 0.1, z: 0.1}, 0.5));
+
+                await new Promise(r => setTimeout(r, 600));
+                scene.remove(beamGroup);
+                scene.remove(spell);
+            }
+            if (!isTest) {
                 [{tx: x, tz: z}, {tx: x+1, tz: z}, {tx: x-1, tz: z}, {tx: x, tz: z+1}, {tx: x, tz: z-1}].forEach(t => {
                     if(t.tx >= 0 && t.tx < BOARD_SIZE && t.tz >= 0 && t.tz < BOARD_SIZE) {
                         let u = tiles[t.tx][t.tz].unit;
                         if(u && intent.hitResults[u.id]) {
                             const res = intent.hitResults[u.id];
                             if(res.isHit) { u.takeDamage(res.finalDamage); spawnFloatingText(u, `-${res.finalDamage}`, '#ef4444'); tween(u.parts.torso.rotation, {x: -0.5, z: (Math.random()-0.5)}, 0.1); setTimeout(() => { if(u.mesh) tween(u.parts.torso.rotation, {x: 0, z: 0}, 0.4); }, 200); }
-                            else spawnFloatingText(u, 'MISSED', '#d1d5db');
                         }
                         vfx.spawnBurst(new THREE.Vector3(t.tx * TILE_SCALE, 0.5, t.tz * TILE_SCALE), 0x0ea5e9, 40, 8);
                     }
                 });
-                
-                // Mage lands
-                tween(activeUnit.mesh.position, { y: 0.2 }, 0.5, Easing.InQuad);
-                tween(activeUnit.parts.torso.rotation, { x: 0 }, 0.5);
-                tween(activeUnit.parts.armL.rotation, { x: 0 }, 0.5);
-                await tweenAsync(activeUnit.parts.armR.rotation, { x: 0 }, 0.5);
-                
-                targetCamRadius = oldCamRadius; targetCamPhi = oldCamPhi;
-                finishAction();
-            }
-            else if (activeUnit.name === 'Assassin') {
-                let oldCamRadius = targetCamRadius;
-                targetCamRadius = Math.max(12, targetCamRadius - 6); // Smoother, no orientation inversion
-                
-                // Slow motion vanish
-                tween(activeUnit.parts.torso.rotation, { x: 0.4 }, 0.3);
-                await tweenAsync(activeUnit.mesh.scale, {x: 0.01, y: 0.01, z: 0.01}, 0.4, Easing.InQuad); 
-                activeUnit.mesh.visible = false; 
-                vfx.spawnBurst(startPos, 0x111111, 40, 3); // dark smoke
-                
-                await new Promise(r => setTimeout(r, 300)); // Hold tension in empty space
-                
-                // Re-appear right behind target (or at target pos if empty)
-                activeUnit.mesh.position.set(x * TILE_SCALE, 2.5, z * TILE_SCALE); 
-                activeUnit.mesh.visible = true; 
-                activeUnit.parts.armR.rotation.x = -Math.PI; activeUnit.parts.armL.rotation.x = -Math.PI;
-                activeUnit.parts.torso.rotation.x = 0.5; // diving pose
-                
-                vfx.spawnBurst(activeUnit.mesh.position, 0x111111, 30, 2);
-                
-                // Drop down and slice
-                await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.1, Easing.OutQuad);
-                tween(activeUnit.mesh.position, {y: 0.2}, 0.15, Easing.InQuad); 
-                
-                // Slice!
-                tween(activeUnit.parts.armR.rotation, {x: -Math.PI/4}, 0.15, Easing.InQuad); 
-                await tweenAsync(activeUnit.parts.armL.rotation, {x: -Math.PI/4}, 0.15, Easing.InQuad);
-                triggerShake(0.4);
-
-                if(targetUnit && intent.hitResults[targetUnit.id]) {
-                    const res = intent.hitResults[targetUnit.id];
-                    if(res.isHit) { 
-                        targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); 
-                        tween(targetUnit.parts.torso.rotation, {x: 0.6}, 0.1); // brutal hit
-                        setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.5); }, 200); 
-                    }
-                    else spawnFloatingText(targetUnit, 'DODGED', '#d1d5db');
-
-                    // --- COUNTER MECHANIC ---
-                    if (targetUnit.hp > 0 && intent.hitResults.counter) {
-                        await new Promise(r => setTimeout(r, 200));
-                        if (activeUnit.hp > 0 && targetUnit.mesh && activeUnit.mesh) {
-                            spawnFloatingText(targetUnit, 'COUNTER!', '#f59e0b', targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
-                            const counterRes = intent.hitResults.counter;
-                            if (counterRes.isHit) {
-                                activeUnit.takeDamage(counterRes.finalDamage);
-                                spawnFloatingText(activeUnit, `-${counterRes.finalDamage}`, '#ef4444');
-                                tween(activeUnit.parts.torso.rotation, {x: -0.5}, 0.1);
-                                setTimeout(() => { if(activeUnit.mesh) tween(activeUnit.parts.torso.rotation, {x: 0}, 0.4); }, 200);
-                                let counterDir = new THREE.Vector3(targetUnit.mesh.position.x - activeUnit.mesh.position.x, 0, targetUnit.mesh.position.z - activeUnit.mesh.position.z).normalize();
-                                spawnSlashVFX(activeUnit.mesh.position.clone(), counterDir, targetUnit.team === 1 ? 0x3b82f6 : 0xef4444);
-                                tween(targetUnit.parts.armR.rotation, {x: -Math.PI/2}, 0.1, Easing.OutQuad);
-                                setTimeout(() => { if(targetUnit.parts.armR) tween(targetUnit.parts.armR.rotation, {x: 0}, 0.3); }, 200);
-                            } else {
-                                spawnFloatingText(activeUnit, 'DODGED', '#d1d5db');
-                            }
-                            await new Promise(r => setTimeout(r, 300));
+            } else { vfx.spawnBurst(emptyTargetPos, 0x0ea5e9, 40, 8); }
+            tween(activeUnit.mesh.position, { y: 0.25 }, 0.5, Easing.InQuad); tween(activeUnit.parts.torso.rotation, { x: 0 }, 0.5); tween(activeUnit.parts.armL.rotation, { x: 0, y:0, z:0 }, 0.5); await tweenAsync(activeUnit.parts.armR.rotation, { x: 0, y:0, z:0 }, 0.5);
+            targetCamRadius = oldCamRadius; targetCamPhi = Math.PI / 3.2; if(!isTest) finishAction();
+        }
+        else if (activeUnit.name === 'Assassin') {
+            targetCamRadius = Math.max(12, targetCamRadius - 6); 
+            if(animStyle === 0) {
+                tween(activeUnit.parts.torso.rotation, { x: 0.4 }, 0.3); await tweenAsync(activeUnit.mesh.scale, {x: 0.01, y: 0.01, z: 0.01}, 0.4, Easing.InQuad); activeUnit.mesh.visible = false; vfx.spawnBurst(startPos, 0x111111, 40, 3);
+                await new Promise(r => setTimeout(r, 300));
+                activeUnit.mesh.position.set(targetPos.x, 2.5, targetPos.z); activeUnit.mesh.visible = true; activeUnit.parts.armR.rotation.x = -Math.PI; activeUnit.parts.armL.rotation.x = -Math.PI; activeUnit.parts.torso.rotation.x = 0.5; vfx.spawnBurst(activeUnit.mesh.position, 0x111111, 30, 2);
+                await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.1, Easing.OutQuad); tween(activeUnit.mesh.position, {y: 0.25}, 0.15, Easing.InQuad); 
+                tween(activeUnit.parts.armR.rotation, {x: -Math.PI/4}, 0.15, Easing.InQuad); await tweenAsync(activeUnit.parts.armL.rotation, {x: -Math.PI/4}, 0.15, Easing.InQuad); triggerShake(0.4);
+            } else if (animStyle === 1) { 
+                const cloneGroups = [];
+                for(let i=0; i<3; i++) {
+                    const clone = new THREE.Group();
+                    activeUnit.mesh.children.forEach(child => {
+                        if (child.isMesh || child.isGroup) {
+                            const cClone = child.clone();
+                            cClone.traverse((obj) => {
+                                if (obj.isMesh) {
+                                    obj.material = new THREE.MeshBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.5 });
+                                }
+                            });
+                            clone.add(cClone);
                         }
-                    }
-                    // ------------------------
-
-                } else {
-                    vfx.spawnBurst(emptyTargetPos, 0x4b5563, 20, 3);
+                    });
+                    
+                    let sideX = (Math.random()-0.5)*3; let sideZ = (Math.random()-0.5)*3;
+                    clone.position.set(targetPos.x + sideX, 0.25, targetPos.z + sideZ);
+                    clone.lookAt(targetPos.x, 0.25, targetPos.z);
+                    scene.add(clone); cloneGroups.push(clone);
+                    tween(clone.position, targetPos, 0.15);
                 }
                 
-                // Cinematic pose hold
-                await new Promise(r=>setTimeout(r, 400)); 
-                
-                // Vanish back
-                await tweenAsync(activeUnit.mesh.scale, {x: 0.01, y: 0.01, z: 0.01}, 0.2, Easing.InQuad); 
-                vfx.spawnBurst(activeUnit.mesh.position, 0x111111, 30, 3);
-                
-                activeUnit.mesh.position.set(startPos.x, 0.2, startPos.z);
-                
-                // Re-appear at start
-                tween(activeUnit.parts.torso.rotation, {x: 0}, 0.1);
-                tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1);
-                tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1);
-                await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.3, Easing.OutQuad); 
-                targetCamRadius = oldCamRadius;
-                
-                finishAction();
+                tween(activeUnit.parts.armR.rotation, {x: -Math.PI/2}, 0.1); 
+                await tweenAsync(activeUnit.mesh.position, targetPos, 0.15);
+                vfx.spawnBurst(targetPos, 0x444444, 20, 3); triggerShake(0.4); 
+                activeUnit.parts.armR.rotation.x = 0;
+                cloneGroups.forEach(c => scene.remove(c));
+            } else { 
+                tween(activeUnit.parts.armR.rotation, {x: -Math.PI/2}, 0.2); tween(activeUnit.mesh.position, {y: 1.5}, 0.4, Easing.OutQuad); await tweenAsync(activeUnit.mesh.rotation, {y: activeUnit.mesh.rotation.y + Math.PI*4}, 0.6, Easing.InOutQuad);
+                for(let i=0; i<3; i++) {
+                    const knife = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.05), new THREE.MeshStandardMaterial({color: 0x999999}));
+                    knife.position.copy(activeUnit.mesh.position); knife.lookAt(targetPos.x, 0.25, targetPos.z); knife.rotation.x = Math.PI/2 + (i-1)*0.2; scene.add(knife);
+                    tween(knife.position, targetPos, 0.2 + i*0.05, Easing.Linear, null, () => { scene.remove(knife); triggerShake(0.2); vfx.spawnBurst(targetPos, 0x111111, 10, 1); });
+                }
+                await tweenAsync(activeUnit.mesh.position, {y: 0.25}, 0.4, Easing.InQuad);
             }
-            else {
-                // FLUID MELEE ATTACK (Commander / Vanguard)
-                let oldCamRadius = targetCamRadius;
-                targetCamRadius = Math.max(8, targetCamRadius - 8);
-                let clashPos = { x: startPos.x - dir.x*(0.7 * TILE_SCALE), z: startPos.z - dir.z*(0.7 * TILE_SCALE) }; 
-                
-                // Smooth Windup
-                tween(activeUnit.parts.torso.rotation, { y: Math.PI/3, x: -0.1 }, 0.3, Easing.OutQuad);
-                tween(activeUnit.parts.armR.rotation, { x: Math.PI/2, z: Math.PI/4 }, 0.3, Easing.OutQuad);
-                if(activeUnit.parts.armL) tween(activeUnit.parts.armL.rotation, { x: Math.PI/4 }, 0.3);
-                await new Promise(r => setTimeout(r, 200));
-
-                // Dash to target
-                await tweenAsync(activeUnit.mesh.position, clashPos, 0.15, Easing.InQuad);
-                
-                // Slash & Impact
-                tween(activeUnit.parts.torso.rotation, { y: -Math.PI/4, x: 0.2 }, 0.1, Easing.OutQuad);
-                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2, z: -Math.PI/6 }, 0.1, Easing.OutQuad);
-                triggerShake(0.5);
-                
-                // Slash VFX
+            if(!isTest && targetUnit && intent.hitResults[targetUnit.id]) {
+                const res = intent.hitResults[targetUnit.id];
+                if(res.isHit) { targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: 0.6}, 0.1); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.5); }, 200); }
+                else spawnFloatingText(targetUnit, 'DODGED', '#d1d5db');
+                if (targetUnit.hp > 0 && intent.hitResults.counter) await processCounter(targetUnit, activeUnit, intent.hitResults.counter);
+            } else if (!isTest) vfx.spawnBurst(emptyTargetPos, 0x4b5563, 20, 3);
+            
+            if(animStyle === 0) {
+                await new Promise(r=>setTimeout(r, 400)); await tweenAsync(activeUnit.mesh.scale, {x: 0.01, y: 0.01, z: 0.01}, 0.2, Easing.InQuad); vfx.spawnBurst(activeUnit.mesh.position, 0x111111, 30, 3);
+                activeUnit.mesh.position.set(startPos.x, 0.25, startPos.z);
+            }
+            tween(activeUnit.parts.torso.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1); await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.3, Easing.OutQuad); targetCamRadius = oldCamRadius; if(!isTest) finishAction();
+        }
+        else {
+            let oldCamRadius = targetCamRadius; targetCamRadius = Math.max(8, targetCamRadius - 8);
+            let clashPos = { x: startPos.x - dir.x*(0.7 * TILE_SCALE), z: startPos.z - dir.z*(0.7 * TILE_SCALE) }; 
+            
+            if(animStyle === 0) { 
+                tween(activeUnit.parts.torso.rotation, { y: Math.PI/3, x: -0.1 }, 0.3, Easing.OutQuad); tween(activeUnit.parts.armR.rotation, { x: Math.PI/2, z: Math.PI/4 }, 0.3, Easing.OutQuad); if(activeUnit.parts.armL) tween(activeUnit.parts.armL.rotation, { x: Math.PI/4 }, 0.3);
+                await new Promise(r => setTimeout(r, 200)); await tweenAsync(activeUnit.mesh.position, clashPos, 0.15, Easing.InQuad);
+                tween(activeUnit.parts.torso.rotation, { y: -Math.PI/4, x: 0.2 }, 0.1, Easing.OutQuad); tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2, z: -Math.PI/6 }, 0.1, Easing.OutQuad); triggerShake(0.5);
                 spawnSlashVFX(clashPos, dir, activeUnit.team === 1 ? 0x3b82f6 : 0xef4444);
-
-                if (targetUnit) {
-                    const res = intent.hitResults[targetUnit.id];
-                    if(res && res.isHit) {
-                        targetUnit.takeDamage(res.finalDamage); 
-                        spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); 
-                        tween(targetUnit.parts.torso.rotation, {x: -0.5, y: (Math.random()-0.5)}, 0.1); 
-                        setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0, y: 0}, 0.4); }, 200);
-                        
-                        if (activeUnit.name === 'Vanguard' && targetUnit.hp > 0) {
-                            let kx = Math.round(x - dir.x), kz = Math.round(z - dir.z);
-                            if (kx >= 0 && kx < BOARD_SIZE && kz >= 0 && kz < BOARD_SIZE && !tiles[kx][kz].unit) {
-                                tiles[x][z].unit = null; targetUnit.x = kx; targetUnit.z = kz; tiles[kx][kz].unit = targetUnit; 
-                                tween(targetUnit.mesh.position, {x: kx * TILE_SCALE, z: kz * TILE_SCALE}, 0.2, Easing.OutQuad, () => targetUnit.updateUIPosition());
-                            }
-                        }
-                    } else {
-                        spawnFloatingText(targetUnit, 'PARRIED', '#d1d5db'); 
-                        tween(targetUnit.mesh.position, {x: targetUnit.mesh.position.x - dir.z*0.5, z: targetUnit.mesh.position.z + dir.x*0.5}, 0.15, Easing.OutQuad); 
-                        setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.mesh.position, {x: x*TILE_SCALE, z: z*TILE_SCALE}, 0.2, Easing.InQuad); }, 150);
-                    }
-
-                    // --- COUNTER MECHANIC ---
-                    if (targetUnit.hp > 0 && intent.hitResults.counter) {
-                        await new Promise(r => setTimeout(r, 200));
-                        if (activeUnit.hp > 0 && targetUnit.mesh && activeUnit.mesh) {
-                            spawnFloatingText(targetUnit, 'COUNTER!', '#f59e0b', targetUnit.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
-                            const counterRes = intent.hitResults.counter;
-                            if (counterRes.isHit) {
-                                activeUnit.takeDamage(counterRes.finalDamage);
-                                spawnFloatingText(activeUnit, `-${counterRes.finalDamage}`, '#ef4444');
-                                tween(activeUnit.parts.torso.rotation, {x: -0.5}, 0.1);
-                                setTimeout(() => { if(activeUnit.mesh) tween(activeUnit.parts.torso.rotation, {x: 0}, 0.4); }, 200);
-                                let counterDir = new THREE.Vector3(targetUnit.mesh.position.x - activeUnit.mesh.position.x, 0, targetUnit.mesh.position.z - activeUnit.mesh.position.z).normalize();
-                                spawnSlashVFX(activeUnit.mesh.position.clone(), counterDir, targetUnit.team === 1 ? 0x3b82f6 : 0xef4444);
-                                tween(targetUnit.parts.armR.rotation, {x: -Math.PI/2}, 0.1, Easing.OutQuad);
-                                setTimeout(() => { if(targetUnit.parts.armR) tween(targetUnit.parts.armR.rotation, {x: 0}, 0.3); }, 200);
-                            } else {
-                                spawnFloatingText(activeUnit, 'DODGED', '#d1d5db');
-                            }
-                            await new Promise(r => setTimeout(r, 300));
-                        }
-                    }
-                    // ------------------------
-
+            } else if (animStyle === 1) { 
+                if(activeUnit.name === 'Commander') {
+                    tween(activeUnit.mesh.position, {x: clashPos.x, y: 3, z: clashPos.z}, 0.5, Easing.OutQuad); tween(activeUnit.parts.torso.rotation, {x: Math.PI*2}, 0.5); tween(activeUnit.parts.armR.rotation, {x: Math.PI}, 0.5);
+                    await new Promise(r=>setTimeout(r,500)); await tweenAsync(activeUnit.mesh.position, {y: 0.25}, 0.15, Easing.InQuad); tween(activeUnit.parts.armR.rotation, {x: -Math.PI/4}, 0.1); triggerShake(0.8); spawnSlashVFX(clashPos, dir, activeUnit.team === 1 ? 0x3b82f6 : 0xef4444, 2);
                 } else {
-                    vfx.spawnBurst(emptyTargetPos, 0xcccccc, 10, 2);
+                    tween(activeUnit.parts.armL.rotation, {x: -Math.PI/2, z: Math.PI/4}, 0.3); await new Promise(r=>setTimeout(r,300));
+                    await tweenAsync(activeUnit.mesh.position, clashPos, 0.1, Easing.InQuad); triggerShake(0.7); vfx.spawnBurst(clashPos, 0xdddddd, 20, 2);
                 }
-                
-                await new Promise(r => setTimeout(r, 400));
-                
-                // Smooth return
-                tween(activeUnit.parts.torso.rotation, { y: 0, x: 0 }, 0.3); 
-                tween(activeUnit.parts.armR.rotation, { x: 0, z: 0 }, 0.3);
-                if(activeUnit.parts.armL) tween(activeUnit.parts.armL.rotation, { x: 0, z: 0 }, 0.3);
-                targetCamRadius = oldCamRadius; 
-                await tweenAsync(activeUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.4, Easing.OutQuad);
-
-                finishAction();
+            } else { 
+                if(activeUnit.name === 'Commander') {
+                    tween(activeUnit.parts.armR.rotation, {x: Math.PI/2, z: Math.PI/2}, 0.2); await tweenAsync(activeUnit.mesh.position, clashPos, 0.2);
+                    for(let i=0; i<3; i++) { tween(activeUnit.mesh.rotation, {y: activeUnit.mesh.rotation.y + Math.PI*2}, 0.2, Easing.Linear); spawnSlashVFX(clashPos, dir, activeUnit.team === 1 ? 0x3b82f6 : 0xef4444); triggerShake(0.3); await new Promise(r=>setTimeout(r, 200)); }
+                } else {
+                    tween(activeUnit.mesh.position, {y: 1.5}, 0.4, Easing.OutQuad); tween(activeUnit.parts.armR.rotation, {x: Math.PI}, 0.4); await tweenAsync(activeUnit.mesh.position, clashPos, 0.4);
+                    await tweenAsync(activeUnit.mesh.position, {y: 0.25}, 0.1, Easing.InQuad); tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); triggerShake(0.9); spawnShockwave(clashPos, activeUnit.team===1?0x3b82f6:0xef4444);
+                }
             }
+
+            if (!isTest && targetUnit) {
+                const res = intent.hitResults[targetUnit.id];
+                if(res && res.isHit) {
+                    targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: -0.5, y: (Math.random()-0.5)}, 0.1); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0, y: 0}, 0.4); }, 200);
+                    if (activeUnit.name === 'Vanguard' && targetUnit.hp > 0 && animStyle!==2) {
+                        let kx = Math.round(x - dir.x), kz = Math.round(z - dir.z);
+                        if (kx >= 0 && kx < BOARD_SIZE && kz >= 0 && kz < BOARD_SIZE && !tiles[kx][kz].unit) { tiles[x][z].unit = null; targetUnit.x = kx; targetUnit.z = kz; tiles[kx][kz].unit = targetUnit; tween(targetUnit.mesh.position, {x: kx * TILE_SCALE, z: kz * TILE_SCALE}, 0.2, Easing.OutQuad, () => targetUnit.updateUIPosition()); }
+                    }
+                } else {
+                    spawnFloatingText(targetUnit, 'PARRIED', '#d1d5db'); tween(targetUnit.mesh.position, {x: targetUnit.mesh.position.x - dir.z*0.5, z: targetUnit.mesh.position.z + dir.x*0.5}, 0.15, Easing.OutQuad); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.mesh.position, {x: x*TILE_SCALE, z: z*TILE_SCALE}, 0.2, Easing.InQuad); }, 150);
+                }
+                if (targetUnit.hp > 0 && intent.hitResults.counter) await processCounter(targetUnit, activeUnit, intent.hitResults.counter);
+            } else if (!isTest) vfx.spawnBurst(emptyTargetPos, 0xcccccc, 10, 2);
+            
+            await new Promise(r => setTimeout(r, 400));
+            tween(activeUnit.parts.torso.rotation, { y: 0, x: 0 }, 0.3); tween(activeUnit.parts.armR.rotation, { x: 0, z: 0 }, 0.3); if(activeUnit.parts.armL) tween(activeUnit.parts.armL.rotation, { x: 0, z: 0 }, 0.3);
+            targetCamRadius = oldCamRadius; await tweenAsync(activeUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.4, Easing.OutQuad);
+            if(!isTest) finishAction();
+        }
+    }
+
+    async function processCounter(tu, au, cres) {
+        await new Promise(r => setTimeout(r, 200));
+        if (au.hp > 0 && tu.mesh && au.mesh) {
+            spawnFloatingText(tu, 'COUNTER!', '#f59e0b', tu.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
+            if (cres.isHit) {
+                au.takeDamage(cres.finalDamage); spawnFloatingText(au, `-${cres.finalDamage}`, '#ef4444'); tween(au.parts.torso.rotation, {x: -0.5}, 0.1); setTimeout(() => { if(au.mesh) tween(au.parts.torso.rotation, {x: 0}, 0.4); }, 200);
+                let cDir = new THREE.Vector3(tu.mesh.position.x - au.mesh.position.x, 0, tu.mesh.position.z - au.mesh.position.z).normalize(); spawnSlashVFX(au.mesh.position.clone(), cDir, tu.team === 1 ? 0x3b82f6 : 0xef4444);
+                tween(tu.parts.armR.rotation, {x: -Math.PI/2}, 0.1, Easing.OutQuad); setTimeout(() => { if(tu.parts.armR) tween(tu.parts.armR.rotation, {x: 0}, 0.3); }, 200);
+            } else spawnFloatingText(au, 'DODGED', '#d1d5db');
+            await new Promise(r => setTimeout(r, 300));
         }
     }
 
     function triggerFacingPhase() {
-        state = 'CHOOSE_FACING'; clearHighlights(); diceContainer.innerHTML = '';
-        btnEndTurn.innerText = "Confirm Direction"; btnEndTurn.classList.add('facing-mode');
+        state = 'CHOOSE_FACING'; clearHighlights(); diceContainer.innerHTML = ''; btnEndTurn.innerText = "Confirm Direction"; btnEndTurn.classList.add('facing-mode');
         showToast('Choose Facing', '#10b981'); document.getElementById('unit-desc').innerText = "Select an adjacent tile to set unit facing.";
-        [{x:0,z:1}, {x:0,z:-1}, {x:1,z:0}, {x:-1,z:0}].forEach(d => {
-            let tx = activeUnit.x + d.x, tz = activeUnit.z + d.z;
-            if (tx >= 0 && tx < BOARD_SIZE && tz >= 0 && tz < BOARD_SIZE) { tiles[tx][tz].mesh.material = matTileFacing; highlightMeshes.push({x: tx, z: tz, type: 'face'}); }
-        });
+        [{x:0,z:1}, {x:0,z:-1}, {x:1,z:0}, {x:-1,z:0}].forEach(d => { let tx = activeUnit.x + d.x, tz = activeUnit.z + d.z; if (tx >= 0 && tx < BOARD_SIZE && tz >= 0 && tz < BOARD_SIZE) { tiles[tx][tz].mesh.material = matTileFacing; highlightMeshes.push({x: tx, z: tz, type: 'face'}); } });
     }
-
-    function endPlayerTurnPhase() {
-        clearHighlights(); btnEndTurn.innerText = "End Turn"; btnEndTurn.classList.remove('facing-mode');
-        broadcastEvent('TURN_ENDED', {});
-        requestAdvanceTurn();
-    }
-
-    function finishAction() {
-        if(checkWinCondition()) return;
-        if (ap <= 0 || diceRolled.every(d => d.used)) triggerFacingPhase();
-        else { state = 'PLAYER_TURN'; selectedDieIndex = -1; Array.from(diceContainer.children).forEach(c => c.classList.remove('selected')); }
-    }
-
+    function endPlayerTurnPhase() { clearHighlights(); btnEndTurn.innerText = "End Turn"; btnEndTurn.classList.remove('facing-mode'); broadcastEvent('TURN_ENDED', {}); requestAdvanceTurn(); }
+    function finishAction() { if(checkWinCondition()) return; if (ap <= 0 || diceRolled.every(d => d.used)) triggerFacingPhase(); else { state = 'PLAYER_TURN'; selectedDieIndex = -1; Array.from(diceContainer.children).forEach(c => c.classList.remove('selected')); } }
     btnEndTurn.addEventListener('click', () => { if(state === 'PLAYER_TURN') triggerFacingPhase(); else if (state === 'CHOOSE_FACING') endPlayerTurnPhase(); });
 
     function checkWinCondition() {
         if(state === 'GAME_OVER') return true;
-        let p1Comm = units.find(u => u.team === 1 && u.name === 'Commander');
-        let p2Comm = units.find(u => u.team === 2 && u.name === 'Commander');
-        
-        if (!p1Comm) { state = 'GAME_OVER'; showGameOver(2); return true; }
-        if (!p2Comm) { state = 'GAME_OVER'; showGameOver(1); return true; }
+        let p1Comm = units.find(u => u.team === 1 && u.name === 'Commander'); let p2Comm = units.find(u => u.team === 2 && u.name === 'Commander');
+        if (!p1Comm) { state = 'GAME_OVER'; showGameOver(2); return true; } if (!p2Comm) { state = 'GAME_OVER'; showGameOver(1); return true; }
         return false;
     }
 
     function showGameOver(winnerNum) {
-        document.getElementById('ui-layer').style.pointerEvents = 'none';
-        const modal = document.getElementById('gameover-modal');
-        const title = document.getElementById('gameover-title');
-        const iconBg = document.getElementById('gameover-icon-bg');
+        document.getElementById('ui-layer').style.pointerEvents = 'none'; const modal = document.getElementById('gameover-modal'), title = document.getElementById('gameover-title'), iconBg = document.getElementById('gameover-icon-bg');
         modal.classList.remove('hidden');
-        if (isPassAndPlay) {
-            title.textContent = `PLAYER ${winnerNum} WINS!`; 
-            title.className = winnerNum === 1 ? 'text-2xl font-black text-blue-400' : 'text-2xl font-black text-red-500';
-            document.getElementById('gameover-icon').className = 'fa-solid fa-trophy';
-            iconBg.className = winnerNum === 1 
-                ? 'w-20 h-20 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 mx-auto flex items-center justify-center text-4xl'
-                : 'w-20 h-20 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 mx-auto flex items-center justify-center text-4xl';
-        } else if (winnerNum === playerNumber) {
-            title.textContent = 'VICTORY!'; title.className = 'text-2xl font-black text-emerald-400';
-            iconBg.className = 'w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center text-4xl';
-        } else {
-            title.textContent = 'DEFEAT'; title.className = 'text-2xl font-black text-rose-500';
-            document.getElementById('gameover-icon').className = 'fa-solid fa-skull';
-            iconBg.className = 'w-20 h-20 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 mx-auto flex items-center justify-center text-4xl';
-        }
+        if (isPassAndPlay) { title.textContent = `PLAYER ${winnerNum} WINS!`; title.className = winnerNum === 1 ? 'text-2xl font-black text-blue-400' : 'text-2xl font-black text-red-500'; document.getElementById('gameover-icon').className = 'fa-solid fa-trophy'; iconBg.className = winnerNum === 1 ? 'w-20 h-20 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 mx-auto flex items-center justify-center text-4xl' : 'w-20 h-20 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 mx-auto flex items-center justify-center text-4xl'; }
+        else if (winnerNum === playerNumber) { title.textContent = 'VICTORY!'; title.className = 'text-2xl font-black text-emerald-400'; iconBg.className = 'w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mx-auto flex items-center justify-center text-4xl'; } 
+        else { title.textContent = 'DEFEAT'; title.className = 'text-2xl font-black text-rose-500'; document.getElementById('gameover-icon').className = 'fa-solid fa-skull'; iconBg.className = 'w-20 h-20 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 mx-auto flex items-center justify-center text-4xl'; }
     }
 
-    /** --- MAIN LOOP & EVENTS --- **/
+    /** --- VIEW & CUSTOMIZE UI --- **/
+    let viewClassIndex = 0; const classKeys = Object.keys(UNIT_TYPES); let dummyUnit = null;
+
+    function renderViewUI() {
+        const key = classKeys[viewClassIndex]; const conf = UNIT_TYPES[key];
+        document.getElementById('view-class-name').textContent = conf.name;
+        document.getElementById('view-class-stats').textContent = `HP: ${conf.maxHp} | ATK: ${conf.atk} | RNG: ${conf.atkRange}`;
+        
+        if(dummyUnit) { viewGroup.remove(dummyUnit.mesh); dummyUnit.uiEl.remove(); }
+        
+        dummyUnit = new Unit(conf, 'dummy', -1, -1, 1, myLoadout[conf.name]);
+        
+        const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.2, 32), new THREE.MeshStandardMaterial({color: 0x0f172a, roughness: 0.8, metalness: 0.4}));
+        pedestal.position.set(0, -0.1, 0);
+        pedestal.receiveShadow = true;
+        dummyUnit.mesh.add(pedestal);
+
+        dummyUnit.mesh.rotation.y = Math.PI;
+        dummyUnit.mesh.position.set(3 * TILE_SCALE, 0.25, 3 * TILE_SCALE);
+        viewGroup.add(dummyUnit.mesh);
+        
+        const cGrid = document.getElementById('cosmetics-grid'); cGrid.innerHTML = '';
+        for(let i=0; i<16; i++) {
+            const btn = document.createElement('button'); 
+            btn.className = `bg-slate-900 border rounded flex flex-col items-center justify-center p-2 sm:p-2.5 transition-all cursor-pointer ${myLoadout[conf.name].cosmetic === i ? 'bg-indigo-900/40 border-indigo-500 text-indigo-300 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : 'border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'}`;
+            btn.innerHTML = `<span class="text-xs sm:text-lg mb-1">${i===0?'<i class="fa-solid fa-ban"></i>':`<i class="fa-solid fa-shield-halved"></i>`}</span><span class="text-[7px] sm:text-[9px] font-bold text-center leading-tight uppercase break-words px-1">${COSMETIC_NAMES[i]}</span>`;
+            btn.onclick = () => { myLoadout[conf.name].cosmetic = i; saveLoadout(); renderViewUI(); }; cGrid.appendChild(btn);
+        }
+
+        const aList = document.getElementById('animations-list'); aList.innerHTML = '';
+        const anims = ANIMATION_NAMES[conf.name];
+        anims.forEach((name, i) => {
+            const btn = document.createElement('button'); 
+            btn.className = `w-full text-center sm:text-left p-2 sm:px-4 sm:py-3 rounded-lg text-[9px] sm:text-xs font-bold uppercase tracking-wider transition-all border cursor-pointer ${myLoadout[conf.name].animation === i ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' : 'bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-300'}`;
+            btn.textContent = name; btn.onclick = () => { myLoadout[conf.name].animation = i; saveLoadout(); renderViewUI(); }; aList.appendChild(btn);
+        });
+    }
+
+    document.getElementById('view-units-btn').addEventListener('click', () => {
+        state = 'VIEW_MODE'; document.getElementById('main-menu').classList.add('hidden'); document.getElementById('view-mode-ui').classList.remove('hidden');
+        document.getElementById('main-header').classList.add('hidden'); document.getElementById('ui-layer').classList.add('hidden');
+        boardGroup.visible = false; viewGroup.visible = true; document.getElementById('hp-container').style.display = 'none';
+        scene.background = new THREE.Color(0x020205);
+        scene.fog = new THREE.FogExp2(0x020205, 0.02);
+        ambientLight.intensity = 2.5;
+        
+        targetCamRadius = 8.5; targetCamPhi = Math.PI/2.4; targetCamTheta = Math.PI;
+        camRadius = 8.5; camPhi = Math.PI/2.4; camTheta = Math.PI;
+        renderViewUI();
+    });
+
+    document.getElementById('exit-view-btn').addEventListener('click', () => {
+        state = 'IDLE'; document.getElementById('view-mode-ui').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden');
+        document.getElementById('main-header').classList.remove('hidden');
+        boardGroup.visible = true; viewGroup.visible = false; document.getElementById('hp-container').style.display = 'block';
+        if(dummyUnit) { viewGroup.remove(dummyUnit.mesh); dummyUnit.uiEl.remove(); dummyUnit = null; }
+        ambientLight.intensity = 1.8;
+        scene.background = new THREE.Color(0x020205);
+        scene.fog = new THREE.FogExp2(0x020205, 0.025);
+        
+        targetCamRadius = 26; targetCamPhi = Math.PI/3.2; targetCamTheta = Math.PI/4;
+    });
+    
+    document.getElementById('view-prev-btn').addEventListener('click', () => { viewClassIndex = (viewClassIndex - 1 + classKeys.length) % classKeys.length; renderViewUI(); });
+    document.getElementById('view-next-btn').addEventListener('click', () => { viewClassIndex = (viewClassIndex + 1) % classKeys.length; renderViewUI(); });
+    
+    document.getElementById('test-walk-btn').addEventListener('click', () => {
+        if(!dummyUnit || state!=='VIEW_MODE') return;
+        let animData = {p: 0};
+        tween(animData, {p: 1}, 1.0, Easing.Linear, (e) => {
+            let cycle = Math.sin(e * Math.PI * 6);
+            if (dummyUnit.parts.legR) { dummyUnit.parts.legR.rotation.x = cycle * 0.5; dummyUnit.parts.legL.rotation.x = -cycle * 0.5; }
+            if (dummyUnit.parts.armR) { dummyUnit.parts.armR.rotation.x = -cycle * 0.5; dummyUnit.parts.armL.rotation.x = cycle * 0.5; }
+            dummyUnit.mesh.position.y = 0.25 + Math.abs(Math.sin(e * Math.PI * 6)) * 0.2;
+        }, () => {
+            if (dummyUnit.parts.legR) { tween(dummyUnit.parts.legR.rotation, {x: 0}, 0.2); tween(dummyUnit.parts.legL.rotation, {x: 0}, 0.2); }
+            if (dummyUnit.parts.armR) { tween(dummyUnit.parts.armR.rotation, {x: 0}, 0.2); tween(dummyUnit.parts.armL.rotation, {x: 0}, 0.2); }
+            tween(dummyUnit.mesh.position, {y: 0.25}, 0.2);
+        });
+    });
+    
+    document.getElementById('test-attack-btn').addEventListener('click', () => {
+        if(!dummyUnit || state!=='VIEW_MODE') return;
+        activeUnit = dummyUnit; 
+        activeUnit.x = 3; activeUnit.z = 3;
+        let fakeIntent = { targetInfo: {x: 3, z: 1}, dieIndex: 0, hitResults: {} };
+        executeAction(fakeIntent, true).then(() => { activeUnit = null; });
+    });
+
+    /** --- MAIN ANIMATION & RENDER LOOP --- **/
     const clock = new THREE.Clock();
     function animate() {
-        requestAnimationFrame(animate); let dt = clock.getDelta();
-        updateTweens(dt); vfx.update(dt);
+        requestAnimationFrame(animate); 
+        let dt = clock.getDelta(); 
+        updateTweens(dt); 
+        vfx.update(dt);
         
-        camTheta += (targetCamTheta - camTheta) * 0.1; camPhi += (targetCamPhi - camPhi) * 0.1; camRadius += (targetCamRadius - camRadius) * 0.1;
-        let targetX = CENTER_POS + camRadius * Math.sin(camPhi) * Math.sin(camTheta), targetY = camRadius * Math.cos(camPhi), targetZ = CENTER_POS + camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+        camTheta += (targetCamTheta - camTheta) * 0.1; 
+        camPhi += (targetCamPhi - camPhi) * 0.1; 
+        camRadius += (targetCamRadius - camRadius) * 0.1;
         
-        if (cameraShake.intensity > 0) {
-            camera.position.set(targetX + (Math.random()-0.5)*cameraShake.intensity, targetY + (Math.random()-0.5)*cameraShake.intensity, targetZ + (Math.random()-0.5)*cameraShake.intensity);
-            cameraShake.intensity = Math.max(0, cameraShake.intensity - dt * 2);
-        } else camera.position.set(targetX, targetY, targetZ);
-        camera.lookAt(CENTER_POS, 0, CENTER_POS);
+        let focusX = state === 'VIEW_MODE' ? (3 * TILE_SCALE) : CENTER_POS;
+        let focusY = state === 'VIEW_MODE' ? 1.0 : 0.2; 
+        let focusZ = state === 'VIEW_MODE' ? (3 * TILE_SCALE) : CENTER_POS;
+
+        let targetX = focusX + camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+        let targetY = focusY + camRadius * Math.cos(camPhi);
+        let targetZ = focusZ + camRadius * Math.sin(camPhi) * Math.cos(camTheta);
         
-        units.forEach(u => {
-            u.updateUIPosition();
+        if (cameraShake.intensity > 0) { 
+            camera.position.set(targetX + (Math.random()-0.5)*cameraShake.intensity, targetY + (Math.random()-0.5)*cameraShake.intensity, targetZ + (Math.random()-0.5)*cameraShake.intensity); 
+            cameraShake.intensity = Math.max(0, cameraShake.intensity - dt * 2); 
+        } else {
+            camera.position.set(targetX, targetY, targetZ);
+        }
+        
+        camera.lookAt(focusX, focusY, focusZ);
+        
+        let pool = state === 'VIEW_MODE' && dummyUnit ? [dummyUnit] : units;
+        pool.forEach(u => {
+            if(state!=='VIEW_MODE') u.updateUIPosition();
             if (state !== 'ACTION_ANIMATING' && u.parts && u.parts.torso) {
                  u.parts.torso.position.y = (u.name === 'Mage' ? 0.7 : 0.85) + Math.sin(clock.elapsedTime * 4 + u.mesh.position.x) * 0.03;
-                 if(u.parts.armR) u.parts.armR.rotation.z = Math.sin(clock.elapsedTime * 3) * 0.05; 
-                 if(u.parts.armL) u.parts.armL.rotation.z = -Math.sin(clock.elapsedTime * 3) * 0.05;
+                 if(u.parts.armR) u.parts.armR.rotation.z = Math.sin(clock.elapsedTime * 3) * 0.05; if(u.parts.armL) u.parts.armL.rotation.z = -Math.sin(clock.elapsedTime * 3) * 0.05;
+                 if(u.activeCosmetic && u.activeCosmetic.userData.animate === 'orbit') u.activeCosmetic.rotation.y -= dt * 2;
             }
         });
         renderer.render(scene, camera);
     }
     window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
 
-    // Menu Controls Init
     window.addEventListener('DOMContentLoaded', () => {
         initSupabase(); animate();
-
-        document.getElementById('play-btn').addEventListener('click', () => {
-            document.getElementById('menu-actions').classList.add('hidden'); document.getElementById('play-submenu').classList.remove('hidden');
-        });
-        document.getElementById('back-to-menu-btn').addEventListener('click', () => {
-            document.getElementById('play-submenu').classList.add('hidden'); document.getElementById('menu-actions').classList.remove('hidden');
-        });
-
-        // Pass and Play Mode
-        document.getElementById('play-pass-btn').addEventListener('click', () => {
-            isPassAndPlay = true; playerNumber = 1; roomCode = 'LOCAL_GAME';
-            startGameSession(true, 'local');
-        });
-
-        // Multiplayer Create/Join
-        document.getElementById('create-room-btn').addEventListener('click', () => {
-            playerNumber = 1; isPassAndPlay = false;
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            setupRealtimeChannel(code);
-            document.getElementById('lobby-code-display').textContent = code;
-            document.getElementById('lobby-modal').classList.remove('hidden');
-        });
+        document.getElementById('play-btn').addEventListener('click', () => { document.getElementById('menu-actions').classList.add('hidden'); document.getElementById('play-submenu').classList.remove('hidden'); });
+        document.getElementById('back-to-menu-btn').addEventListener('click', () => { document.getElementById('play-submenu').classList.add('hidden'); document.getElementById('menu-actions').classList.remove('hidden'); });
+        document.getElementById('play-pass-btn').addEventListener('click', () => { isPassAndPlay = true; playerNumber = 1; roomCode = 'LOCAL_GAME'; startGameSession(true); });
+        document.getElementById('create-room-btn').addEventListener('click', () => { playerNumber = 1; isPassAndPlay = false; const code = Math.random().toString(36).substring(2, 8).toUpperCase(); setupRealtimeChannel(code); document.getElementById('lobby-code-display').textContent = code; document.getElementById('lobby-modal').classList.remove('hidden'); });
         document.getElementById('show-join-input-btn').addEventListener('click', () => document.getElementById('join-box').classList.toggle('hidden'));
-        document.getElementById('confirm-join-btn').addEventListener('click', () => {
-            const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase();
-            if (codeInput.length !== 6) return showNetToast('Please enter a valid 6-character room code.', 'error');
-            playerNumber = 2; isPassAndPlay = false; setupRealtimeChannel(codeInput);
-        });
-        
-        document.getElementById('copy-code-btn').addEventListener('click', () => {
-            navigator.clipboard.writeText(document.getElementById('lobby-code-display').textContent);
-            showNetToast('Room code copied!');
-        });
-        document.getElementById('cancel-lobby-btn').addEventListener('click', () => {
-            document.getElementById('lobby-modal').classList.add('hidden');
-            if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel);
-        });
-        document.getElementById('leave-game-btn').addEventListener('click', () => {
-            document.getElementById('confirm-modal').classList.remove('hidden');
-            document.getElementById('confirm-message').textContent = 'Are you sure you want to leave the match?';
-        });
+        document.getElementById('confirm-join-btn').addEventListener('click', () => { const codeInput = document.getElementById('room-code-input').value.trim().toUpperCase(); if (codeInput.length !== 6) return showNetToast('Invalid code.', 'error'); playerNumber = 2; isPassAndPlay = false; setupRealtimeChannel(codeInput); });
+        document.getElementById('copy-code-btn').addEventListener('click', () => { navigator.clipboard.writeText(document.getElementById('lobby-code-display').textContent); showNetToast('Code copied!'); });
+        document.getElementById('cancel-lobby-btn').addEventListener('click', () => { document.getElementById('lobby-modal').classList.add('hidden'); if (realtimeChannel && supabaseClient) supabaseClient.removeChannel(realtimeChannel); });
+        document.getElementById('leave-game-btn').addEventListener('click', () => { document.getElementById('confirm-modal').classList.remove('hidden'); document.getElementById('confirm-message').textContent = 'Leave match?'; });
         document.getElementById('confirm-yes-btn').addEventListener('click', () => { document.getElementById('confirm-modal').classList.add('hidden'); leaveGame(); });
-        document.getElementById('confirm-no-btn').addEventListener('click', () => document.getElementById('confirm-modal').classList.add('hidden'));
-        document.getElementById('quit-btn').addEventListener('click', leaveGame);
-
-        const sbModal = document.getElementById('supabase-modal');
-        const openSbModal = () => { document.getElementById('sb-url-input').value = localStorage.getItem('sb_url') || ''; document.getElementById('sb-key-input').value = localStorage.getItem('sb_key') || ''; sbModal.classList.remove('hidden'); };
-        document.getElementById('config-btn').addEventListener('click', openSbModal); document.getElementById('supabase-config-link').addEventListener('click', openSbModal);
-        document.getElementById('close-supabase-btn').addEventListener('click', () => sbModal.classList.add('hidden'));
-        document.getElementById('save-sb-btn').addEventListener('click', () => {
-            localStorage.setItem('sb_url', document.getElementById('sb-url-input').value.trim()); localStorage.setItem('sb_key', document.getElementById('sb-key-input').value.trim());
-            initSupabase(); sbModal.classList.add('hidden'); showNetToast('Credentials saved.');
-        });
+        document.getElementById('confirm-no-btn').addEventListener('click', () => document.getElementById('confirm-modal').classList.add('hidden')); document.getElementById('quit-btn').addEventListener('click', leaveGame);
+        const sbModal = document.getElementById('supabase-modal'); const openSbModal = () => { document.getElementById('sb-url-input').value = localStorage.getItem('sb_url') || ''; document.getElementById('sb-key-input').value = localStorage.getItem('sb_key') || ''; sbModal.classList.remove('hidden'); };
+        document.getElementById('config-btn').addEventListener('click', openSbModal); document.getElementById('supabase-config-link').addEventListener('click', openSbModal); document.getElementById('close-supabase-btn').addEventListener('click', () => sbModal.classList.add('hidden'));
+        document.getElementById('save-sb-btn').addEventListener('click', () => { localStorage.setItem('sb_url', document.getElementById('sb-url-input').value.trim()); localStorage.setItem('sb_key', document.getElementById('sb-key-input').value.trim()); initSupabase(); sbModal.classList.add('hidden'); showNetToast('Credentials saved.'); });
     });
 </script>
 </body>
 </html>
-
 
