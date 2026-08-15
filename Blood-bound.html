@@ -721,11 +721,12 @@
         die() {
             if (this.x >= 0 && this.z >= 0 && state !== 'VIEW_MODE') tiles[this.x][this.z].unit = null; 
             this.uiEl.style.opacity = '0';
+            units = units.filter(u => u !== this);
             tween(this.parts.torso.rotation, {x: -Math.PI/2}, 0.4, Easing.OutQuad);
             setTimeout(() => {
                 vfx.spawnBurst(this.mesh.position.clone().add(new THREE.Vector3(0, 0.2, 0)), 0xff0000, 60, 6);
                 tween(this.mesh.position, {y: -2}, 0.5, Easing.InQuad, null, () => {
-                    scene.remove(this.mesh); this.uiEl.remove(); units = units.filter(u => u !== this); triggerShake(0.4); checkWinCondition();
+                    scene.remove(this.mesh); this.uiEl.remove(); triggerShake(0.4); checkWinCondition();
                 });
             }, 400);
         }
@@ -868,7 +869,7 @@
         selectedDieIndex = index; Array.from(diceContainer.children).forEach(c => c.classList.remove('selected')); if(btnEl) btnEl.classList.add('selected');
         broadcastEvent('SELECT_DIE', { index });
         const die = diceRolled[index]; const actionType = die.effectiveId;
-        if(actionType === 'defend') { const intent = { targetInfo: { type: 'defend' }, dieIndex: index }; broadcastEvent('ACTION_INTENT', intent); executeAction(intent); return; }
+        if(actionType === 'defend') { const intent = { targetInfo: { type: 'defend' }, dieIndex: index, morphedId: actionType }; broadcastEvent('ACTION_INTENT', intent); executeAction(intent); return; }
         showValidTargets(actionType);
     }
 
@@ -977,13 +978,13 @@
                     else {
                         const die = diceRolled[selectedDieIndex]; const actionType = die.effectiveId;
                         if (actionType === 'attack' && activeUnit.name !== 'Mage') {
-                            const intent = { targetInfo: { x, z }, dieIndex: selectedDieIndex, hitResults: generateHitResults(actionType, x, z) };
+                            const intent = { targetInfo: { x, z }, dieIndex: selectedDieIndex, hitResults: generateHitResults(actionType, x, z), morphedId: actionType };
                             broadcastEvent('ACTION_INTENT', intent); executeAction(intent);
                         } else if (actionType === 'magic') {
-                            const intent = { targetInfo: { x, z }, dieIndex: selectedDieIndex, hitResults: generateHitResults(actionType, x, z) };
+                            const intent = { targetInfo: { x, z }, dieIndex: selectedDieIndex, hitResults: generateHitResults(actionType, x, z), morphedId: actionType };
                             broadcastEvent('ACTION_INTENT', intent); executeAction(intent);
                         } else {
-                            const intent = { targetInfo: { x, z }, dieIndex: selectedDieIndex };
+                            const intent = { targetInfo: { x, z }, dieIndex: selectedDieIndex, morphedId: actionType };
                             broadcastEvent('ACTION_INTENT', intent); executeAction(intent);
                         }
                     }
@@ -1489,4 +1490,4 @@
 </script>
 </body>
 </html>
-
+```eof
