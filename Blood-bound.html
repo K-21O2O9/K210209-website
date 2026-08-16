@@ -191,8 +191,8 @@
         <!-- Right Side (25%): Actions Panel -->
         <div class="w-[35%] sm:w-[30%] md:w-1/4 view-side-panel bg-black border-l border-slate-800 pointer-events-auto flex flex-col shadow-[-20px_0_30px_rgba(0,0,0,0.9)] h-full z-10 overflow-hidden relative">
             <div class="p-3 sm:p-5 border-b border-slate-800 flex justify-end items-center bg-slate-900/40">
-                <button id="exit-view-btn" class="w-8 h-8 sm:w-10 sm:h-10 bg-slate-800 hover:bg-rose-600 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-white rounded flex items-center justify-center text-sm transition-all shadow-xl z-20 cursor-pointer">
-                    <i class="fa-solid fa-xmark"></i>
+                <button id="exit-view-btn" class="text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-rose-800/50 flex items-center gap-1.5 shadow-xl z-20 cursor-pointer">
+                    <i class="fa-solid fa-right-from-bracket"></i> Leave
                 </button>
             </div>
              <div class="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-5 space-y-6">
@@ -254,11 +254,11 @@
 
 <script>
     /** --- LOADOUTS & DATA --- **/
-    const COSMETIC_NAMES = ["None","Iron Halo","War Horns","Steel Wings","Gargoyle Wings","Arcane Orbs","Warlord Crown","Spiky Pauldrons","Visor Glow","Battle Banner","Combat Belt","Plague Mask","Skull Pauldron","Spiked Shield","Aura Base","Knight Helm"];
+    const COSMETIC_NAMES = ["None","Iron Halo","War Horns","Steel Wings","Gargoyle Wings","Arcane Orbs","Warlord Crown","Spiky Pauldrons","Visor Glow","Battle Banner","Void Mantle","Plague Mask","Skull Pauldron","Spiked Shield","Aura Base","Knight Helm"];
     const ANIMATION_NAMES = {
         'Commander': ["Heavy Slash", "Jump Strike", "Whirlwind Spin"],
         'Vanguard': ["Shield Bash", "Shield Charge", "Ground Slam"],
-        'Assassin': ["Blink Strike", "Shadow Clone", "Fan of Knives"],
+        'Assassin': ["Swift Slash", "Whirling Daggers"],
         'Archer': ["Precision Shot", "Arrow Rain", "Power Shot"],
         'Mage': ["Arcane Blast", "Kamehameha"] 
     };
@@ -514,17 +514,32 @@
                 hornG.position.set(x, 0.25, -0.05); hornG.rotation.x = -0.3; hornG.rotation.z = x>0?-0.4:0.4; g.add(hornG); 
             }); 
         }
-        if(id===3) { // Bladed Wings
+        if(id===3) { // Steel Wings
             [-1,1].forEach(x => { 
-                const m = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.4, 1.2, 3), matMetal); 
-                m.position.set(x*0.4, 0.5, -0.3); m.rotation.z = x * -0.5; m.rotation.x = 0.2; g.add(m); 
-            }); g.userData.attach = 'torso'; 
+                const wing = new THREE.Group();
+                const joint = new THREE.Mesh(new THREE.SphereGeometry(0.06), matMetal); wing.add(joint);
+                const arm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.06, 0.04), matMetal); arm.position.set(x*0.2, 0.1, 0); arm.rotation.z = x * 0.2; wing.add(arm);
+                const forearm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.03), matMetal); forearm.position.set(x*0.5, 0, 0); forearm.rotation.z = x * -0.4; wing.add(forearm);
+                const feathers = [ {pos: [0.1, -0.1, 0], rot: -0.8, len: 0.4}, {pos: [0.3, -0.2, 0], rot: -0.9, len: 0.5}, {pos: [0.5, -0.3, 0], rot: -1.0, len: 0.5}, {pos: [0.65, -0.4, 0], rot: -1.1, len: 0.4} ];
+                feathers.forEach(f => { const blade = new THREE.Mesh(new THREE.BoxGeometry(0.03, f.len, 0.01), new THREE.MeshStandardMaterial({color: 0xffffff, metalness: 0.9, roughness: 0.1})); blade.position.set(x*f.pos[0], f.pos[1], f.pos[2]); blade.rotation.z = x * f.rot; wing.add(blade); });
+                wing.position.set(x*0.1, 0.3, -0.2); g.add(wing); 
+            }); 
+            g.userData.attach = 'torso'; g.userData.animate = 'wings';
         } 
-        if(id===4) { // Dragon Wings
+        if(id===4) { // Gargoyle Wings
             [-1,1].forEach(x => { 
-                const m = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.0, 4), matDark); 
-                m.position.set(x*0.4, 0.4, -0.3); m.rotation.z = x * -0.8; m.scale.z = 0.1; g.add(m); 
-            }); g.userData.attach = 'torso'; 
+                const wing = new THREE.Group();
+                const arm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.05), matDark); arm.position.set(x*0.2, 0.2, 0); arm.rotation.z = x * 0.4;
+                const finger1 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.6, 0.03), matDark); finger1.position.set(x*0.4, -0.05, 0); finger1.rotation.z = x * -0.2;
+                const finger2 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.5, 0.03), matDark); finger2.position.set(x*0.5, 0.1, 0); finger2.rotation.z = x * -0.7;
+                wing.add(arm, finger1, finger2);
+                const memMat = new THREE.MeshStandardMaterial({color: 0x4c0519, roughness: 0.9, side: THREE.DoubleSide});
+                const mem1 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, 0.01), memMat); mem1.position.set(x*0.25, 0.0, 0); mem1.rotation.z = x * 0.1;
+                const mem2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.4, 0.01), memMat); mem2.position.set(x*0.45, 0.1, 0); mem2.rotation.z = x * -0.4;
+                wing.add(mem1, mem2);
+                wing.position.set(x*0.1, 0.35, -0.25); wing.rotation.y = x * 0.2; wing.rotation.x = 0.2; g.add(wing); 
+            }); 
+            g.userData.attach = 'torso'; g.userData.animate = 'wings';
         }
         if(id===5) { // Orbiting Sigils
             [0,1,2].forEach(i => { 
@@ -556,10 +571,13 @@
             const flag = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.0, 0.05), new THREE.MeshStandardMaterial({color: baseColor})); flag.position.set(0.25, 0.3, 0); pole.add(flag);
             g.add(pole); g.userData.attach = 'torso'; 
         } 
-        if(id===10) { // Utility Harness
-            const m = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.08, 8, 16), matDark); m.rotation.x = Math.PI/2; m.position.y = -0.2; 
-            [-1, 1].forEach(x => { const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.1), matDark); pouch.position.set(x*0.3, 0, 0.2); m.add(pouch); });
-            g.add(m); g.userData.attach = 'torso'; 
+        if(id===10) { // Void Mantle
+            const mantleMat = new THREE.MeshStandardMaterial({color: 0x020617, roughness: 1.0});
+            const centerCape = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.1, 0.05), mantleMat); centerCape.position.set(0, -0.2, -0.25); centerCape.rotation.x = 0.15;
+            const sideCapeL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.0, 0.05), mantleMat); sideCapeL.position.set(-0.2, -0.15, -0.15); sideCapeL.rotation.y = -0.4; sideCapeL.rotation.x = 0.1;
+            const sideCapeR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.0, 0.05), mantleMat); sideCapeR.position.set(0.2, -0.15, -0.15); sideCapeR.rotation.y = 0.4; sideCapeR.rotation.x = 0.1;
+            const cowl = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.4), mantleMat); cowl.position.set(0, 0.3, -0.05); cowl.rotation.x = -0.1;
+            g.add(centerCape, sideCapeL, sideCapeR, cowl); g.userData.attach = 'torso'; 
         } 
         if(id===11) { // Plague Mask
             const m = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 8), matDark); m.rotation.x = Math.PI/2; m.position.set(0, 0, 0.36); g.add(m); 
@@ -579,11 +597,15 @@
             const inner = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.5, 32), matEnergy); m.add(inner);
             g.add(m); g.userData.attach = 'torso'; 
         } 
-        if(id===15) { // Paladin Helm
-            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.4, 16), matMetal); m.position.y = 0.2; 
-            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.15, 0.15), matGold); visor.position.set(0, 0.05, 0.15); m.add(visor);
-            const crest = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.4, 0.3), matGlow); crest.position.set(0, 0.3, -0.05); m.add(crest);
-            g.add(m); 
+        if(id===15) { // Knight Helm
+            const helm = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.4, 0.38), matMetal); helm.position.y = 0.0;
+            const glowG = new THREE.Group();
+            const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.05), matGlow); eyeL.position.set(-0.07, 0.03, 0.18); eyeL.rotation.z = -0.15;
+            const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.05), matGlow); eyeR.position.set(0.07, 0.03, 0.18); eyeR.rotation.z = 0.15;
+            glowG.add(eyeL, eyeR); helm.add(glowG);
+            const crest = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.2, 4), matGold); crest.position.set(0, 0.2, 0); helm.add(crest);
+            const plume = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, 0.25), new THREE.MeshStandardMaterial({color: baseColor})); plume.position.set(0, 0.25, -0.1); plume.rotation.x = -0.2; helm.add(plume);
+            g.add(helm); g.userData.isHelm = true;
         }
         return g;
     }
@@ -637,6 +659,9 @@
                 const cosMesh = buildCosmeticsMesh(this.loadout.cosmetic, team===1 ? 0x60a5fa : 0xf87171);
                 if(cosMesh.userData.attach === 'torso') this.parts.torso.add(cosMesh); else this.parts.head.add(cosMesh);
                 this.activeCosmetic = cosMesh;
+                if(cosMesh.userData.isHelm) {
+                    this.parts.head.children.forEach(c => { if(c !== cosMesh) c.visible = false; });
+                }
             }
 
             this.uiEl = document.createElement('div'); this.uiEl.className = 'hp-bar';
@@ -1075,7 +1100,6 @@
         }
 
         let animStyle = activeUnit.loadout.animation || 0;
-        if(activeUnit.name === 'Mage') animStyle = Math.random() > 0.5 ? 1 : 0;
         if(isTest) animStyle = myLoadout[activeUnit.name].animation;
 
         let targetUnit = isTest ? null : tiles[x][z].unit;
@@ -1198,49 +1222,42 @@
         }
         else if (activeUnit.name === 'Assassin') {
             targetCamRadius = Math.max(12, targetCamRadius - 6); 
-            if(animStyle === 0) {
-                tween(activeUnit.parts.torso.rotation, { x: 0.4 }, 0.3); await tweenAsync(activeUnit.mesh.scale, {x: 0.01, y: 0.01, z: 0.01}, 0.4, Easing.InQuad); activeUnit.mesh.visible = false; vfx.spawnBurst(startPos, 0x111111, 40, 3);
-                await new Promise(r => setTimeout(r, 300));
-                activeUnit.mesh.position.set(targetPos.x, 2.5, targetPos.z); activeUnit.mesh.visible = true; activeUnit.parts.armR.rotation.x = -Math.PI; activeUnit.parts.armL.rotation.x = -Math.PI; activeUnit.parts.torso.rotation.x = 0.5; vfx.spawnBurst(activeUnit.mesh.position, 0x111111, 30, 2);
-                await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.1, Easing.OutQuad); tween(activeUnit.mesh.position, {y: 0.25}, 0.15, Easing.InQuad); 
-                tween(activeUnit.parts.armR.rotation, {x: -Math.PI/4}, 0.15, Easing.InQuad); await tweenAsync(activeUnit.parts.armL.rotation, {x: -Math.PI/4}, 0.15, Easing.InQuad); triggerShake(0.4);
-            } else if (animStyle === 1) { 
-                const cloneGroups = [];
-                for(let i=0; i<3; i++) {
-                    const clone = new THREE.Group();
-                    activeUnit.mesh.children.forEach(child => {
-                        if (child.isMesh || child.isGroup) {
-                            const cClone = child.clone();
-                            cClone.traverse((obj) => {
-                                if (obj.isMesh) {
-                                    obj.material = new THREE.MeshBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.5 });
-                                }
-                            });
-                            clone.add(cClone);
-                        }
-                    });
-                    
-                    let sideX = (Math.random()-0.5)*3; let sideZ = (Math.random()-0.5)*3;
-                    clone.position.set(targetPos.x + sideX, 0.25, targetPos.z + sideZ);
-                    clone.lookAt(targetPos.x, 0.25, targetPos.z);
-                    scene.add(clone); cloneGroups.push(clone);
-                    tween(clone.position, targetPos, 0.15);
-                }
+            let clashPos = { x: startPos.x - dir.x*(0.7 * TILE_SCALE), z: startPos.z - dir.z*(0.7 * TILE_SCALE) };
+            
+            if(animStyle === 0) { // Swift Slash
+                tween(activeUnit.parts.torso.rotation, { x: 0.3 }, 0.1);
+                tween(activeUnit.parts.armR.rotation, { x: -Math.PI/2 }, 0.1); 
+                tween(activeUnit.parts.armL.rotation, { x: Math.PI/4 }, 0.1);
+                await tweenAsync(activeUnit.mesh.position, clashPos, 0.15, Easing.OutQuad);
                 
-                tween(activeUnit.parts.armR.rotation, {x: -Math.PI/2}, 0.1); 
-                await tweenAsync(activeUnit.mesh.position, targetPos, 0.15);
-                vfx.spawnBurst(targetPos, 0x444444, 20, 3); triggerShake(0.4); 
-                activeUnit.parts.armR.rotation.x = 0;
-                cloneGroups.forEach(c => scene.remove(c));
-            } else { 
-                tween(activeUnit.parts.armR.rotation, {x: -Math.PI/2}, 0.2); tween(activeUnit.mesh.position, {y: 1.5}, 0.4, Easing.OutQuad); await tweenAsync(activeUnit.mesh.rotation, {y: activeUnit.mesh.rotation.y + Math.PI*4}, 0.6, Easing.InOutQuad);
+                tween(activeUnit.parts.armR.rotation, { x: Math.PI/4, z: Math.PI/6 }, 0.1);
+                tween(activeUnit.parts.armL.rotation, { x: -Math.PI/4 }, 0.1);
+                tween(activeUnit.parts.torso.rotation, { y: Math.PI/4 }, 0.1);
+                spawnSlashVFX(clashPos, dir, activeUnit.team === 1 ? 0x3b82f6 : 0xef4444);
+                triggerShake(0.4);
+                await new Promise(r => setTimeout(r, 150));
+            } else { // Whirling Daggers
+                tween(activeUnit.parts.armR.rotation, {x: -Math.PI/2, z: Math.PI/3}, 0.2); 
+                tween(activeUnit.parts.armL.rotation, {x: -Math.PI/2, z: -Math.PI/3}, 0.2);
+                tween(activeUnit.mesh.position, {y: 2.0}, 0.3, Easing.OutQuad);
+                await tweenAsync(activeUnit.mesh.rotation, {y: activeUnit.mesh.rotation.y + Math.PI*4}, 0.5, Easing.InOutQuad);
+                
                 for(let i=0; i<3; i++) {
-                    const knife = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.05), new THREE.MeshStandardMaterial({color: 0x999999}));
-                    knife.position.copy(activeUnit.mesh.position); knife.lookAt(targetPos.x, 0.25, targetPos.z); knife.rotation.x = Math.PI/2 + (i-1)*0.2; scene.add(knife);
-                    tween(knife.position, targetPos, 0.2 + i*0.05, Easing.Linear, null, () => { scene.remove(knife); triggerShake(0.2); vfx.spawnBurst(targetPos, 0x111111, 10, 1); });
+                    const knife = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.4, 0.05), new THREE.MeshStandardMaterial({color: 0x999999, metalness: 0.8}));
+                    knife.position.copy(activeUnit.mesh.position); 
+                    knife.lookAt(targetPos.x, 0.25, targetPos.z); 
+                    knife.rotation.x = Math.PI/2; 
+                    scene.add(knife);
+                    let offX = (Math.random()-0.5)*0.5, offZ = (Math.random()-0.5)*0.5;
+                    let endP = {x: targetPos.x + offX, y: 0.25, z: targetPos.z + offZ};
+                    tween(knife.position, endP, 0.15 + i*0.05, Easing.Linear, null, () => { 
+                        scene.remove(knife); triggerShake(0.15); vfx.spawnBurst(endP, 0x111111, 10, 1); 
+                        spawnSlashVFX(endP, dir, 0x999999, 0.5);
+                    });
                 }
-                await tweenAsync(activeUnit.mesh.position, {y: 0.25}, 0.4, Easing.InQuad);
+                await tweenAsync(activeUnit.mesh.position, {y: 0.25}, 0.3, Easing.InQuad);
             }
+            
             if(!isTest && targetUnit && intent.hitResults[targetUnit.id]) {
                 const res = intent.hitResults[targetUnit.id];
                 if(res.isHit) { targetUnit.takeDamage(res.finalDamage); spawnFloatingText(targetUnit, `-${res.finalDamage}`, '#ef4444'); tween(targetUnit.parts.torso.rotation, {x: 0.6}, 0.1); setTimeout(() => { if(targetUnit.mesh) tween(targetUnit.parts.torso.rotation, {x: 0}, 0.5); }, 200); }
@@ -1248,11 +1265,16 @@
                 if (targetUnit.hp > 0 && intent.hitResults.counter) await processCounter(targetUnit, activeUnit, intent.hitResults.counter);
             } else if (!isTest) vfx.spawnBurst(emptyTargetPos, 0x4b5563, 20, 3);
             
-            if(animStyle === 0) {
-                await new Promise(r=>setTimeout(r, 400)); await tweenAsync(activeUnit.mesh.scale, {x: 0.01, y: 0.01, z: 0.01}, 0.2, Easing.InQuad); vfx.spawnBurst(activeUnit.mesh.position, 0x111111, 30, 3);
-                activeUnit.mesh.position.set(startPos.x, 0.25, startPos.z);
+            if (animStyle === 0) {
+                await new Promise(r => setTimeout(r, 200));
+                await tweenAsync(activeUnit.mesh.position, { x: startPos.x, z: startPos.z }, 0.2, Easing.InOutQuad);
             }
-            tween(activeUnit.parts.torso.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armR.rotation, {x: 0}, 0.1); tween(activeUnit.parts.armL.rotation, {x: 0}, 0.1); await tweenAsync(activeUnit.mesh.scale, {x: 1, y: 1, z: 1}, 0.3, Easing.OutQuad); targetCamRadius = oldCamRadius; if(!isTest) finishAction();
+            
+            tween(activeUnit.parts.torso.rotation, {x: 0, y: 0}, 0.2); 
+            tween(activeUnit.parts.armR.rotation, {x: 0, z: 0}, 0.2); 
+            tween(activeUnit.parts.armL.rotation, {x: 0, z: 0}, 0.2); 
+            targetCamRadius = oldCamRadius; 
+            if(!isTest) finishAction();
         }
         else {
             let oldCamRadius = targetCamRadius; targetCamRadius = Math.max(8, targetCamRadius - 8);
@@ -1463,7 +1485,15 @@
             if (state !== 'ACTION_ANIMATING' && u.parts && u.parts.torso) {
                  u.parts.torso.position.y = (u.name === 'Mage' ? 0.7 : 0.85) + Math.sin(clock.elapsedTime * 4 + u.mesh.position.x) * 0.03;
                  if(u.parts.armR) u.parts.armR.rotation.z = Math.sin(clock.elapsedTime * 3) * 0.05; if(u.parts.armL) u.parts.armL.rotation.z = -Math.sin(clock.elapsedTime * 3) * 0.05;
-                 if(u.activeCosmetic && u.activeCosmetic.userData.animate === 'orbit') u.activeCosmetic.rotation.y -= dt * 2;
+                 if(u.activeCosmetic) {
+                     if(u.activeCosmetic.userData.animate === 'orbit') u.activeCosmetic.rotation.y -= dt * 2;
+                     if(u.activeCosmetic.userData.animate === 'wings') {
+                         u.activeCosmetic.children.forEach((wing, i) => {
+                             let side = i === 0 ? -1 : 1;
+                             wing.rotation.y = side * 0.2 + Math.sin(clock.elapsedTime * 3) * side * 0.15;
+                         });
+                     }
+                 }
             }
         });
         renderer.render(scene, camera);
@@ -1490,4 +1520,3 @@
 </script>
 </body>
 </html>
-```eof
