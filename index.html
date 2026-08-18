@@ -6,7 +6,8 @@
 
 <title>K210209♤ Studios</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Swapped Inter for Pixelify Sans -->
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- NEW: EmailJS CDN for the Auto-Mod Email Trigger -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -28,7 +29,8 @@
 }
 
 body{
-    font-family:'Inter',sans-serif;
+    /* Updated font-family to Pixelify Sans */
+    font-family:'Pixelify Sans', sans-serif;
     background:#050505;
     color:white;
     overflow-x:hidden;
@@ -805,6 +807,22 @@ footer p{
         <!-- Logged in state for Games -->
         <div id="gamesLoggedIn" style="display: none;">
             <div class="games-grid">
+                
+                <!-- NEW GAME: BORROWED -->
+                <div class="game-card">
+                    <div class="game-banner" style="background:linear-gradient(135deg, #0088cc, #004466, #0a0a0a);">
+                        BORROWED
+                    </div>
+                    <div class="game-info">
+                        <h3>Borrowed</h3>
+                        <p>A game that guarantees fun by mixing physics and stuff</p>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <a href="borrowed.html" class="download-btn">Play Web Version</a>
+                            <button class="download-btn" onclick="openBorrowedGuide()">About Game</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="game-card">
                     <div class="game-banner">SCOUNDREL</div>
                     <div class="game-info">
@@ -1232,6 +1250,26 @@ function setModalContent(title, subtitle, bodyHTML) {
     document.getElementById("modalTitle").innerHTML = title;
     document.getElementById("modalSubtitle").innerHTML = subtitle;
     document.getElementById("guideBody").innerHTML = bodyHTML;
+}
+
+// NEW: Function to open guide for BORROWED
+function openBorrowedGuide() {
+    document.getElementById("guideModal").style.display = "block";
+    
+    const content = `
+        <div>
+            <b>BORROWED</b><br><br>
+            What if you could take a property from one object and give it to another?
+            <br><br>
+            In BORROWED, objects have properties like weight, heat, cold, magnetism, light and sound. Transfer these properties between objects to solve physics based puzzles and reach the exit.
+            <br><br>
+            You cannot create properties. You can only move them.
+            <br><br>
+            Take what you need. Give what you don't.
+        </div>
+    `;
+    
+    setModalContent("Borrowed", "K210209♤ STUDIOS | Property-Swapping Puzzle", content);
 }
 
 async function openGuide() {
