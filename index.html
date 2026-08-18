@@ -1,2149 +1,795 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
-
-<title>K210209♤ Studios</title>
-
-<!-- High-Quality Pixelify Sans for global cinematic retro text -->
-<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<!-- EmailJS CDN for the Auto-Mod Email Trigger -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script type="text/javascript">
-   (function(){
-      // You will replace this with your actual EmailJS Public Key later
-      emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); 
-   })();
-</script>
-
-<style>
-/* =========================================
-   1. GLOBAL STYLES & RESET
-========================================= */
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    /* Smooth transitions for high-quality feel */
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    /* Apply Pixel font globally to all elements */
-    font-family: 'Pixelify Sans', sans-serif;
-}
-
-body{
-    background:#030303; /* Deeper cinematic black */
-    color:#e5e5e5;
-    overflow-x:hidden;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    letter-spacing: 0.5px; /* Slight tracking for readability with pixel font */
-}
-
-/* SUBTLE CINEMATIC SCANLINES (Not overly dark or old) */
-body::after {
-    content: "";
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
-    background-size: 100% 4px;
-    z-index: 99999;
-    pointer-events: none;
-    opacity: 0.6;
-}
-
-/* PREMIUM TYPOGRAPHY - Headers */
-h1, h2, h3, h4, .logo, .hero-tag, .btn, .game-banner, .download-btn, th, .devlog-date {
-    letter-spacing: 1px;
-}
-
-/* SCROLLBAR - Modern Retro */
-::-webkit-scrollbar{
-    width: 12px;
-}
-::-webkit-scrollbar-track{
-    background: #080808;
-    border-left: 1px solid #1a1a1a;
-}
-::-webkit-scrollbar-thumb{
-    background: #8b0000;
-    border-radius: 0px; /* Pixel sharp edges */
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #ff2d2d;
-}
-
-/* BACKGROUND EFFECTS - High-res subtle glowing grid */
-.bg-glow{
-    position:fixed;
-    width: 100vw;
-    height: 100vh;
-    background-image: 
-        linear-gradient(rgba(255, 45, 45, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 45, 45, 0.05) 1px, transparent 1px);
-    background-size: 40px 40px;
-    top: 0; left: 0;
-    z-index:-1;
-    mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
-    -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
-}
-.bg-glow2{
-    position:fixed;
-    width:800px;
-    height:800px;
-    background:radial-gradient(circle, rgba(255,45,45,0.08) 0%, rgba(255,45,45,0) 70%);
-    bottom:-300px;
-    left:-200px;
-    z-index:-1;
-}
-
-/* =========================================
-   2. NAVBAR & SANDWICH MENU 
-========================================= */
-nav{
-    width:100%;
-    display:flex;
-    justify-content:flex-start;
-    align-items:center;
-    padding:25px 8%;
-    position:sticky;
-    top:0;
-    background:rgba(3,3,3,0.9);
-    backdrop-filter:blur(12px);
-    border-bottom:1px solid rgba(255,45,45,0.15);
-    z-index:998;
-    gap: 30px; 
-}
-
-.menu-icon {
-    font-size: 2.2rem;
-    cursor: pointer;
-    color: #e5e5e5;
-    user-select: none;
-    text-shadow: 0 0 10px rgba(255,255,255,0.2);
-}
-.menu-icon:hover {
-    color: #ff2d2d;
-    text-shadow: 0 0 15px rgba(255,45,45,0.6);
-}
-
-.logo{
-    font-size: 2rem;
-    font-weight: 700;
-    cursor: pointer;
-    text-shadow: 2px 2px 0 rgba(0,0,0,0.8);
-}
-.logo span{
-    color:#ff2d2d;
-    text-shadow: 0 0 15px rgba(255,45,45,0.5);
-}
-
-.side-menu {
-    height: 100%;
-    width: 0; 
-    position: fixed;
-    z-index: 100000;
-    top: 0;
-    left: 0;
-    background-color: rgba(5, 5, 5, 0.98);
-    backdrop-filter: blur(20px);
-    overflow-x: hidden;
-    padding-top: 100px;
-    border-right: 1px solid rgba(255, 45, 45, 0.3);
-    box-shadow: 20px 0 50px rgba(0,0,0,0.8);
-}
-
-.side-menu a {
-    padding: 25px 50px;
-    text-decoration: none;
-    font-size: 1.4rem;
-    color: #d4d4d4;
-    display: block;
-    font-weight: 500;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-.side-menu a:hover {
-    color: #fff;
-    background: rgba(255, 45, 45, 0.1);
-    padding-left: 60px; 
-    border-left: 4px solid #ff2d2d;
-}
-.side-menu .close-btn {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-    font-size: 3.5rem;
-    padding: 0;
-    border: none;
-    background: none;
-}
-.side-menu .close-btn:hover {
-    background: none;
-    padding-left: 0;
-    color: #ff2d2d;
-    border: none;
-}
-
-/* =========================================
-   3. SECTIONS COMMON STYLING
-========================================= */
-section{
-    padding: 120px 8%; /* Increased breathability */
-}
-.section-title{
-    font-size: 3rem;
-    margin-bottom: 20px;
-    font-weight: 700;
-    text-shadow: 0 0 20px rgba(255,45,45,0.2);
-}
-.section-title span{
-    color:#ff2d2d;
-}
-.section-sub{
-    color:#a3a3a3;
-    margin-bottom: 60px; /* Increased margin */
-    font-size: 1.15rem;
-    line-height: 1.8;
-    max-width: 800px;
-}
-
-/* Form Inputs */
-.form-input {
-    width: 100%;
-    background: rgba(10,10,10,0.8);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 18px 25px; /* Bigger inputs */
-    border-radius: 4px; /* Subtle pixel rounding */
-    color: white;
-    font-size: 1.1rem;
-}
-.form-input:focus {
-    outline: none;
-    border-color: #ff2d2d;
-    background: rgba(20,0,0,0.5);
-    box-shadow: 0 0 15px rgba(255,45,45,0.2);
-}
-
-/* =========================================
-   4. HOME VIEW 
-========================================= */
-.hero{
-    min-height:92vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    padding:0 8%;
-}
-.hero-content{
-    max-width: 950px;
-}
-.hero-tag{
-    display:inline-block;
-    padding:10px 24px;
-    border:1px solid #ff2d2d;
-    border-radius: 2px;
-    background:rgba(255,45,45,0.1);
-    color:#ff4d4d;
-    margin-bottom:35px;
-    font-size: 1.1rem;
-    text-shadow: 0 0 10px rgba(255,45,45,0.5);
-    box-shadow: 0 0 15px rgba(255,45,45,0.2);
-}
-.hero h1{
-    font-size: 4.8rem; /* Larger, cinematic headers */
-    line-height: 1.15;
-    margin-bottom: 30px;
-}
-.hero h1 span{
-    color:#ff2d2d;
-}
-.hero p{
-    color:#b0b0b0;
-    font-size: 1.25rem;
-    line-height: 1.9;
-    margin-bottom: 50px;
-}
-.hero-buttons{
-    display:flex;
-    justify-content:center;
-    gap: 25px; /* More breathing room */
-    flex-wrap:wrap;
-}
-.btn{
-    padding: 18px 36px;
-    font-size: 1.1rem;
-    border-radius: 2px; /* Pixel edge */
-    text-decoration:none;
-    cursor: pointer;
-    text-transform: uppercase;
-}
-.btn-primary{
-    background: #ff2d2d;
-    color: #050505;
-    border: 1px solid #ff2d2d;
-    box-shadow: 0 0 20px rgba(255,45,45,0.4);
-}
-.btn-primary:hover{
-    transform:translateY(-3px);
-    background: #ff4d4d;
-    box-shadow: 0 0 30px rgba(255,45,45,0.6);
-}
-.btn-secondary{
-    border:1px solid rgba(255,255,255,0.3);
-    color:white;
-    background: transparent;
-    backdrop-filter: blur(5px);
-}
-.btn-secondary:hover{
-    background: rgba(255,255,255,0.1);
-    transform:translateY(-3px);
-}
-.about-box{
-    background: rgba(10,10,10,0.8);
-    border: 1px solid rgba(255,45,45,0.2);
-    padding: 60px; /* Much more spacious */
-    border-radius: 4px;
-    font-size: 1.15rem;
-    line-height: 2;
-    color: #c5c5c5;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-}
-
-/* =========================================
-   5. GAMES VIEW 
-========================================= */
-.games-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-    gap: 40px; /* Less compact */
-}
-.game-card{
-    background: rgba(10,10,10,0.8);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 4px;
-    overflow:hidden;
-    position:relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-.game-card:hover{
-    transform:translateY(-8px);
-    border-color: rgba(255,45,45,0.5);
-    box-shadow: 0 15px 40px rgba(255,45,45,0.2);
-}
-.game-banner{
-    height: 220px; /* Taller cinematic crop */
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size: 2.2rem;
-    text-shadow: 0 0 15px rgba(0,0,0,0.9);
-    text-align:center;
-    padding: 10px;
-    border-bottom: 2px solid rgba(0,0,0,0.5);
-}
-.game-info{
-    padding: 35px; /* More padding */
-}
-.game-info h3{
-    font-size: 1.6rem;
-    margin-bottom: 15px;
-}
-.game-info p{
-    color:#a8a8a8;
-    line-height: 1.8;
-    margin-bottom: 30px;
-    font-size: 1.05rem;
-}
-.download-btn{
-    display:inline-block;
-    padding: 14px 26px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 2px;
-    text-decoration:none;
-    color:white;
-    font-size: 1rem;
-    transition:0.3s;
-    cursor:pointer;
-}
-.download-btn:hover{
-    background: #ff2d2d;
-    border-color: #ff2d2d;
-    color: #000;
-    box-shadow: 0 0 15px rgba(255,45,45,0.4);
-}
-
-/* =========================================
-   6. CONTACT VIEW 
-========================================= */
-.contact-container {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    max-width: 800px;
-}
-.email-box {
-    background: rgba(10,10,10,0.8);
-    border: 1px solid rgba(255,45,45,0.2);
-    border-radius: 4px;
-    padding: 50px;
-    text-align: center;
-}
-.email-box h3 {
-    color: white;
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-}
-.email-box a {
-    color: #ff2d2d;
-    font-size: 1.4rem;
-    font-weight: 600;
-    text-decoration: none;
-    text-shadow: 0 0 10px rgba(255,45,45,0.3);
-}
-.email-box a:hover {
-    color: white;
-}
-.whatsapp-box{
-    background: rgba(10,10,10,0.8);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 4px;
-    padding: 50px;
-    text-align:center;
-}
-.whatsapp-box p{
-    color:#b0b0b0;
-    margin-bottom: 30px;
-    line-height:1.8;
-    font-size: 1.1rem;
-}
-.whatsapp-link{
-    display:inline-block;
-    padding: 16px 30px;
-    border-radius: 2px;
-    background: #25D366;
-    color: #000;
-    text-decoration:none;
-    font-size: 1.1rem;
-    font-weight:600;
-    box-shadow: 0 0 20px rgba(37,211,102,0.3);
-}
-.whatsapp-link:hover{
-    transform:translateY(-3px);
-    box-shadow: 0 0 30px rgba(37,211,102,0.5);
-}
-
-/* =========================================
-   7. DEV LOG STYLING
-========================================= */
-.devlog-container {
-    display: flex;
-    flex-direction: column;
-    gap: 35px;
-    max-width: 900px;
-}
-.devlog-entry {
-    background: rgba(10,10,10,0.8);
-    border-left: 4px solid #ff2d2d;
-    border-right: 1px solid rgba(255,255,255,0.06);
-    border-top: 1px solid rgba(255,255,255,0.06);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    border-radius: 0 4px 4px 0;
-    padding: 40px;
-}
-.devlog-entry:hover {
-    background: rgba(20,10,10,0.8);
-    box-shadow: 0 0 20px rgba(255,45,45,0.1);
-}
-.devlog-date {
-    color: #ff2d2d;
-    font-size: 1rem;
-    letter-spacing: 2px;
-    margin-bottom: 15px;
-    display: block;
-}
-.devlog-title {
-    font-size: 2rem;
-    color: white;
-    margin-bottom: 20px;
-}
-.devlog-content {
-    color: #b0b0b0;
-    line-height: 1.9;
-    font-size: 1.1rem;
-}
-
-/* =========================================
-   8. MODAL STYLING (Guide & Admin)
-========================================= */
-.guide-modal{
-    display:none;
-    position:fixed;
-    z-index: 100000;
-    left:0;
-    top:0;
-    width:100%;
-    height:100%;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BORROWED - 2D Physics Puzzle</title>
     
-    /* CRITICAL: Allows scrolling/swiping on mobile */
-    overflow-y: auto; 
-    -webkit-overflow-scrolling: touch; 
-    
-    background:rgba(0,0,0,0.85);
-    backdrop-filter:blur(8px);
-    padding: 60px 20px; /* Space top and bottom to scroll past */
-}
-.guide-content{
-    background: #080808;
-    margin: 0 auto; /* Removed auto vertical centering to allow natural flow */
-    margin-bottom: 80px; /* Buffer at the bottom */
-    max-width: 900px;
-    border: 1px solid rgba(255,45,45,0.3);
-    border-radius: 4px;
-    padding: 50px;
-    color: #d5d5d5;
-    position: relative;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.guide-content h2{
-    color: #ff2d2d;
-    font-size: 2.5rem;
-    margin-bottom: 15px;
-}
-.guide-content h3{
-    color: white;
-    margin-bottom: 30px;
-    font-size: 1.2rem;
-    letter-spacing: 1px;
-}
-.guide-body {
-    line-height: 2;
-    font-size: 1.1rem;
-    color: #e0e0e0;
-}
-.close-guide{
-    position: absolute;
-    right: 30px;
-    top: 25px;
-    font-size: 2.5rem;
-    cursor: pointer;
-    color: #ff2d2d;
-}
-.close-guide:hover{
-    opacity: 0.7;
-    text-shadow: 0 0 10px rgba(255,45,45,0.5);
-}
-@keyframes fadeIn{
-    from{ opacity:0; transform:translateY(20px); }
-    to{ opacity:1; transform:translateY(0); }
-}
+    <!-- Tailwind CSS for UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-/* =========================================
-   9. ACCOUNT / SIGN-IN STYLING
-========================================= */
-.account-container {
-    max-width: 850px;
-    background: rgba(10,10,10,0.8);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 4px;
-    padding: 60px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-}
-.admin-db-container {
-    max-width: 1400px !important;
-    width: 95%;
-    margin: 0 auto;
-}
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0f172a;
+            touch-action: none;
+            font-family: 'Inter', system-ui, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-.advantages-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 40px 0;
-}
-.advantages-table tr {
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.advantages-table tr:hover {
-    background: rgba(255,45,45,0.03);
-}
-.advantages-table th {
-    padding: 25px 20px 25px 0;
-    text-align: left;
-    color: white;
-    font-size: 1.2rem;
-    width: 250px;
-}
-.advantages-table th::before {
-    content: '■'; 
-    color: #ff2d2d;
-    margin-right: 12px;
-    font-size: 0.9rem;
-}
-.advantages-table td {
-    padding: 25px 0;
-    color: #b0b0b0;
-    line-height: 1.8;
-}
-.profile-card {
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    margin-bottom: 40px;
-    padding-bottom: 30px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.profile-card img {
-    width: 100px;
-    height: 100px;
-    border-radius: 4px;
-    border: 2px solid #ff2d2d;
-    box-shadow: 0 0 20px rgba(255,45,45,0.3);
-}
-.profile-info h3 {
-    font-size: 2rem;
-    margin-bottom: 10px;
-    color: white;
-}
-.profile-info p {
-    color: #a3a3a3;
-    font-size: 1.1rem;
-}
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
 
-/* =========================================
-   10. CHAT / SUPPORT STYLING
-========================================= */
-.forum-container {
-    max-width: 900px;
-    background: rgba(10,10,10,0.8);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 4px;
-    overflow: hidden;
-    height: 650px; /* Slightly taller */
-    max-height: 75vh; 
-}
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
 
-#forumLoggedIn {
-    display: none; 
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-}
+        .interactive-ui {
+            pointer-events: auto;
+        }
 
-.forum-messages {
-    flex: 1 1 auto; 
-    padding: 40px; /* More padding */
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-}
+        #joystick-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin-left: 2rem;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+        }
 
-.message-bubble {
-    display: flex;
-    gap: 15px;
-    animation: fadeIn 0.3s ease;
-}
-.message-avatar {
-    width: 45px;
-    height: 45px;
-    border-radius: 2px;
-    border: 1px solid rgba(255,45,45,0.4);
-    flex-shrink: 0;
-}
-.message-content-wrapper {
-    background: rgba(20,20,20,0.8);
-    padding: 20px 25px;
-    border-radius: 2px;
-    border: 1px solid rgba(255,255,255,0.05);
-    max-width: 80%;
-}
-.message-header {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-.message-author {
-    color: #ff2d2d;
-    font-size: 1.1rem;
-}
-.message-time {
-    color: #666;
-    font-size: 0.9rem;
-}
-.message-text {
-    color: #e0e0e0;
-    line-height: 1.7;
-    font-size: 1.05rem;
-    word-break: break-word;
-}
+        #joystick-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+            will-change: transform;
+        }
 
-.message-bubble.own-message {
-    flex-direction: row-reverse;
-}
-.message-bubble.own-message .message-content-wrapper {
-    background: rgba(255,45,45,0.05);
-    border-color: rgba(255,45,45,0.2);
-}
-.message-bubble.own-message .message-header {
-    flex-direction: row-reverse;
-}
+        .action-btn {
+            background: linear-gradient(145deg, #334155, #1e293b);
+            border: 1px solid #475569;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
+            transition: all 0.1s ease-out;
+            transform: translateY(0);
+        }
+        
+        .action-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.4);
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+        }
 
-.forum-input-area {
-    flex: 0 0 auto;
-    padding: 25px 30px;
-    background: #050505;
-    border-top: 1px solid rgba(255,255,255,0.08);
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-.forum-input-area button {
-    padding: 18px 35px;
-}
-
-.forum-logged-out-msg {
-    text-align: center;
-    padding: 80px 30px;
-}
-.forum-logged-out-msg h3 {
-    font-size: 2rem;
-    margin-bottom: 20px;
-}
-.forum-logged-out-msg p {
-    color: #a3a3a3;
-    margin-bottom: 30px;
-    font-size: 1.1rem;
-}
-
-/* =========================================
-   11. FOOTER & MEDIA QUERIES
-========================================= */
-footer{
-    margin-top: 100px;
-    padding: 50px 8%;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-}
-footer p{
-    color:#666;
-    letter-spacing: 1px;
-}
-@media(max-width:768px){
-    section { padding: 80px 6%; }
-    .hero h1{ font-size: 3.2rem; }
-    .section-title{ font-size: 2.2rem; }
-    .guide-content{ padding: 30px; margin-bottom: 40px; }
-    .account-container { padding: 30px; }
-    .profile-card { flex-direction: column; text-align: center; }
-    
-    .advantages-table th, .advantages-table td {
-        display: block;
-        width: 100%;
-    }
-    .advantages-table th {
-        padding-bottom: 10px;
-        border-bottom: none;
-    }
-    .advantages-table td {
-        padding-top: 0;
-        padding-bottom: 30px;
-    }
-    
-    .forum-container { height: 80vh; max-height: none; }
-    .forum-messages { padding: 25px; }
-    .forum-input-area { padding: 20px; flex-direction: column; }
-    .forum-input-area .form-input { width: 100%; }
-    .forum-input-area button { width: 100%; }
-}
-</style>
+        /* Cinematic Intro Overlay */
+        #cinematic-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: #0f172a;
+            z-index: 50;
+            pointer-events: none;
+        }
+    </style>
 </head>
-
 <body>
 
-<!-- Background Elements -->
-<div class="bg-glow"></div>
-<div class="bg-glow2"></div>
+    <!-- PixiJS Canvas Container -->
+    <div id="game-container"></div>
 
-<!-- Sandwich Side Menu -->
-<div id="sideMenu" class="side-menu">
-    <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
-    <a href="javascript:void(0)" onclick="switchView('home')">Home</a>
-    <a href="javascript:void(0)" onclick="switchView('profile')">Profile</a>
-    <a href="javascript:void(0)" onclick="switchView('devlog')">Dev Log</a>
-    <a href="javascript:void(0)" onclick="switchView('games')">Games</a>
-    <a href="javascript:void(0)" onclick="switchView('rules')">Rules</a>
-    <a href="javascript:void(0)" onclick="switchView('forum')">Customer Care</a>
-    <a href="javascript:void(0)" onclick="switchView('audio')">Audio</a>
-    
-    <!-- Hidden Admin Section in Menu -->
-    <a href="javascript:void(0)" id="menuAdminLink" onclick="switchView('admin')" style="display:none; color:#ff2d2d;">Admin Panel</a>
-    
-    <a href="javascript:void(0)" id="menuAccountLink" onclick="switchView('account')" style="color: #ff2d2d;">My Account</a>
-    <a href="javascript:void(0)" onclick="switchView('contact')">Contact Info</a>
-</div>
+    <!-- Intro Cinematic Overlay -->
+    <div id="cinematic-overlay"></div>
 
-<!-- Sticky Navbar -->
-<nav>
-    <div class="menu-icon" onclick="openMenu()">&#9776;</div>
-    <div class="logo" onclick="switchView('home')">K210209♤ <span>STUDIOS</span></div>
-</nav>
+    <!-- UI Overlay Layer -->
+    <div id="ui-layer" class="p-4 sm:p-6 pb-8">
+        
+        <!-- Top UI -->
+        <div class="flex justify-between items-start w-full">
+            <div id="objective-panel" class="bg-slate-800 bg-opacity-90 rounded-2xl p-4 max-w-[60%] md:max-w-md border border-slate-600 shadow-2xl backdrop-blur-sm interactive-ui opacity-0">
+                <h1 class="text-white font-black text-xl mb-1 tracking-tight">Level 1: The Weight of Light</h1>
+                <p class="text-slate-300 text-sm leading-relaxed">Borrow <strong class="text-blue-300">LIGHT</strong> from the Empty Box to gain a jump. Transfer properties between objects to open the security door. <strong class="text-yellow-400">WEIGHT</strong> slows you down.</p>
+            </div>
 
-<!-- =======================================================
-     VIEW 1: HOME
-======================================================== -->
-<div id="view-home">
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-tag">Independent Game Development Studio</div>
-            <h1>Building <span>immersive</span><br>games & experiences.</h1>
-            <p>
-                K210209♤ Studios creates unique single-player and multiplayer experiences
-                focused on strategy, survival, atmosphere, and innovation.
-            </p>
-            <div class="hero-buttons">
-                <button onclick="switchView('games')" class="btn btn-primary">Explore Games</button>
-                <a href="#about" class="btn btn-secondary">Learn More</a>
+            <div id="property-panel" class="bg-slate-800 border-2 border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center min-w-[120px] shadow-2xl transition-all duration-300 backdrop-blur-sm opacity-0">
+                <span class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-2">Holding</span>
+                <span id="held-property-text" class="text-white font-black text-lg text-center">- None -</span>
             </div>
         </div>
-    </section>
 
-    <section id="about">
-        <h2 class="section-title">About <span>K210209♤ Studios</span></h2>
-        <div class="about-box">
-            K210209♤ Studios is an independent game development studio focused on
-            creating immersive and memorable experiences.
-            <br><br>
-            The studio explores strategy, survival, fantasy,
-            and experimental gameplay systems.
-            <br><br>
-            Every project is designed with passion,
-            creativity, and atmosphere.
-        </div>
-    </section>
-</div>
-
-<!-- =======================================================
-     VIEW 2: GAMES
-======================================================== -->
-<div id="view-games" style="display: none;">
-    <section id="games">
-        <h2 class="section-title">Featured <span>Games</span></h2>
-        <p class="section-sub">Explore current projects from K210209♤ Studios. Download available titles directly below.</p>
-
-        <!-- Logged out message for Games -->
-        <div id="gamesLoggedOut" style="text-align:center; padding: 60px 30px; background: rgba(10,10,10,0.8); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; max-width: 800px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
-            <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access and download our games.</p>
-            <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
-        </div>
-
-        <!-- Logged in state for Games -->
-        <div id="gamesLoggedIn" style="display: none;">
-            <div class="games-grid">
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg,#4a0000,#8b0000,#0a0a0a);">SCOUNDREL</div>
-                    <div class="game-info">
-                        <h3>Scoundrel</h3>
-                        <p>A dark fantasy dungeon-crawling card game focused on survival, tactical decisions, monsters, potions, and strategic risk management.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="Scoundrel.apk" class="download-btn" download>Download APK</a>
-                            <button class="download-btn" onclick="openGuide()">About Game</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg,#001a2b,#004466,#0a0a0a);">
-                        DIMENSIONAL WARFARE
-                    </div>
-                    <div class="game-info">
-                        <h3>Dimensional Warfare</h3>
-                        <p>An intense 3D space shooter experience. Navigate through hostile dimensions, epic bosses. Do your best to survive waves of high-tech enemies.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="dimensionalwarfare.apk" class="download-btn" download>Download APK</a>
-                            <a href="DWF1.html" class="download-btn">Play Web Version</a>
-                            <button class="download-btn" onclick="openDWGuide()">About Game</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #ff4d94, #2a1132, #0a0a0a);">
-                        MIRROR-VERSE
-                    </div>
-                    <div class="game-info">
-                        <h3>Mirror-verse</h3>
-                        <p>One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="https://mirror-verse.k210209-studios.workers.dev" class="download-btn" target="_blank" rel="noopener noreferrer">Play Web Version</a>
-                            <button class="download-btn" onclick="openMirrorVerseGuide()">About Game</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #e65c00, #F9D423, #0a0a0a);">
-                        HORIZON RUSH
-                    </div>
-                    <div class="game-info">
-                        <h3>Horizon Rush</h3>
-                        <p>An adrenaline-fueled endless runner. Dodge obstacles, collect power-ups, and race towards the ever-expanding horizon in this fast-paced arcade experience.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="horizon_rush.html" class="download-btn">Play Web Version</a>
-                            <button class="download-btn" onclick="openHorizonRushGuide()">About Game</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #8b0000, #3a0000, #0a0a0a);">
-                        BLOOD-BOUND
-                    </div>
-                    <div class="game-info">
-                        <h3>Blood-Bound</h3>
-                        <p>This game is multiplayer only (2 players, connected on same wifi) it is a turn-based rpg game. the rules are simple, the commander is like the king on a chess board, if he is defeated, game over. There are various classes such as assassin, archer, mage and vanguard.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="Blood-bound.html" class="download-btn">Play Web Version</a>
-                            <button class="download-btn" onclick="openBloodBoundGuide()">About Game</button>
-                        </div>
-                    </div>
+        <!-- Center UI: Selected Object -->
+        <div class="absolute top-[25%] left-1/2 transform -translate-x-1/2 flex flex-col items-center interactive-ui pointer-events-none">
+            <div id="selection-panel" class="opacity-0 scale-90 bg-blue-900 bg-opacity-95 rounded-2xl px-8 py-4 border border-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.3)] text-center backdrop-blur-md pointer-events-auto transition-none">
+                <h2 id="selection-name" class="text-white font-black text-2xl tracking-wide uppercase">Object</h2>
+                <div class="flex items-center gap-2 mt-2 justify-center">
+                    <span class="text-blue-300 text-xs font-bold uppercase tracking-wider">Property:</span>
+                    <span id="selection-props" class="text-slate-400 font-bold text-sm bg-blue-950 px-3 py-1 rounded-full border border-blue-800">None</span>
                 </div>
             </div>
         </div>
-    </section>
-</div>
 
-<!-- =======================================================
-     VIEW 3: DEV LOG
-======================================================== -->
-<div id="view-devlog" style="display: none;">
-    <section id="dev-log">
-        <h2 class="section-title">Developer <span>Log</span></h2>
-        <p class="section-sub">Latest updates, patch notes, and behind-the-scenes development progress.</p>
-
-        <div class="devlog-container">
-            <div class="devlog-entry">
-                <span class="devlog-date">August 2, 2026</span>
-                <h3 class="devlog-title">Site Launch & Dev Log Added</h3>
-                <div class="devlog-content">
-                    <p>Welcome to the new K210209♤ Studios website! We've just implemented the new Developer Log system to keep everyone updated. Moving forward, we'll be posting news here as well.</p>
-                </div>
-            </div>
-        </div>
-<div class="devlog-entry">
-    <span class="devlog-date">August 16, 2026</span>
-    <h3 class="devlog-title">New website</h3>
-    <div class="devlog-content">
-        <p> To download the apk please go to the website where you will be redirected to GitHub. please note that all games here are still in beta mode. if you have any queries, do not hesitate to message us in customer care!
-
-https://K210209-website.k210209-studios.workers.dev
-</p>
-    </div>
-</div>
-
-    </section>
-</div>
-
-<!-- =======================================================
-     VIEW 4: CONTACT INFO
-======================================================== -->
-<div id="view-contact" style="display: none;">
-    <section id="contact-info">
-        <h2 class="section-title">Contact <span>Info</span></h2>
-        <p class="section-sub">Get in touch for inquiries, support, or development news.</p>
-
-        <div class="contact-container">
-            <div class="email-box">
-                <h3>Studio Email</h3>
-                <a href="mailto:k210209.studios@gmail.com">k210209.studios@gmail.com</a>
+        <!-- Bottom UI: Inputs -->
+        <div class="flex justify-between items-end w-full mt-auto">
+            <div id="joystick-container" class="interactive-ui opacity-0">
+                <div id="joystick-knob"></div>
             </div>
 
-            <div class="whatsapp-box">
-                <p>Follow the K210209♤_STUDIOS channel on WhatsApp for updates, development news, future releases, and announcements.</p>
-                <a class="whatsapp-link" href="https://whatsapp.com/channel/0029Vb7sWjABadmXSFsPxG1Y" target="_blank" rel="noopener noreferrer">Join WhatsApp Channel</a>
+            <div id="action-buttons" class="flex flex-col gap-4 interactive-ui mr-2 sm:mr-6 items-end opacity-0">
+                <button id="btn-jump" class="action-btn text-white font-bold py-3 px-8 rounded-2xl text-xl hidden items-center justify-center gap-2 border-blue-400 border-2 bg-blue-600/50 mb-2">
+                    <svg class="w-6 h-6 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
+                    JUMP
+                </button>
+                <button id="btn-borrow" class="action-btn text-white font-bold py-5 px-8 rounded-2xl text-xl hidden items-center justify-center gap-3 w-full">
+                    <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                    BORROW
+                </button>
+                <button id="btn-give" class="action-btn text-white font-bold py-5 px-8 rounded-2xl text-xl hidden items-center justify-center gap-3 w-full">
+                    <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                    GIVE
+                </button>
             </div>
-        </div>
-    </section>
-</div>
-
-<!-- =======================================================
-     VIEW 5: ACCOUNT & AUTHENTICATION
-======================================================== -->
-<div id="view-account" style="display: none;">
-    <section id="account">
-        <h2 class="section-title">Studio <span>Account</span></h2>
-        <p class="section-sub">Manage your profile, cloud saves, and studio ecosystem access.</p>
-
-        <div class="account-container">
-            
-            <div id="loggedOutState">
-                <h3 style="font-size: 2rem; margin-bottom: 15px;">Join the K210209 Ecosystem</h3>
-                <p style="color: #a3a3a3; font-size: 1.15rem; margin-bottom: 35px;">Sign in for free to elevate your gaming experience.</p>
-                
-                <table class="advantages-table" style="margin-bottom: 45px;">
-                    <tbody>
-                        <tr>
-                            <th>Cloud Synchronization</th>
-                            <td>Safely back up your game progress and transfer it seamlessly across all your devices.</td>
-                        </tr>
-                        <tr>
-                            <th>Early Access</th>
-                            <td>Get exclusive priority access to private beta builds and unreleased prototype projects.</td>
-                        </tr>
-                        <tr>
-                            <th>Community Recognition</th>
-                            <td>Stand out with verified player badges in future dev logs and community features.</td>
-                        </tr>
-                        <tr>
-                            <th>Direct Dev Support</th>
-                            <td>Gain priority assistance for account issues and gameplay troubleshooting.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <!-- Email Registration / Login Box -->
-                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 45px; border-radius: 4px;">
-                    <h4 style="margin-bottom: 25px; font-size: 1.3rem; color: white;">Email Login / Registration</h4>
-                    
-                    <input type="email" id="authEmail" class="form-input" placeholder="Email Address" style="margin-bottom: 20px;" />
-                    <input type="password" id="authPassword" class="form-input" placeholder="Password" style="margin-bottom: 20px;" />
-                    
-                    <div id="authMessage" style="margin-bottom: 25px; font-weight: 600; font-size: 1.05rem;"></div>
-                    
-                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                        <button class="btn btn-primary" onclick="signInWithEmail()" style="flex: 1;">Log In</button>
-                        <button class="btn btn-secondary" onclick="signUpWithEmail()" style="flex: 1;">Sign Up</button>
-                    </div>
-                    
-                    <div style="text-align: center; margin: 40px 0; color: #666; font-size: 1rem; font-weight: 600; letter-spacing: 2px;">— OR —</div>
-                    
-                    <button class="btn btn-secondary" onclick="signInWithGoogle()" style="width: 100%; display:flex; justify-content:center; align-items:center; gap:15px;">
-                        <img src="https://www.google.com/favicon.ico" alt="Google Logo" style="width:24px; border-radius:50%; background:white; padding:3px;" />
-                        Sign in with Google
-                    </button>
-                </div>
-            </div>
-
-            <div id="loggedInState" style="display:none;">
-                <div class="profile-card">
-                    <img id="userAvatar" src="" alt="Player Avatar" />
-                    <div class="profile-info">
-                        <h3 id="userName">Player Name</h3>
-                        <p id="userEmail">player@email.com</p>
-                    </div>
-                </div>
-                
-                <p style="color: #a3a3a3; margin-bottom: 35px; font-size: 1.1rem; line-height:1.7;">Your account is currently active. Your game progress and data are being synced automatically.</p>
-                <button class="btn btn-secondary" onclick="signOut()" style="border-color: #ff2d2d; color: #ff2d2d;">Securely Sign Out</button>
-            </div>
-
-        </div>
-    </section>
-</div>
-
-<!-- =======================================================
-     VIEW 6: RULES 
-======================================================== -->
-<div id="view-rules" style="display: none;">
-    <section id="rules">
-        <h2 class="section-title">Customer Care <span>Guidelines</span></h2>
-        <p class="section-sub">All players must read and agree to these terms before opening a support ticket with K210209♤ Studios.</p>
-
-        <div class="account-container">
-            <h3 style="color: #ff2d2d; font-size: 1.8rem; margin-bottom: 25px;">Support Ticket Rules</h3>
-            
-            <table class="advantages-table">
-                <tbody>
-                    <tr>
-                        <th>1. Professional Conduct</th>
-                        <td>Our automated moderation system actively filters profanity and slurs. Attempting to bypass this filter in your support ticket will result in the ticket being flagged.</td>
-                    </tr>
-                    <tr>
-                        <th>2. No External Links</th>
-                        <td>To protect our development team from malicious files, all external URLs and domain names are strictly blocked in the support chat.</td>
-                    </tr>
-                    <tr>
-                        <th>3. Protect Personal Privacy</th>
-                        <td>Do not share passwords or sensitive personal information. Our system automatically censors phone numbers to protect your identity.</td>
-                    </tr>
-                    <tr>
-                        <th>4. Respect the Dev Team</th>
-                        <td>We are here to help you, but harassment, toxicity, or threats toward K210209♤ Studios staff will lead to a permanent account ban.</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div style="margin-top: 45px; padding: 35px; background: rgba(255,45,45,0.05); border-left: 4px solid #ff2d2d; border-radius: 4px;">
-                <p style="color: #d5d5d5; line-height: 1.8; font-size: 1.1rem;"><strong>Notice:</strong> By proceeding to the customer care chat, you acknowledge that you have read and agree to follow these rules.</p>
-                
-                <button class="btn btn-primary" onclick="switchView('forum')" style="margin-top: 25px; width: 100%;">I Agree — Open Ticket</button>
-            </div>
-        </div>
-    </section>
-</div>
-
-<!-- =======================================================
-     VIEW 7: SUPPORT (Formerly Forum)
-======================================================== -->
-<div id="view-forum" style="display: none;">
-    <section id="forum">
-        <h2 class="section-title">Customer <span>Care</span></h2>
-        <p class="section-sub">Connect securely with K210209♤ Studios staff. Your conversation is entirely private.</p>
-
-        <div class="forum-container">
-            
-            <div id="forumLoggedOut" class="forum-logged-out-msg">
-                <h3>Authentication Required</h3>
-                <p>The customer care service is exclusive to registered members of the K210209 Ecosystem to prevent spam.</p>
-                <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
-            </div>
-
-            <div id="forumLoggedIn">
-                
-                <!-- Admin Ticket Management UI -->
-                <div id="adminTicketUI" style="display:none; padding: 20px 30px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                    <label style="color:#ff2d2d; font-weight:700; font-size: 1.1rem;">Admin View</label>
-                    <select id="adminTicketSelect" class="form-input" style="flex: 1; min-width: 250px;" onchange="switchAdminTicket()">
-                        <option value="">-- Select a Player to Support --</option>
-                    </select>
-                    <button class="btn btn-secondary" style="padding: 15px 25px;" onclick="refreshAdminTickets()">↻ Refresh</button>
-                </div>
-
-                <div class="forum-messages" id="chatBox">
-                    <div style="text-align:center; color:#666; margin-top:30px;">Loading your private chat...</div>
-                </div>
-
-                <div class="forum-input-area">
-                    <input type="text" id="chatInput" class="form-input" placeholder="Type your message to the dev team here..." onkeypress="handleEnter(event)" />
-                    <button id="sendChatBtn" class="btn btn-primary" onclick="sendForumMessage()">Send</button>
-                </div>
-            </div>
-
-        </div>
-    </section>
-</div>
-
-<!-- =======================================================
-     VIEW 8: PROFILE
-======================================================== -->
-<div id="view-profile" style="display: none;">
-    <section id="profile">
-        <h2 class="section-title">My <span>Profile</span></h2>
-        <p class="section-sub">Customize your display name.</p>
-
-        <div class="account-container" style="max-width: 600px; margin: 0 auto;">
-            
-            <div id="profileLoggedOut" style="display:none; text-align:center;">
-                <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
-                <p style="color: #a3a3a3; margin-bottom: 30px; font-size:1.1rem;">You must be signed in to edit your profile.</p>
-                <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
-            </div>
-
-            <div id="profileLoggedIn" style="display:none;">
-                <label style="display:block; margin-bottom:15px; color:#a3a3a3; font-weight:600; font-size:1.1rem;">Display Name</label>
-                <input type="text" id="profileNameInput" class="form-input" placeholder="Enter display name" />
-                <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:25px; width:100%;">Save Changes</button>
-                
-                <div id="profileStatus" style="margin-top:20px; color:#4ade80; text-align:center; display:none; font-weight:600; font-size:1.1rem;">Profile updated successfully!</div>
-            </div>
-
-        </div>
-    </section>
-</div>
-
-<!-- =======================================================
-     VIEW 9: ADMIN PANEL (User List)
-======================================================== -->
-<div id="view-admin" style="display: none;">
-    <section id="admin-panel" style="padding-left: 2%; padding-right: 2%;">
-        <h2 class="section-title" style="text-align: center;">Admin <span>Database</span></h2>
-        <p class="section-sub" style="text-align: center;">Confidential overview of all registered K210209 Ecosystem users.</p>
-
-        <div class="account-container admin-db-container">
-            <h3 style="color: #ff2d2d; font-size: 1.8rem; margin-bottom: 25px;">Registered Player Accounts</h3>
-            <div id="adminUserList" style="max-height: 75vh; overflow-y: auto; padding-right: 20px;">
-                <!-- User data populated by JS -->
-            </div>
-        </div>
-    </section>
-</div>
-
-<!-- =======================================================
-     VIEW 10: AUDIO
-======================================================== -->
-<div id="view-audio" style="display: none;">
-    <section id="audio-section">
-        <h2 class="section-title">Studio <span>Audio</span></h2>
-        <p class="section-sub">Listen to the official soundtrack playlist.</p>
-
-        <div class="account-container">
-            <h3 style="color: #ff2d2d; font-size: 1.8rem; margin-bottom: 25px;">Playlist</h3>
-            
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 30px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-                <span style="color: #d4d4d4; font-weight: 500; font-size: 1.15rem;">1. 8bit Dungeon Level- Kevin MacLeod.mp3</span>
-                <button id="audio-toggle-btn" class="btn btn-secondary" onclick="toggleMainAudio()" style="padding: 14px 28px;">Play</button>
-            </div>
-            
-            <audio id="main-audio-player" src="8bit Dungeon Level- Kevin MacLeod.mp3" preload="none" loop></audio>
-        </div>
-    </section>
-</div>
-
-
-<!-- =======================================================
-     GLOBAL COMPONENTS (Footer & Modals)
-======================================================== -->
-<div id="guideModal" class="guide-modal">
-    <div class="guide-content">
-        <span class="close-guide" onclick="closeGuide()">&times;</span>
-        <h2 id="modalTitle">Official Tutorial Guide</h2>
-        <h3 id="modalSubtitle">K210209♤ STUDIOS</h3>
-        <div id="guideBody" class="guide-body">
-            Tutorial content will appear here.
         </div>
     </div>
-</div>
 
-<div id="adminModal" class="guide-modal">
-    <div class="guide-content" style="max-width:450px; text-align:center; padding: 40px;">
-        <span class="close-guide" onclick="closeAdminModal()">&times;</span>
-        <h2 style="font-size:1.8rem; margin-bottom:15px; color:white;">Moderate User</h2>
-        <p id="moderateUserName" style="color:#ff2d2d; margin-bottom:25px; font-weight:bold; font-size:1.1rem;"></p>
-        <div style="display:flex; flex-direction:column; gap:20px;">
-            <select id="muteDuration" class="form-input">
-                <option value="1">Mute for 1 Hour</option>
-                <option value="24">Mute for 24 Hours</option>
-                <option value="168">Mute for 7 Days</option>
-            </select>
-            <button class="btn btn-secondary" onclick="applyMute()">Apply Mute</button>
-            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
-            <button class="btn btn-primary" onclick="applyBan()" style="background:#8b0000; border-color:#8b0000;">PERMANENT BAN</button>
-            <button class="btn btn-secondary" onclick="removeRestrictions()" style="border-color:#25D366; color:#25D366; background: rgba(37, 211, 102, 0.05); margin-top: 15px;">LIFT RESTRICTIONS (UNBAN)</button>
+    <!-- Win Modal -->
+    <div id="win-modal" class="hidden interactive-ui absolute inset-0 bg-slate-900 bg-opacity-90 backdrop-blur-sm flex items-center justify-center z-50">
+        <div id="win-content" class="bg-slate-800 p-10 rounded-3xl text-center border-2 border-green-500 shadow-[0_0_50px_rgba(34,197,94,0.4)] max-w-lg opacity-0 scale-90">
+            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/50">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h2 class="text-4xl text-white font-black mb-4 tracking-tight">Level Complete!</h2>
+            <p class="text-slate-300 mb-10 text-lg">You manipulated properties perfectly.</p>
+            <button onclick="window.location.reload()" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-lg hover:shadow-green-500/50 hover:-translate-y-1 text-xl uppercase tracking-wider">
+                Next Level
+            </button>
         </div>
     </div>
-</div>
 
-<footer>
-    <p>© 2026 K210209♤ Studios — All Rights Reserved</p>
-</footer>
+    <script type="module">
+        import RAPIER from 'https://esm.sh/@dimforge/rapier2d-compat@0.13.1';
+        import * as PIXI from 'https://esm.sh/pixi.js@7.3.2';
+        import { GlowFilter, DropShadowFilter } from 'https://esm.sh/pixi-filters@5.2.1';
+        import gsap from 'https://esm.sh/gsap@3.12.2';
 
-<script>
-// =========================================
-// NAVIGATION & VIEW SWITCHING LOGIC
-// =========================================
+        // Physics to Pixel Scale Factor (1 Rapier Meter = 60 Pixels)
+        const METER = 60;
 
-function openMenu() {
-    document.getElementById("sideMenu").style.width = "320px";
-}
+        // --- GAME STATE ---
+        const GameState = {
+            active: false,
+            heldProperty: null,
+            selectedEntity: null,
+            input: { moveX: 0, jump: false },
+            entities: [],
+            player: null,
+            door: null,
+            plate: null,
+            camera: { x: 0, y: 0, zoom: 1 }
+        };
 
-function closeMenu() {
-    document.getElementById("sideMenu").style.width = "0";
-}
+        const UI = {
+            heldText: document.getElementById('held-property-text'),
+            propertyPanel: document.getElementById('property-panel'),
+            selectionPanel: document.getElementById('selection-panel'),
+            selectionName: document.getElementById('selection-name'),
+            selectionProps: document.getElementById('selection-props'),
+            btnBorrow: document.getElementById('btn-borrow'),
+            btnGive: document.getElementById('btn-give'),
+            btnJump: document.getElementById('btn-jump'),
+            winModal: document.getElementById('win-modal'),
+            winContent: document.getElementById('win-content'),
+            overlay: document.getElementById('cinematic-overlay')
+        };
 
-function switchView(viewName) {
-    document.getElementById("view-home").style.display = "none";
-    document.getElementById("view-games").style.display = "none";
-    document.getElementById("view-devlog").style.display = "none"; 
-    document.getElementById("view-contact").style.display = "none";
-    document.getElementById("view-account").style.display = "none"; 
-    document.getElementById("view-rules").style.display = "none"; 
-    document.getElementById("view-forum").style.display = "none"; 
-    document.getElementById("view-profile").style.display = "none"; 
-    document.getElementById("view-admin").style.display = "none"; 
-    document.getElementById("view-audio").style.display = "none"; 
-    
-    document.getElementById("view-" + viewName).style.display = "block";
-    
-    window.scrollTo(0, 0);
-    closeMenu();
-    
-    if(viewName === 'forum' && GLOBAL_USER) {
-        scrollToBottom();
-    }
-    
-    if(viewName === 'admin' && GLOBAL_USER && isMasterAdmin(GLOBAL_USER.email)) {
-        loadAdminUserList();
-    } else if (viewName === 'admin') {
-        switchView('home'); // Kick out unauthorized attempts
-    }
-}
+        const COLORS = {
+            HEAVY: 0x334155, 
+            LIGHT: 0xf8fafc, 
+            PLAYER: 0x3b82f6,
+            PLATE_OFF: 0xef4444, 
+            PLATE_ON: 0x22c55e, 
+            DOOR: 0x64748b, 
+            BG: 0x0f172a,
+            PLATFORM: 0x1e293b
+        };
 
-// =========================================
-// GAME MODALS LOGIC
-// =========================================
+        const app = new PIXI.Application({
+            resizeTo: window,
+            backgroundColor: COLORS.BG,
+            resolution: Math.min(window.devicePixelRatio, 2),
+            autoDensity: true,
+            antialias: true
+        });
+        document.getElementById('game-container').appendChild(app.view);
 
-function setModalContent(title, subtitle, bodyHTML) {
-    document.getElementById("modalTitle").innerHTML = title;
-    document.getElementById("modalSubtitle").innerHTML = subtitle;
-    document.getElementById("guideBody").innerHTML = bodyHTML;
-}
-
-async function openGuide() {
-    const modal = document.getElementById("guideModal");
-    modal.style.display = "block";
-    
-    setModalContent(
-        "Scoundrel · Official Tutorial", 
-        "K210209♤ STUDIOS | Loading Guide...",
-        '<div style="text-align:center; padding:30px;"><span style="color:#ff2d2d; font-size:1.5rem;">⟳</span> Loading Scoundrel tutorial content...</div>'
-    );
-    
-    try {
-        const response = await fetch('./Scoundreltutorial.html');
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        // Core Containers
+        const worldContainer = new PIXI.Container();
+        const backgroundContainer = new PIXI.Container();
+        const mainContainer = new PIXI.Container();
+        const vfxContainer = new PIXI.Container();
         
-        let tutorialHTML = await response.text();
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = tutorialHTML;
-        
-        let bodyContent = tempDiv.querySelector('body');
-        let finalContent = bodyContent ? bodyContent.innerHTML : tutorialHTML;
-        
-        const styledContent = `
-            <div class="scoundrel-tutorial-wrapper">
-                ${finalContent}
-                <hr style="border-color:rgba(255,45,45,0.3); margin:30px 0 15px 0;">
-                <div style="font-size:0.95rem; color:#999; text-align:center;">📜 K210209♤ Studios · Scoundrel deep dive</div>
-            </div>
-        `;
-        
-        setModalContent("Scoundrel · Dungeon Crawler Guide", "K210209♤ STUDIOS | Official Tutorial", styledContent);
-        
-    } catch (error) {
-        console.error("Failed to load Scoundrel tutorial:", error);
-        setModalContent(
-            "Scoundrel · Guide Unavailable", 
-            "K210209♤ STUDIOS",
-            `<div style="border-left:4px solid #ff2d2d; background:rgba(255,45,45,0.05); padding:25px; border-radius:4px;">
-                <b style="font-size:1.2rem;">⚠️ Could not load Scoundreltutorial.html</b><br><br>
-                Make sure the file <code style="background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:4px;">Scoundreltutorial.html</code> exists in the same folder as this webpage.<br><br>
-                Meanwhile, here's the official Scoundrel essence:<br><br>
-                <b>◈ Core mechanics:</b> Dungeon delving, tactical card combat, risk/reward system.<br>
-                <b>◈ Survival:</b> Manage HP, weapons, armor and deadly room encounters.<br>
-                <b>◈ Strategy:</b> Every choice matters — one wrong move and your run ends.<br><br>
-                <i>Place your custom Scoundreltutorial.html file to see the full interactive manual.</i>
-            </div>`
-        );
-    }
-}
+        worldContainer.addChild(backgroundContainer);
+        worldContainer.addChild(mainContainer);
+        worldContainer.addChild(vfxContainer);
+        app.stage.addChild(worldContainer);
 
-function openDWGuide() {
-    document.getElementById("guideModal").style.display = "block";
-    
-    const dwContent = `
-        <div>
-            <b style="font-size:1.2rem; color:#ff2d2d;">3D Space Shooter · Dimensional Warfare</b><br><br>
-            Experience fast-paced aerial combat in a futuristic setting. 
-            Dimensional Warfare pushes your reflexes to the limit as you pilot 
-            advanced spacecraft through treacherous cosmic environments.
-            <br><br>
-            <b style="font-size:1.2rem; color:#ff2d2d;">Key Features</b><br><br>
-            • Dynamic 3D flight mechanics with zero-gravity drift.<br>
-            • Various enemy archetypes and epic boss encounters.<br>
-            • Upgradable weapon systems and dimensional rifts.<br>
-            • Unique "Dimensional Breach" ultimate ability.<br><br>
-            Master the dimensions, survive endless waves and secure the galaxy.<br><br>
-             <i>Optimized for mobile.</i><br>
-            <i>NOTE: enter the app in landscape mode to play web version</i>
-            <br><br>
-            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Space Warfare Division</span>
-        </div>
-    `;
-    
-    setModalContent("Dimensional Warfare", "K210209♤ STUDIOS | Tactical Space Shooter", dwContent);
-}
+        // Add subtle background grid for depth
+        const bgGrid = new PIXI.Graphics();
+        bgGrid.lineStyle(1, 0xffffff, 0.03);
+        for(let i = -2000; i < 2000; i += METER * 2) {
+            bgGrid.moveTo(i, -2000); bgGrid.lineTo(i, 2000);
+            bgGrid.moveTo(-2000, i); bgGrid.lineTo(2000, i);
+        }
+        backgroundContainer.addChild(bgGrid);
 
-function openMirrorVerseGuide() {
-    document.getElementById("guideModal").style.display = "block";
-    
-    const content = `
-        <div>
-            <b style="font-size:1.2rem; color:#ff2d2d;">Spatial Puzzle Platformer · Mirror-verse</b><br><br>
-            One mind. Two asymmetric realities. Control two characters simultaneously with a single set of inputs in this mind-bending spatial puzzle platformer. Navigate asymmetrical realities to solve complex puzzles and progress.
-            <br><br>
-            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Puzzle Division</span>
-        </div>
-    `;
-    
-    setModalContent("Mirror-verse", "K210209♤ STUDIOS | Puzzle Platformer", content);
-}
+        // Global Filters for Cinematic Look
+        const dropShadow = new DropShadowFilter({
+            distance: 8, blur: 6, alpha: 0.5, color: 0x000000, rotation: 45
+        });
 
-function openHorizonRushGuide() {
-    document.getElementById("guideModal").style.display = "block";
-    
-    const content = `
-        <div>
-            <b style="font-size:1.2rem; color:#ff2d2d;">Endless Runner · Horizon Rush</b><br><br>
-            An adrenaline-fueled endless runner. Dodge obstacles and race towards the ever-expanding horizon in this fast-paced arcade experience. Test your reflexes and aim for the highest score. 
-            <br><br>
-            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Arcade Division</span>
-        </div>
-    `;
-    
-    setModalContent("Horizon Rush", "K210209♤ STUDIOS | Arcade Runner", content);
-}
+        let world;
+        await RAPIER.init();
+        world = new RAPIER.World({ x: 0.0, y: -30.0 }); // Realistic 2D gravity
 
-function openBloodBoundGuide() {
-    document.getElementById("guideModal").style.display = "block";
-    
-    const content = `
-        <div>
-            <b style="font-size:1.2rem; color:#ff2d2d;">Action Survival · Blood-Bound</b><br><br>
-            An intense, Blood-bound experience. Step into the darkness and fight for your survival in this thrilling web-based title. Face challenging enemies and uncover the secrets of the dark.
-            <br><br>
-            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Survival Division</span>
-        </div>
-    `;
-    
-    setModalContent("Blood-Bound", "K210209♤ STUDIOS | Survival Experience", content);
-}
+        // Property Mass Management
+        function getDensityForEntity(type, props) {
+            if (type === 'player') return 2.0; 
+            if (props && props.includes('WEIGHT')) return 300.0; // Immovable
+            if (props && props.includes('LIGHT')) return 0.05;   // Very light
+            if (type === 'dynamic') return 0.5;
+            return 1.0;
+        }
 
-function closeGuide() {
-    document.getElementById("guideModal").style.display = "none";
-    document.getElementById("guideBody").innerHTML = ""; 
-}
+        function createEntity(config) {
+            const ent = {
+                name: config.name || 'Object',
+                type: config.type || 'dynamic',
+                size: config.size || {w: 1, h: 1}, 
+                properties: config.properties || [],
+                isInteractable: config.isInteractable || false,
+                body: null, collider: null, graphics: null, selectionOutline: null
+            };
 
-window.onclick = function(event) {
-    const modal = document.getElementById("guideModal");
-    const adminModal = document.getElementById("adminModal");
-    if(event.target == modal) {
-        modal.style.display = "none";
-        document.getElementById("guideBody").innerHTML = ""; 
-    }
-    if(event.target == adminModal) {
-        adminModal.style.display = "none";
-    }
-}
-</script>
+            // 1. Physics Body setup
+            let rbDesc;
+            if (ent.type === 'static') rbDesc = RAPIER.RigidBodyDesc.fixed();
+            else if (ent.type === 'kinematic') rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased();
+            else rbDesc = RAPIER.RigidBodyDesc.dynamic().lockRotations(); // Keep sliding blocks upright
 
-<!-- =========================================
-     SUPABASE AUTH, FORUM & ADMIN LOGIC
-========================================= -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script>
-const SUPABASE_URL = "https://qzubciaxoknwddcfuzuj.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_hsbz2xf7ODsb36VNb-gJ-w__22nrY4r";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const pos = config.pos || {x: 0, y: 0};
+            rbDesc.setTranslation(pos.x, pos.y);
+            ent.body = world.createRigidBody(rbDesc);
 
-let GLOBAL_USER = null; 
-let forumChannel = null; 
-let currentTicketId = null; 
+            const density = getDensityForEntity(ent.type, ent.properties);
+            let collDesc = RAPIER.ColliderDesc.cuboid(ent.size.w/2, ent.size.h/2)
+                .setDensity(density)
+                .setFriction(ent.type === 'player' ? 0.0 : 0.2)
+                .setRestitution(0.0);
 
-const ADMIN_EMAILS = [
-    "ubaydullah1111@gmail.com",
-    "sunjanahkhushi@gmail.com",
-    "bhundooamodini3@gmail.com",
-    "chris59469655@gmail.com",
-    "kingk210209@gmail.com",
-    "k210209.studios@gmail.com"
-].map(e => e.toLowerCase());
+            ent.collider = world.createCollider(collDesc, ent.body);
 
-function isAdmin(email) {
-    return email && ADMIN_EMAILS.includes(email.toLowerCase());
-}
-
-// Master Admin check for the database panel
-function isMasterAdmin(email) {
-    return email && email.toLowerCase() === "kingk210209@gmail.com";
-}
-
-// ---------------------------
-// 1. AUTHENTICATION LOGIC
-// ---------------------------
-async function signUpWithEmail() {
-    const email = document.getElementById('authEmail').value.trim();
-    const password = document.getElementById('authPassword').value;
-    const msg = document.getElementById('authMessage');
-
-    if (!email || !password) {
-        msg.style.color = "#ff2d2d";
-        msg.innerText = "Please enter both email and password.";
-        return;
-    }
-
-    msg.style.color = "white";
-    msg.innerText = "Creating account...";
-
-    const { data, error } = await supabaseClient.auth.signUp({ email, password });
-
-    if (error) {
-        msg.style.color = "#ff2d2d";
-        msg.innerText = "Error: " + error.message;
-    } else {
-        msg.style.color = "#4ade80";
-        // Depending on your Supabase settings, users might need to check their email.
-        msg.innerText = "Success! Please check your email inbox to confirm your account.";
-    }
-}
-
-async function signInWithEmail() {
-    const email = document.getElementById('authEmail').value.trim();
-    const password = document.getElementById('authPassword').value;
-    const msg = document.getElementById('authMessage');
-
-    if (!email || !password) {
-        msg.style.color = "#ff2d2d";
-        msg.innerText = "Please enter both email and password.";
-        return;
-    }
-
-    msg.style.color = "white";
-    msg.innerText = "Signing in...";
-
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-    if (error) {
-        msg.style.color = "#ff2d2d";
-        msg.innerText = "Error: " + error.message;
-    } else {
-        msg.innerText = "";
-    }
-}
-
-async function signInWithGoogle() {
-    const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: window.location.origin + window.location.pathname }
-    });
-    if (error) alert("Sign-in failed: " + error.message);
-}
-
-async function signOut() {
-    await supabaseClient.auth.signOut();
-    updateAuthUI(null);
-    switchView('home'); 
-}
-
-async function signOutAndReload() {
-    await supabaseClient.auth.signOut();
-    window.location.reload();
-}
-
-async function updateAuthUI(user) {
-    GLOBAL_USER = user;
-    
-    if (await checkGlobalBan()) {
-        return; 
-    }
-
-    const loggedOutState = document.getElementById("loggedOutState");
-    const loggedInState = document.getElementById("loggedInState");
-    const menuAccountLink = document.getElementById("menuAccountLink");
-    const forumLoggedOut = document.getElementById("forumLoggedOut");
-    const forumLoggedIn = document.getElementById("forumLoggedIn");
-    const menuAdminLink = document.getElementById("menuAdminLink");
-    
-    const profileLoggedOut = document.getElementById("profileLoggedOut");
-    const profileLoggedIn = document.getElementById("profileLoggedIn");
-    const profileNameInput = document.getElementById("profileNameInput");
-
-    const gamesLoggedOut = document.getElementById("gamesLoggedOut");
-    const gamesLoggedIn = document.getElementById("gamesLoggedIn");
-
-    if (user) {
-        const meta = user.user_metadata || {};
-        
-        loggedOutState.style.display = "none";
-        loggedInState.style.display = "block";
-        document.getElementById("userAvatar").src = meta.avatar_url || "https://www.gravatar.com/avatar/?d=mp";
-        document.getElementById("userName").textContent = meta.full_name || meta.name || "Player";
-        document.getElementById("userEmail").textContent = user.email || "";
-        menuAccountLink.textContent = "My Account";
-        
-        profileLoggedOut.style.display = "none";
-        profileLoggedIn.style.display = "block";
-        profileNameInput.value = meta.full_name || meta.name || "";
-        
-        forumLoggedOut.style.display = "none";
-        forumLoggedIn.style.display = "flex";
-
-        if(gamesLoggedOut) gamesLoggedOut.style.display = "none";
-        if(gamesLoggedIn) gamesLoggedIn.style.display = "block";
-        
-        // ADMIN SPECIFIC LOGIC
-        if (isAdmin(user.email)) {
-            // General Admins get customer care UI
-            document.getElementById("adminTicketUI").style.display = "flex";
-            currentTicketId = null; 
-            refreshAdminTickets();
+            // 2. PixiJS Graphics setup
+            ent.graphics = new PIXI.Graphics();
+            ent.graphics.pivot.set(0, 0); // Center pivot managed manually via drawing
             
-            // ONLY Master Admin gets the Admin Panel menu link
-            if (isMasterAdmin(user.email)) {
-                menuAdminLink.style.display = "block"; 
+            if (ent.type !== 'static') ent.graphics.filters = [dropShadow];
+            mainContainer.addChild(ent.graphics);
+
+            // Selection Glow Outline
+            ent.selectionOutline = new PIXI.Graphics();
+            ent.selectionOutline.lineStyle(4, 0x60a5fa, 1);
+            ent.selectionOutline.drawRoundedRect(-ent.size.w*METER/2 - 4, -ent.size.h*METER/2 - 4, ent.size.w*METER + 8, ent.size.h*METER + 8, 8);
+            ent.selectionOutline.alpha = 0;
+            const glow = new GlowFilter({ distance: 15, outerStrength: 2, color: 0x60a5fa });
+            ent.selectionOutline.filters = [glow];
+            ent.graphics.addChild(ent.selectionOutline);
+
+            // Pointer Interaction
+            if (ent.isInteractable) {
+                ent.graphics.eventMode = 'static';
+                ent.graphics.cursor = 'pointer';
+                ent.graphics.on('pointerdown', (e) => {
+                    e.stopPropagation();
+                    if(GameState.active) selectEntity(ent);
+                });
+            }
+
+            GameState.entities.push(ent);
+            drawEntity(ent, config.color);
+            if(ent.type === 'dynamic') applyProperties(ent);
+
+            return ent;
+        }
+
+        function drawEntity(ent, baseColor) {
+            ent.graphics.clear();
+            const w = ent.size.w * METER;
+            const h = ent.size.h * METER;
+            let color = baseColor;
+            
+            // Override colors based on properties
+            if (ent.properties.includes('WEIGHT')) color = COLORS.HEAVY;
+            else if (ent.properties.includes('LIGHT') && ent.type !== 'player') color = COLORS.LIGHT;
+
+            ent.graphics.beginFill(color);
+            
+            if (ent.type === 'player') {
+                ent.graphics.drawRoundedRect(-w/2, -h/2, w, h, 12);
+                // Player visor
+                ent.graphics.beginFill(0x93c5fd);
+                ent.graphics.drawRoundedRect(w/4, -h/4, w/3, h/6, 4);
             } else {
-                menuAdminLink.style.display = "none";
-                if (document.getElementById("view-admin").style.display === "block") {
-                    switchView('home');
+                ent.graphics.drawRoundedRect(-w/2, -h/2, w, h, 6);
+            }
+            ent.graphics.endFill();
+
+            // Inner border for polish
+            ent.graphics.lineStyle(2, 0xffffff, 0.1);
+            ent.graphics.drawRoundedRect(-w/2 + 2, -h/2 + 2, w - 4, h - 4, 4);
+        }
+
+        function applyProperties(entity) {
+            if (!entity.body || !entity.graphics) return;
+            
+            const density = getDensityForEntity(entity.type, entity.properties);
+            entity.collider.setDensity(density); // Instantly updates physics mass seamlessly
+            entity.body.wakeUp();
+
+            drawEntity(entity, COLORS.HEAVY); // redraws with correct color mapping
+            
+            // GSAP Impact pop
+            gsap.fromTo(entity.graphics.scale, 
+                { x: 1.2, y: 1.2 }, 
+                { x: 1, y: 1, duration: 0.4, ease: "back.out(1.5)" }
+            );
+
+            updateUIPanel();
+        }
+
+        function createLightningVFX(startPos, endPos, colorHex) {
+            const line = new PIXI.Graphics();
+            vfxContainer.addChild(line);
+            
+            const segments = 8;
+            line.lineStyle(4, colorHex, 1);
+            line.moveTo(startPos.x, startPos.y);
+
+            for (let i = 1; i <= segments; i++) {
+                const t = i / segments;
+                const x = startPos.x + (endPos.x - startPos.x) * t;
+                const y = startPos.y + (endPos.y - startPos.y) * t;
+                
+                let offsetX = 0, offsetY = 0;
+                if (i < segments) {
+                    offsetX = (Math.random() - 0.5) * 40;
+                    offsetY = (Math.random() - 0.5) * 40;
                 }
+                line.lineTo(x + offsetX, y + offsetY);
             }
-        } else {
-            menuAdminLink.style.display = "none";
-            document.getElementById("adminTicketUI").style.display = "none";
-            currentTicketId = user.id; 
+
+            line.filters = [new GlowFilter({ distance: 20, outerStrength: 3, color: colorHex })];
+
+            gsap.to(line, {
+                alpha: 0, duration: 0.3, ease: "power2.out",
+                onComplete: () => vfxContainer.removeChild(line)
+            });
+
+            // Screen flash
+            const flash = new PIXI.Graphics();
+            flash.beginFill(colorHex, 0.15);
+            flash.drawRect(0, 0, app.screen.width, app.screen.height);
+            flash.endFill();
+            app.stage.addChild(flash);
+            gsap.to(flash, { alpha: 0, duration: 0.4, onComplete: () => app.stage.removeChild(flash) });
+        }
+
+        // Environment boundaries
+        createEntity({ name: 'Floor', type: 'static', size: {w: 40, h: 2}, pos: {x: 10, y: -1}, color: COLORS.PLATFORM });
+        createEntity({ name: 'LeftWall', type: 'static', size: {w: 2, h: 20}, pos: {x: -10, y: 10}, color: COLORS.PLATFORM });
+        
+        // Raised Platform for the puzzle
+        createEntity({ name: 'Platform', type: 'static', size: {w: 8, h: 1}, pos: {x: 0, y: 2.5}, color: COLORS.PLATFORM });
+
+        // Player
+        GameState.player = createEntity({
+            name: 'Borrower', type: 'player', size: {w: 1.0, h: 1.6}, pos: {x: -6, y: 1}, color: COLORS.PLAYER
+        });
+        GameState.player.graphics.filters = [dropShadow, new GlowFilter({ distance: 10, outerStrength: 1, color: COLORS.PLAYER })];
+
+        // Heavy Crate (Placed high on platform)
+        createEntity({
+            name: 'Heavy Crate', type: 'dynamic', size: {w: 1.5, h: 1.5}, pos: {x: 0, y: 4}, 
+            isInteractable: true, properties: ['WEIGHT']
+        });
+
+        // Empty Box (Placed on ground, has Light/Jump)
+        createEntity({
+            name: 'Empty Box', type: 'dynamic', size: {w: 1.5, h: 1.5}, pos: {x: 6, y: 1}, 
+            isInteractable: true, properties: ['LIGHT']
+        });
+
+        // Interactive Elements
+        GameState.plate = createEntity({
+            name: 'Pressure Plate', type: 'static', size: {w: 2.2, h: 0.3}, pos: {x: 10, y: 0.15}, color: COLORS.PLATE_OFF
+        });
+
+        GameState.door = createEntity({
+            name: 'Security Door', type: 'kinematic', size: {w: 1.2, h: 6}, pos: {x: 14, y: 3}, color: COLORS.DOOR
+        });
+
+        // Exit Zone Visuals
+        const exitGeo = new PIXI.Graphics();
+        exitGeo.beginFill(0x22c55e, 0.2);
+        exitGeo.drawRect(-1.5*METER, -1.5*METER, 3*METER, 3*METER);
+        exitGeo.endFill();
+        exitGeo.position.set(20 * METER, -1.5 * METER);
+        exitGeo.filters = [new GlowFilter({ distance: 30, outerStrength: 2, color: 0x22c55e })];
+        backgroundContainer.addChild(exitGeo);
+
+        let joyCenter = {x: 0, y: 0};
+        let isJoyDragging = false;
+        let joyPointerId = null;
+
+        function handleJoyDown(e) {
+            e.preventDefault(); e.stopPropagation();
+            joyPointerId = e.pointerId;
+            const rect = UI.joystickZone.getBoundingClientRect();
+            joyCenter = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
+            isJoyDragging = true;
+            processJoyMove(e);
+        }
+
+        function handleJoyMove(e) {
+            if (!isJoyDragging || e.pointerId !== joyPointerId) return;
+            e.preventDefault();
+            processJoyMove(e);
+        }
+
+        function handleJoyUp(e) {
+            if (!isJoyDragging || e.pointerId !== joyPointerId) return;
+            e.preventDefault();
+            isJoyDragging = false;
+            joyPointerId = null;
+            gsap.to(UI.joystickKnob, { x: 0, y: 0, duration: 0.2, ease: "back.out(2)" });
+            GameState.input.moveX = 0;
+        }
+
+        function processJoyMove(e) {
+            const dx = e.clientX - joyCenter.x;
+            const dy = e.clientY - joyCenter.y;
+            const maxRadius = 40;
+            const distance = Math.min(Math.sqrt(dx*dx + dy*dy), maxRadius);
+            const angle = Math.atan2(dy, dx);
+            const knobX = distance * Math.cos(angle);
+            const knobY = distance * Math.sin(angle);
             
-            if (document.getElementById("view-admin").style.display === "block") {
-                switchView('home');
+            // GSAP for immediate knob position
+            gsap.set(UI.joystickKnob, { x: knobX, y: knobY });
+            
+            let rawMove = knobX / maxRadius;
+            GameState.input.moveX = Math.abs(rawMove) < 0.1 ? 0 : rawMove;
+        }
+
+        UI.joystickZone = document.getElementById('joystick-container');
+        UI.joystickKnob = document.getElementById('joystick-knob');
+        UI.joystickZone.addEventListener('pointerdown', handleJoyDown);
+        window.addEventListener('pointermove', handleJoyMove);
+        window.addEventListener('pointerup', handleJoyUp);
+        window.addEventListener('pointercancel', handleJoyUp);
+
+        // Jump Button Logic
+        UI.btnJump.addEventListener('pointerdown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            GameState.input.jump = true;
+            gsap.to(UI.btnJump, { scale: 0.9, duration: 0.1 });
+        });
+        UI.btnJump.addEventListener('pointerup', (e) => {
+            gsap.to(UI.btnJump, { scale: 1, duration: 0.1 });
+        });
+
+        // Background deselect
+        app.stage.eventMode = 'static';
+        app.stage.on('pointerdown', () => { if(GameState.active) selectEntity(null); });
+
+        function selectEntity(entity) {
+            GameState.selectedEntity = entity;
+            GameState.entities.forEach(ent => { 
+                if(ent.selectionOutline) gsap.to(ent.selectionOutline, { alpha: 0, duration: 0.2 }); 
+            });
+            
+            if (entity && entity.selectionOutline) {
+                gsap.to(entity.selectionOutline, { alpha: 1, duration: 0.2 });
+            }
+            updateUIPanel();
+        }
+
+        function updateUIPanel() {
+            const ent = GameState.selectedEntity;
+            if (!ent) {
+                gsap.to(UI.selectionPanel, { autoAlpha: 0, scale: 0.9, duration: 0.2, ease: "power2.in" });
+                UI.btnBorrow.classList.add('hidden');
+                UI.btnGive.classList.add('hidden');
+                return;
+            }
+
+            UI.selectionName.innerText = ent.name;
+            const hasProps = ent.properties.length > 0;
+            UI.selectionProps.innerText = hasProps ? ent.properties[0] : 'None';
+            
+            if(hasProps && ent.properties[0] === 'WEIGHT') UI.selectionProps.className = 'text-yellow-400 font-bold bg-yellow-900/40 px-3 py-1 rounded-full border border-yellow-700/50';
+            else if(hasProps && ent.properties[0] === 'LIGHT') UI.selectionProps.className = 'text-blue-300 font-bold bg-blue-900/40 px-3 py-1 rounded-full border border-blue-700/50';
+            else UI.selectionProps.className = 'text-slate-400 font-bold bg-slate-800 px-3 py-1 rounded-full border border-slate-700';
+
+            gsap.to(UI.selectionPanel, { autoAlpha: 1, scale: 1, duration: 0.3, ease: "back.out(1.5)" });
+
+            // Max 1 property logic
+            if (!GameState.heldProperty && hasProps) {
+                UI.btnBorrow.classList.remove('hidden');
+                UI.btnGive.classList.add('hidden');
+            } else if (GameState.heldProperty && !hasProps && ent.isInteractable) {
+                UI.btnBorrow.classList.add('hidden');
+                UI.btnGive.classList.remove('hidden');
+            } else {
+                UI.btnBorrow.classList.add('hidden');
+                UI.btnGive.classList.add('hidden');
             }
         }
-        
-        await checkMuteStatus();
-        loadForumMessages();
-        subscribeToForum();
-        
-    } else {
-        loggedOutState.style.display = "block";
-        loggedInState.style.display = "none";
-        menuAccountLink.textContent = "Sign In / Register";
-        menuAdminLink.style.display = "none";
-        
-        profileLoggedOut.style.display = "block";
-        profileLoggedIn.style.display = "none";
-        
-        forumLoggedOut.style.display = "block";
-        forumLoggedIn.style.display = "none";
 
-        if(gamesLoggedOut) gamesLoggedOut.style.display = "block";
-        if(gamesLoggedIn) gamesLoggedIn.style.display = "none";
-        
-        if (document.getElementById("view-admin").style.display === "block") {
-            switchView('home');
-        }
-        
-        if(forumChannel) supabaseClient.removeChannel(forumChannel);
-    }
-}
-
-// ---------------------------
-// 1.5 ADMIN USER LIST LOGIC (REWORKED UI)
-// ---------------------------
-async function loadAdminUserList() {
-    const adminListContainer = document.getElementById("adminUserList");
-    adminListContainer.innerHTML = "<div style='text-align:center; padding: 50px;'><span style='color:#ff2d2d; font-size: 2rem;'>⟳</span><br><br><span style='color:#a3a3a3; font-size:1.1rem;'>Decrypting player database...</span></div>";
-
-    const { data, error } = await supabaseClient.rpc('get_all_user_emails');
-    
-    if (error) {
-        adminListContainer.innerHTML = `<div style='color:#ff2d2d; padding: 30px; border: 1px solid rgba(255,45,45,0.3); background: rgba(255,45,45,0.05); border-radius: 4px;'><b>System Error:</b> ${error.message}</div>`;
-        return;
-    }
-
-    if (!data || data.length === 0) {
-        adminListContainer.innerHTML = "<div style='padding: 30px; color: #a3a3a3; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;'>No registered users found in the ecosystem.</div>";
-        return;
-    }
-
-    // New Card-Based Grid Layout
-    let html = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-top: 20px; padding-bottom: 30px;">`;
-    
-    data.forEach(u => {
-        const isUserAdmin = isAdmin(u.email);
-        const badgeColor = isUserAdmin ? "#ff2d2d" : "#4ade80";
-        const badgeText = isUserAdmin ? "Staff" : "Player";
-        const badgeBg = isUserAdmin ? "rgba(255, 45, 45, 0.1)" : "rgba(74, 222, 128, 0.1)";
-
-        // Safely escape the name for the HTML inline function call
-        const safeNameForJS = escapeHTML(u.name || 'Anonymous').replace(/'/g, "\\'");
-
-        html += `
-        <div style="background: rgba(20,20,20,0.8); border: 1px solid rgba(255,255,255,0.05); border-left: 3px solid ${badgeColor}; border-radius: 4px; padding: 25px; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.4);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                <h4 style="color: white; font-size: 1.3rem; margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%;">
-                    ${escapeHTML(u.name || 'Anonymous')}
-                </h4>
-                <span style="font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; background: ${badgeBg}; color: ${badgeColor}; padding: 6px 12px; border-radius: 2px;">
-                    ${badgeText}
-                </span>
-            </div>
+        UI.btnBorrow.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const ent = GameState.selectedEntity;
+            if(!ent || GameState.heldProperty || ent.properties.length === 0) return;
             
-            <p style="color: #a3a3a3; font-size: 1rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; word-break: break-all;">
-                <span style="opacity: 0.6;">✉️</span> ${escapeHTML(u.email)}
-            </p>
+            const prop = ent.properties.shift();
+            GameState.heldProperty = prop;
+            applyProperties(ent);
             
-            <div style="background: rgba(0,0,0,0.5); padding: 12px 15px; border-radius: 4px; font-size: 0.85rem; color: #888; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center;">
-                <span>ID:</span>
-                <span>${u.id}</span>
-            </div>
-
-            <!-- NEW: Moderate button added to card so you can Unban from the database list directly -->
-            <button onclick="openAdminModal('${u.id}', '${safeNameForJS}')" style="margin-top: 20px; width: 100%; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #d4d4d4; border-radius: 2px; cursor: pointer; transition: 0.3s; font-size:1.05rem;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">Moderate Player</button>
-        </div>`;
-    });
-    
-    html += `</div>`;
-    
-    adminListContainer.innerHTML = html;
-}
-
-// ---------------------------
-// 2. ADMIN MODERATION LOGIC
-// ---------------------------
-let targetModerateUserId = null;
-
-async function checkGlobalBan() {
-    if (!GLOBAL_USER) return false;
-    const { data } = await supabaseClient.from('user_restrictions').select('*').eq('user_id', GLOBAL_USER.id).eq('restriction_type', 'ban');
-        
-    if (data && data.length > 0) {
-        document.body.innerHTML = `
-            <div style="display:flex; height:100vh; width:100%; align-items:center; justify-content:center; background:#050505; color:#ff2d2d; flex-direction:column; text-align:center; padding:30px;">
-                <h1 style="font-size:3.5rem; margin-bottom:20px;">ACCOUNT BANNED</h1>
-                <p style="color:#a3a3a3; font-size:1.2rem; margin-bottom:40px; max-width:650px; line-height:1.8;">Your account (${GLOBAL_USER.email}) has been permanently banned from K210209♤ Studios for violating community guidelines.</p>
-                <button style="padding:18px 40px; background:#111; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:4px; cursor:pointer; font-size:1.1rem; transition:0.3s;" onmouseover="this.style.background='#222'" onmouseout="this.style.background='#111'" onclick="signOutAndReload()">Sign Out</button>
-            </div>
-        `;
-        return true;
-    }
-    return false;
-}
-
-async function checkMuteStatus() {
-    if (!GLOBAL_USER) return false;
-    const { data } = await supabaseClient.from('user_restrictions').select('*').eq('user_id', GLOBAL_USER.id).eq('restriction_type', 'mute').gt('expires_at', new Date().toISOString());
-        
-    const input = document.getElementById("chatInput");
-    const btn = document.getElementById("sendChatBtn");
-    
-    if (data && data.length > 0) {
-        input.disabled = true;
-        input.placeholder = "You are currently muted from customer care.";
-        btn.disabled = true;
-        btn.style.opacity = "0.4";
-        return true;
-    } else {
-        input.disabled = false;
-        input.placeholder = "Type your message to the dev team here...";
-        btn.disabled = false;
-        btn.style.opacity = "1";
-        return false;
-    }
-}
-
-function openAdminModal(userId, userName) {
-    targetModerateUserId = userId;
-    document.getElementById("moderateUserName").innerText = "Target: " + userName;
-    document.getElementById("adminModal").style.display = "block";
-}
-
-function closeAdminModal() {
-    document.getElementById("adminModal").style.display = "none";
-    targetModerateUserId = null;
-}
-
-async function applyMute() {
-    if(!targetModerateUserId) return;
-    const hours = parseInt(document.getElementById("muteDuration").value);
-    const expires = new Date();
-    expires.setHours(expires.getHours() + hours);
-
-    const {error} = await supabaseClient.from('user_restrictions').insert([{
-        user_id: targetModerateUserId,
-        restriction_type: 'mute',
-        expires_at: expires.toISOString()
-    }]);
-    
-    if(error) alert("Error applying mute: " + error.message);
-    else { 
-        alert("Player has been successfully muted."); 
-        closeAdminModal(); 
-    }
-}
-
-async function applyBan() {
-    if(!targetModerateUserId) return;
-    if(!confirm("WARNING: This will permanently ban the player from accessing the K210209 website and ecosystem. Proceed?")) return;
-    
-    const {error} = await supabaseClient.from('user_restrictions').insert([{
-        user_id: targetModerateUserId,
-        restriction_type: 'ban',
-        expires_at: null
-    }]);
-    
-    if(error) alert("Error applying ban: " + error.message);
-    else { 
-        alert("Player permanently banned."); 
-        closeAdminModal(); 
-    }
-}
-
-// NEW: Allows you to UNBAN a player or remove a mute
-async function removeRestrictions() {
-    if(!targetModerateUserId) return;
-    if(!confirm("Are you sure you want to lift all bans and mutes for this player?")) return;
-
-    // Delete all restriction records matching the user_id
-    const {error} = await supabaseClient.from('user_restrictions').delete().eq('user_id', targetModerateUserId);
-    
-    if(error) alert("Error removing restrictions: " + error.message);
-    else { 
-        alert("Success! Player restrictions lifted. The player is unbanned and unmuted."); 
-        closeAdminModal(); 
-    }
-}
-
-async function deleteMessage(msgId) {
-    if(!confirm("Are you sure you want to delete this message?")) return;
-    const {error} = await supabaseClient.from('forum_messages').delete().eq('id', msgId);
-    if(error) alert("Error deleting message: " + error.message);
-}
-
-
-// ---------------------------
-// 3. PROFILE LOGIC
-// ---------------------------
-async function saveProfile() {
-    const newName = document.getElementById("profileNameInput").value.trim();
-    if(!newName) {
-        alert("Please enter a display name.");
-        return;
-    }
-    
-    const { data, error } = await supabaseClient.auth.updateUser({
-        data: { full_name: newName, name: newName }
-    });
-    
-    if(error) {
-        alert("Error updating profile: " + error.message);
-    } else {
-        const statusBox = document.getElementById("profileStatus");
-        statusBox.style.display = "block";
-        setTimeout(() => { statusBox.style.display = "none"; }, 3000);
-        updateAuthUI(data.user); 
-    }
-}
-
-// ---------------------------
-// 4. CUSTOMER CARE / CHAT LOGIC
-// ---------------------------
-
-async function refreshAdminTickets() {
-    const { data, error } = await supabaseClient
-        .from('forum_messages')
-        .select('user_id, customer_id, user_name')
-        .order('created_at', { ascending: false })
-        .limit(300);
-        
-    if (error) {
-        console.error("Failed to load tickets", error);
-        return;
-    }
-    
-    const select = document.getElementById("adminTicketSelect");
-    select.innerHTML = '<option value="">-- Select a Player to Support --</option>';
-    
-    const uniqueUsers = {};
-    data.forEach(msg => {
-        if (msg.user_id === msg.customer_id && !uniqueUsers[msg.customer_id]) {
-            uniqueUsers[msg.customer_id] = msg.user_name;
-            const opt = document.createElement("option");
-            opt.value = msg.customer_id;
-            opt.textContent = msg.user_name;
+            createLightningVFX(ent.graphics.position, GameState.player.graphics.position, prop === 'WEIGHT' ? 0xeab308 : 0x93c5fd);
             
-            if (currentTicketId === msg.customer_id) opt.selected = true;
-            select.appendChild(opt);
-        }
-    });
-}
+            if (prop === 'WEIGHT') {
+                UI.heldText.innerHTML = 'WEIGHT<br><span class="text-xs text-red-400 block mt-1">(Slowed)</span>';
+                UI.heldText.className = 'text-yellow-400 font-black text-lg text-center';
+                UI.propertyPanel.classList.add('border-yellow-500');
+            } else if (prop === 'LIGHT') {
+                UI.heldText.innerHTML = 'LIGHT<br><span class="text-xs text-blue-200 block mt-1">(Jump Active)</span>';
+                UI.heldText.className = 'text-blue-300 font-black text-lg text-center';
+                UI.propertyPanel.classList.add('border-blue-500');
+                UI.btnJump.classList.remove('hidden');
+                UI.btnJump.style.display = 'flex';
+                gsap.fromTo(UI.btnJump, {scale: 0, autoAlpha: 0}, {scale: 1, autoAlpha: 1, duration: 0.4, ease: "back.out(1.5)"});
+            }
+            
+            updateUIPanel();
+        });
 
-function switchAdminTicket() {
-    currentTicketId = document.getElementById("adminTicketSelect").value;
-    loadForumMessages();
-}
+        UI.btnGive.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const ent = GameState.selectedEntity;
+            const prop = GameState.heldProperty;
+            if(!ent || !prop || !ent.isInteractable || ent.properties.length > 0) return;
+            
+            createLightningVFX(GameState.player.graphics.position, ent.graphics.position, prop === 'WEIGHT' ? 0xeab308 : 0x93c5fd);
 
-async function loadForumMessages() {
-    const chatBox = document.getElementById("chatBox");
-    
-    if (!currentTicketId) {
-        chatBox.innerHTML = `<div style="text-align:center; color:#666; margin-top:30px;">No ticket selected. Select a player above.</div>`;
-        return;
-    }
-    
-    chatBox.innerHTML = ""; 
+            ent.properties.push(prop);
+            GameState.heldProperty = null;
+            applyProperties(ent);
+            
+            UI.heldText.innerHTML = '- None -';
+            UI.heldText.className = 'text-white font-black text-lg text-center';
+            UI.propertyPanel.classList.remove('border-yellow-500', 'border-blue-500');
+            
+            if(prop === 'LIGHT') {
+                gsap.to(UI.btnJump, {scale: 0, autoAlpha: 0, duration: 0.2, onComplete: () => {
+                    UI.btnJump.classList.add('hidden');
+                    UI.btnJump.style.display = '';
+                }});
+            }
+            
+            updateUIPanel();
+        });
 
-    const { data, error } = await supabaseClient
-        .from('forum_messages')
-        .select('*')
-        .eq('customer_id', currentTicketId) 
-        .order('created_at', { ascending: true })
-        .limit(50); 
+        app.ticker.add((delta) => {
+            if(!GameState.active && GameState.player) {
+                // Intro / Outro Camera tracking
+                syncGraphics();
+                updateCamera();
+                return;
+            }
 
-    if (error) {
-        chatBox.innerHTML = `<div style="text-align:center; color:#ff2d2d;">Error loading chat: ${error.message}</div>`;
-        return;
-    }
+            world.step();
 
-    if(data.length === 0) {
-        chatBox.innerHTML = `<div style="text-align:center; color:#666; margin-top:30px;">No messages yet. Send a message to open this ticket!</div>`;
-    } else {
-        data.forEach(msg => appendMessageToUI(msg));
-        scrollToBottom();
-    }
-}
+            if (GameState.player && GameState.player.body) {
+                const vel = GameState.player.body.linvel();
+                const playerPos = GameState.player.body.translation();
+                
+                // Weight Mechanics
+                const isHeavy = GameState.heldProperty === 'WEIGHT';
+                const speedMult = isHeavy ? 0.3 : 1.0; 
+                const targetSpeed = GameState.input.moveX * 8.0 * speedMult;
+                
+                // Ground detection (Raycast down)
+                const rayOrigin = { x: playerPos.x, y: playerPos.y - (GameState.player.size.h / 2) + 0.1 };
+                const ray = new RAPIER.Ray(rayOrigin, { x: 0.0, y: -1.0 });
+                const hit = world.castRay(ray, 0.2, true, 0xFFFFFFFF, undefined, undefined, GameState.player.collider);
+                const isGrounded = hit !== null;
 
-async function sendForumMessage() {
-    const input = document.getElementById("chatInput");
-    let content = input.value.trim();
-    if (!content || !GLOBAL_USER) return;
-    
-    if (!currentTicketId) {
-        alert("Admin Warning: Please select a player ticket before sending a message.");
-        return;
-    }
-    
-    input.value = ""; 
-    
-    const meta = GLOBAL_USER.user_metadata || {};
-    const userNameRaw = meta.full_name || meta.name || "Anonymous Player";
-    const userName = isAdmin(GLOBAL_USER.email) ? "[DEV] " + userNameRaw : userNameRaw;
-    
-    let isFlagged = false;
-    const originalMessage = content;
+                // Jump Mechanics (Requires LIGHT)
+                let newVelY = vel.y;
+                if (GameState.input.jump && isGrounded && GameState.heldProperty === 'LIGHT') {
+                    newVelY = 16.0; 
+                    GameState.input.jump = false; 
+                }
 
-    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.(com|net|org|io|gov|co|dev|app|me|uk|us|info)(?:\/[^\s]*)?)/gi;
-    if (urlRegex.test(content)) {
-        content = content.replace(urlRegex, "[LINK BLOCKED]");
-        isFlagged = true;
-    }
+                GameState.player.body.setLinvel({ x: targetSpeed, y: newVelY }, true);
+                GameState.player.body.wakeUp();
+            }
 
-    const phoneRegex = /(?:\+?\d[\s\-\.\(\)\[\]_]*){7,}/g;
-    if (phoneRegex.test(content)) {
-        content = content.replace(phoneRegex, "[PHONE BLOCKED]");
-        isFlagged = true;
-    }
+            syncGraphics();
+            updateLogic();
+            updateCamera();
+        });
 
-    const badWords = ["fuck", "shit", "bitch", "ass", "asshole", "nigger", "nigga", "faggot", "slut", "whore", "cunt", "retard", "dick", "pussy", "bastard"]; 
-    const badWordsPattern = new RegExp(`\\b(${badWords.join('|')})\\b`, 'gi');
-    if (badWordsPattern.test(content)) {
-        content = content.replace(badWordsPattern, "[CENSORED]");
-        isFlagged = true;
-    }
-
-    const { error } = await supabaseClient
-        .from('forum_messages')
-        .insert([{
-            user_id: GLOBAL_USER.id,
-            customer_id: currentTicketId,
-            user_name: userName, 
-            avatar_url: meta.avatar_url || "https://www.gravatar.com/avatar/?d=mp",
-            content: content
-        }]);
-
-    if (error) {
-        alert("Failed to send message: " + error.message);
-    } else if (isFlagged && !isAdmin(GLOBAL_USER.email)) {
-        sendAutoModEmail(userName, GLOBAL_USER.email, originalMessage, content);
-    }
-}
-
-function sendAutoModEmail(playerName, playerEmail, originalText, censoredText) {
-    if (typeof emailjs !== 'undefined') {
-        emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
-            admin_email: "k210209.studios@gmail.com", 
-            player_name: playerName,
-            player_email: playerEmail,
-            original_message: originalText,
-            censored_message: censoredText,
-            reply_to: playerEmail || "k210209.studios@gmail.com" 
-        }).catch(err => console.error("AutoMod Email failed to send:", err));
-    }
-}
-
-function handleEnter(e) {
-    if (e.key === 'Enter') {
-        sendForumMessage();
-    }
-}
-
-function subscribeToForum() {
-    if(forumChannel) supabaseClient.removeChannel(forumChannel);
-    
-    forumChannel = supabaseClient.channel('custom-all-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'forum_messages' }, (payload) => {
-            if (payload.eventType === 'INSERT') {
-                if (payload.new.customer_id === currentTicketId) {
-                    const chatBox = document.getElementById("chatBox");
-                    if(chatBox.innerHTML.includes("No messages yet")) {
-                        chatBox.innerHTML = "";
+        function syncGraphics() {
+            for (let ent of GameState.entities) {
+                if (ent.body && ent.graphics) {
+                    const t = ent.body.translation();
+                    const r = ent.body.rotation();
+                    // Rapier Y is UP, Pixi Y is DOWN. 
+                    ent.graphics.position.set(t.x * METER, -t.y * METER);
+                    ent.graphics.rotation = -r;
+                    
+                    if (ent.selectionOutline && ent.selectionOutline.alpha > 0) {
+                        ent.selectionOutline.rotation += 0.02; // Slow pulse spin
                     }
-                    appendMessageToUI(payload.new);
-                    scrollToBottom();
                 }
-            } else if (payload.eventType === 'DELETE') {
-                const deletedElement = document.getElementById('msg-' + payload.old.id);
-                if(deletedElement) deletedElement.remove();
             }
-        })
-        .subscribe();
-}
+        }
 
-function appendMessageToUI(msg) {
-    const chatBox = document.getElementById("chatBox");
-    const isOwn = GLOBAL_USER && msg.user_id === GLOBAL_USER.id;
-    const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    
-    let adminControls = '';
-    if (GLOBAL_USER && isAdmin(GLOBAL_USER.email)) {
-        adminControls = `
-            <div style="margin-top: 8px; font-size: 0.85rem; display: flex; gap: 15px;">
-                <span style="color: #ff5555; cursor: pointer; text-decoration:underline;" onclick="deleteMessage('${msg.id}')">Delete Message</span>
-                ${msg.user_id !== GLOBAL_USER.id ? `<span style="color: #f59e0b; cursor: pointer; text-decoration:underline;" onclick="openAdminModal('${msg.user_id}', '${escapeHTML(msg.user_name)}')">Moderate Player</span>` : ''}
-            </div>
-        `;
-    }
-    
-    const bubble = document.createElement('div');
-    bubble.className = `message-bubble ${isOwn ? 'own-message' : ''}`;
-    bubble.id = `msg-${msg.id}`; 
-    
-    bubble.innerHTML = `
-        <img src="${msg.avatar_url}" alt="avatar" class="message-avatar" onerror="this.src='https://www.gravatar.com/avatar/?d=mp'" />
-        <div class="message-content-wrapper">
-            <div class="message-header">
-                <span class="message-author">${escapeHTML(msg.user_name)}</span>
-                <span class="message-time">${time}</span>
-            </div>
-            <div class="message-text">${escapeHTML(msg.content)}</div>
-            ${adminControls}
-        </div>
-    `;
-    
-    chatBox.appendChild(bubble);
-}
+        function updateLogic() {
+            // Pressure Plate Logic
+            let isPlatePressed = false;
+            const platePos = GameState.plate.body.translation();
 
-function escapeHTML(str) {
-    return str.replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-    }[tag] || tag));
-}
+            for(let ent of GameState.entities) {
+                if(ent.type === 'dynamic' && ent.properties.includes('WEIGHT')) {
+                    const pPos = ent.body.translation();
+                    const distX = Math.abs(pPos.x - platePos.x);
+                    const distY = Math.abs(pPos.y - platePos.y);
+                    if(distX < (GameState.plate.size.w/2 + ent.size.w/2) && distY < 1.5) {
+                        isPlatePressed = true; break;
+                    }
+                }
+            }
 
-function scrollToBottom() {
-    const chatBox = document.getElementById("chatBox");
-    setTimeout(() => {
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }, 50);
-}
+            if (isPlatePressed) {
+                GameState.plate.graphics.tint = COLORS.PLATE_ON;
+                GameState.plate.graphics.y = -0.05 * METER; // Visual press
+            } else {
+                GameState.plate.graphics.tint = 0xFFFFFF; // Original
+                GameState.plate.graphics.y = -0.15 * METER;
+            }
 
-// ---------------------------
-// 5. INITIALIZATION
-// ---------------------------
-(async () => {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    updateAuthUI(session ? session.user : null);
-})();
+            // Door Kinematics
+            const doorT = GameState.door.body.translation();
+            const targetY = isPlatePressed ? 9 : 3; 
+            const newY = doorT.y + (targetY - doorT.y) * 0.1;
+            GameState.door.body.setNextKinematicTranslation({ x: doorT.x, y: newY });
 
-supabaseClient.auth.onAuthStateChange((event, session) => {
-    updateAuthUI(session ? session.user : null);
-    if (window.location.hash.includes("access_token")) {
-        window.history.replaceState(null, "", window.location.pathname);
-        switchView('account');
-    }
-});
-</script>
+            // Win Condition
+            if (GameState.player && GameState.player.body.translation().x > 18.5) {
+                GameState.active = false;
+                triggerWinSequence();
+            }
+        }
 
-<!-- Web Games Overlay with small X button -->
-<style>
-#game-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #030303;
-    z-index: 10000;
-}
-#game-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
-#game-close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    color: white;
-    font-size: 2.5rem;
-    cursor: pointer;
-    background: transparent;
-    padding: 0;
-    border: none;
-    line-height: 1;
-    user-select: none;
-    transition: 0.3s;
-    z-index: 10001;
-}
-#game-close-btn:hover {
-    color: #ff2d2d;
-    transform: scale(1.1);
-}
-</style>
-<div id="game-overlay">
-    <div id="game-close-btn" onclick="closeGameOverlay()">&times;</div>
-    <iframe id="game-iframe" src=""></iframe>
-</div>
-<script>
-// --- AUDIO PLAYER LOGIC ---
-const audioPlayer = document.getElementById('main-audio-player');
-const audioToggleBtn = document.getElementById('audio-toggle-btn');
+        function updateCamera() {
+            const px = GameState.player.graphics.x;
+            const py = GameState.player.graphics.y;
+            
+            // Base camera tracking
+            const targetX = app.screen.width / 2 - px - ((GameState.camera.xOffset || 0) * METER);
+            let targetY = app.screen.height / 2 + 100 - py - ((GameState.camera.yOffset || 0) * METER); 
+            
+            // Smooth LERP
+            worldContainer.x += (targetX - worldContainer.x) * 0.1;
+            worldContainer.y += (targetY - worldContainer.y) * 0.1;
+            
+            worldContainer.scale.set(GameState.camera.zoom);
+        }
 
-function toggleMainAudio() {
-    if (audioPlayer.paused) {
-        audioPlayer.play();
-        audioToggleBtn.textContent = "Stop";
-        audioToggleBtn.classList.remove('btn-secondary');
-        audioToggleBtn.classList.add('btn-primary');
-    } else {
-        audioPlayer.pause();
-        audioToggleBtn.textContent = "Play";
-        audioToggleBtn.classList.remove('btn-primary');
-        audioToggleBtn.classList.add('btn-secondary');
-    }
-}
+        function triggerStartSequence() {
+            // Initial state override via GSAP
+            const state = { zoom: 1.5, xOffset: 20, yOffset: 0, alpha: 1 };
+            
+            // Pre-set initial values
+            GameState.camera.xOffset = state.xOffset;
+            GameState.camera.yOffset = state.yOffset;
+            GameState.camera.zoom = state.zoom;
+            UI.overlay.style.opacity = state.alpha;
+            
+            // Sequence: Start at Door (xOffset: 20), Pan to Player (xOffset: 0), Fade overlay
+            gsap.to(state, {
+                xOffset: 0,
+                duration: 3,
+                ease: "power3.inOut",
+                onUpdate: () => {
+                    GameState.camera.xOffset = state.xOffset;
+                }
+            });
 
-function stopAudio() {
-    if (audioPlayer && !audioPlayer.paused) {
-        audioPlayer.pause();
-        audioToggleBtn.textContent = "Play";
-        audioToggleBtn.classList.remove('btn-primary');
-        audioToggleBtn.classList.add('btn-secondary');
-    }
-}
+            gsap.to(state, {
+                zoom: 1,
+                duration: 2,
+                delay: 1.5,
+                ease: "power2.inOut",
+                onUpdate: () => { 
+                    GameState.camera.zoom = state.zoom; 
+                }
+            });
 
-document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-        stopAudio();
-    }
-});
-
-// --- GAME OVERLAY LOGIC ---
-document.addEventListener("DOMContentLoaded", () => {
-    const gameLinks = document.querySelectorAll('.download-btn');
-    gameLinks.forEach(link => {
-        if (link.textContent.trim() === "Play Web Version") {
-            link.addEventListener("click", function(e) {
-                e.preventDefault();
-                stopAudio(); // Stops the audio when a player enters the game overlay
-                document.getElementById("game-iframe").src = this.href;
-                document.getElementById("game-overlay").style.display = "block";
+            gsap.to(state, {
+                alpha: 0,
+                duration: 1.5,
+                delay: 0.5,
+                onUpdate: () => { 
+                    UI.overlay.style.opacity = state.alpha; 
+                },
+                onComplete: () => {
+                    GameState.active = true;
+                    // Fade in UI
+                    gsap.to([document.getElementById('objective-panel'), document.getElementById('property-panel')], { autoAlpha: 1, y: 0, stagger: 0.2, duration: 0.8, ease: "back.out(1)" });
+                    gsap.to([document.getElementById('joystick-container'), document.getElementById('action-buttons')], { autoAlpha: 1, y: 0, duration: 0.8, delay: 0.4, ease: "back.out(1)" });
+                }
             });
         }
-    });
-});
 
-function closeGameOverlay() {
-    document.getElementById("game-overlay").style.display = "none";
-    document.getElementById("game-iframe").src = "";
-    if (typeof switchView === "function") {
-        switchView("games");
-    }
-}
-</script>
+        function triggerWinSequence() {
+            // Hide UI
+            gsap.to('#ui-layer', { autoAlpha: 0, duration: 0.5 });
+            
+            // Cinematic zoom in
+            const state = { zoom: GameState.camera.zoom };
+            gsap.to(state, {
+                zoom: 1.8, duration: 2, ease: "power2.inOut",
+                onUpdate: () => { GameState.camera.zoom = state.zoom; }
+            });
+
+            // Show Win Modal
+            UI.winModal.classList.remove('hidden');
+            gsap.to(UI.winContent, { autoAlpha: 1, scale: 1, duration: 0.8, delay: 1, ease: "back.out(1.5)" });
+        }
+
+        // Start everything
+        gsap.set([document.getElementById('objective-panel'), document.getElementById('property-panel'), document.getElementById('joystick-container'), document.getElementById('action-buttons')], { y: 20 });
+        
+        // Wait for visual setup then start sequence
+        setTimeout(() => triggerStartSequence(), 500);
+
+    </script>
 </body>
 </html>
 
