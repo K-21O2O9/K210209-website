@@ -231,6 +231,7 @@ section{
     line-height:1.8;
     margin-bottom:40px;
 }
+
 .hero-buttons{
     display:flex;
     justify-content:center;
@@ -304,6 +305,7 @@ section{
     text-align:center;
     padding: 10px;
 }
+
 .game-info{
     padding:25px;
 }
@@ -541,6 +543,7 @@ section{
     line-height: 1.7;
     vertical-align: top;
 }
+
 .profile-card {
     display: flex;
     align-items: center;
@@ -807,21 +810,6 @@ footer p{
         <!-- Logged in state for Games -->
         <div id="gamesLoggedIn" style="display: none;">
             <div class="games-grid">
-                
-                <!-- NEW GAME: BORROWED -->
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #0088cc, #004466, #0a0a0a);">
-                        BORROWED
-                    </div>
-                    <div class="game-info">
-                        <h3>Borrowed</h3>
-                        <p>A game that guarantees fun by mixing physics and stuff</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="borrowed.html" class="download-btn">Play Web Version</a>
-                            <button class="download-btn" onclick="openBorrowedGuide()">About Game</button>
-                        </div>
-                    </div>
-                </div>
 
                 <div class="game-card">
                     <div class="game-banner">SCOUNDREL</div>
@@ -891,6 +879,37 @@ footer p{
                         </div>
                     </div>
                 </div>
+
+                <!-- REARRANGED: BORROWED (Under Blood-Bound) -->
+                <div class="game-card">
+                    <div class="game-banner" style="background:linear-gradient(135deg, #0088cc, #004466, #0a0a0a);">
+                        BORROWED
+                    </div>
+                    <div class="game-info">
+                        <h3>Borrowed</h3>
+                        <p>A game that guarantees fun by mixing physics and stuff</p>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <a href="borrowed.html" class="download-btn">Play Web Version</a>
+                            <button class="download-btn" onclick="openBorrowedGuide()">About Game</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW GAME: NEON SPLASH (Under Borrowed) -->
+                <div class="game-card">
+                    <div class="game-banner" style="background:linear-gradient(135deg, #ff007f, #00ffff, #0a0a0a);">
+                        NEON SPLASH
+                    </div>
+                    <div class="game-info">
+                        <h3>Neon Splash</h3>
+                        <p>A flashy game for those who enjoy fast paced space shooters</p>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <a href="neon.html" class="download-btn">Play Web Version</a>
+                            <button class="download-btn" onclick="openNeonSplashGuide()">About Game</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>
@@ -1252,7 +1271,7 @@ function setModalContent(title, subtitle, bodyHTML) {
     document.getElementById("guideBody").innerHTML = bodyHTML;
 }
 
-// NEW: Function to open guide for BORROWED
+// Function to open guide for BORROWED
 function openBorrowedGuide() {
     document.getElementById("guideModal").style.display = "block";
     
@@ -1270,6 +1289,22 @@ function openBorrowedGuide() {
     `;
     
     setModalContent("Borrowed", "K210209♤ STUDIOS | Property-Swapping Puzzle", content);
+}
+
+// NEW: Function to open guide for NEON SPLASH
+function openNeonSplashGuide() {
+    document.getElementById("guideModal").style.display = "block";
+    
+    const content = `
+        <div>
+            <b>NEON SPLASH</b><br><br>
+            A fast-paced, geometry wars-inspired space shooter. Dive into a vibrant neon arena where quick reflexes and spatial awareness are your only lifelines.<br><br>
+            Dodge overwhelming swarms of enemies, unleash powerful attacks, and chase the highest scores in this flashy, action-packed arcade experience.<br><br>
+            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Arcade Division</span>
+        </div>
+    `;
+    
+    setModalContent("Neon Splash", "K210209♤ STUDIOS | Neon Arcade Shooter", content);
 }
 
 async function openGuide() {
