@@ -9,7 +9,7 @@
 <!-- Swapped Inter for Pixelify Sans -->
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<!-- NEW: EmailJS CDN for the Auto-Mod Email Trigger -->
+<!-- NEW: https://pagecraft.k210209-studios.workers.dev/ CDN for the Auto-Mod Email Trigger -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script type="text/javascript">
    (function(){
@@ -741,6 +741,7 @@ footer p{
     <a href="javascript:void(0)" onclick="switchView('profile')">Profile</a>
     <a href="javascript:void(0)" onclick="switchView('devlog')">Dev Log</a>
     <a href="javascript:void(0)" onclick="switchView('games')">Games</a>
+    <a href="javascript:void(0)" onclick="switchView('apps')">Apps</a> <!-- NEW -->
     <a href="javascript:void(0)" onclick="switchView('rules')">Rules</a>
     <a href="javascript:void(0)" onclick="switchView('forum')">Customer Care</a>
     <a href="javascript:void(0)" onclick="switchView('audio')">Audio</a>
@@ -906,6 +907,44 @@ footer p{
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
                             <a href="neon.html" class="download-btn">Play Web Version</a>
                             <button class="download-btn" onclick="openNeonSplashGuide()">About Game</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- =======================================================
+     VIEW 2.5: APPS (NEW SECTION)
+======================================================== -->
+<div id="view-apps" style="display: none;">
+    <section id="apps">
+        <h2 class="section-title">Studio <span>Apps</span></h2>
+        <p class="section-sub">Explore utility applications and tools from K210209♤ Studios.</p>
+
+        <!-- Logged out message for Apps -->
+        <div id="appsLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
+            <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
+            <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access our applications.</p>
+            <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
+        </div>
+
+        <!-- Logged in state for Apps -->
+        <div id="appsLoggedIn" style="display: none;">
+            <div class="games-grid">
+
+                <div class="game-card">
+                    <div class="game-banner" style="background:linear-gradient(135deg, #1e3c72, #2a5298, #0a0a0a);">
+                        PAGECRAFT
+                    </div>
+                    <div class="game-info">
+                        <h3>PageCraft</h3>
+                        <p>A powerful, completely free, and ad-free PDF editor. Seamlessly edit, modify, and manage your documents without any distractions or hidden costs.</p>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <a href="https://pagecraft.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                            <button class="download-btn" onclick="openPageCraftGuide()">About App</button>
                         </div>
                     </div>
                 </div>
@@ -1236,6 +1275,7 @@ function closeMenu() {
 function switchView(viewName) {
     document.getElementById("view-home").style.display = "none";
     document.getElementById("view-games").style.display = "none";
+    document.getElementById("view-apps").style.display = "none"; 
     document.getElementById("view-devlog").style.display = "none"; 
     document.getElementById("view-contact").style.display = "none";
     document.getElementById("view-account").style.display = "none"; 
@@ -1269,6 +1309,22 @@ function setModalContent(title, subtitle, bodyHTML) {
     document.getElementById("modalTitle").innerHTML = title;
     document.getElementById("modalSubtitle").innerHTML = subtitle;
     document.getElementById("guideBody").innerHTML = bodyHTML;
+}
+
+// Function to open guide for PageCraft
+function openPageCraftGuide() {
+    document.getElementById("guideModal").style.display = "block";
+    
+    const content = `
+        <div>
+            <b>PAGECRAFT</b><br><br>
+            PageCraft is a completely free, zero-advertisement PDF editor built with productivity in mind.<br><br>
+            We believe essential utility tools should be accessible to everyone without paywalls, hidden costs, or annoying ads distracting from your work.<br><br>
+            <span style="color:#ff7b7b;">K210209♤ STUDIOS · Utility Division</span>
+        </div>
+    `;
+    
+    setModalContent("PageCraft", "K210209♤ STUDIOS | PDF Utility Tool", content);
 }
 
 // Function to open guide for BORROWED
@@ -1568,6 +1624,9 @@ async function updateAuthUI(user) {
 
     const gamesLoggedOut = document.getElementById("gamesLoggedOut");
     const gamesLoggedIn = document.getElementById("gamesLoggedIn");
+    
+    const appsLoggedOut = document.getElementById("appsLoggedOut");
+    const appsLoggedIn = document.getElementById("appsLoggedIn");
 
     if (user) {
         const meta = user.user_metadata || {};
@@ -1588,6 +1647,9 @@ async function updateAuthUI(user) {
 
         if(gamesLoggedOut) gamesLoggedOut.style.display = "none";
         if(gamesLoggedIn) gamesLoggedIn.style.display = "block";
+        
+        if(appsLoggedOut) appsLoggedOut.style.display = "none";
+        if(appsLoggedIn) appsLoggedIn.style.display = "block";
         
         // ADMIN SPECIFIC LOGIC
         if (isAdmin(user.email)) {
@@ -1633,6 +1695,9 @@ async function updateAuthUI(user) {
 
         if(gamesLoggedOut) gamesLoggedOut.style.display = "block";
         if(gamesLoggedIn) gamesLoggedIn.style.display = "none";
+        
+        if(appsLoggedOut) appsLoggedOut.style.display = "block";
+        if(appsLoggedIn) appsLoggedIn.style.display = "none";
         
         if (document.getElementById("view-admin").style.display === "block") {
             switchView('home');
