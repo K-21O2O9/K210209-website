@@ -744,7 +744,6 @@ footer p{
     <a href="javascript:void(0)" onclick="switchView('apps')">Apps</a> <!-- NEW -->
     <a href="javascript:void(0)" onclick="switchView('rules')">Rules</a>
     <a href="javascript:void(0)" onclick="switchView('forum')">Customer Care</a>
-    <a href="javascript:void(0)" onclick="switchView('audio')">Audio</a>
     
     <!-- Hidden Admin Section in Menu -->
     <a href="javascript:void(0)" id="menuAdminLink" onclick="switchView('admin')" style="display:none; color:#f59e0b;">Admin Panel</a>
@@ -1199,30 +1198,6 @@ footer p{
     </section>
 </div>
 
-<!-- =======================================================
-     VIEW 10: AUDIO
-======================================================== -->
-<div id="view-audio" style="display: none;">
-    <section id="audio-section">
-        <h2 class="section-title">Studio <span>Audio</span></h2>
-        <p class="section-sub">Listen to your custom soundtrack playlist.</p>
-
-        <div class="account-container">
-            <h3 style="color: #ff3b3b; font-size: 1.5rem; margin-bottom: 20px;">Personal Playlist</h3>
-            
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px;">
-                <input type="file" id="audioFiles" accept="audio/*" multiple class="form-input" style="background: #0a0a0a; border-color: rgba(255,255,255,0.1);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                    <span id="nowPlayingText" style="color: #d4d4d4; font-weight: 600; font-size: 1.05rem;">No track selected</span>
-                    <button id="audio-toggle-btn" class="btn btn-secondary" onclick="toggleMainAudio()" style="padding: 10px 20px;">Play</button>
-                </div>
-            </div>
-            
-            <audio id="main-audio-player" preload="none"></audio>
-        </div>
-    </section>
-</div>
-
 
 <!-- =======================================================
      GLOBAL COMPONENTS (Footer & Modals)
@@ -1286,7 +1261,6 @@ function switchView(viewName) {
     document.getElementById("view-forum").style.display = "none"; 
     document.getElementById("view-profile").style.display = "none"; 
     document.getElementById("view-admin").style.display = "none"; 
-    document.getElementById("view-audio").style.display = "none"; 
     
     document.getElementById("view-" + viewName).style.display = "block";
     
@@ -2136,7 +2110,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 });
 </script>
 
-<!-- NEW CODE: Web Games Overlay with X button -->
+<!-- Web Games Overlay -->
 <style>
 #game-overlay {
     display: none;
@@ -2153,111 +2127,12 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     height: 100%;
     border: none;
 }
-#game-close-btn {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    color: white;
-    font-family: monospace;
-    font-size: 1.2rem;
-    font-weight: bold;
-    cursor: pointer;
-    background: rgba(0,0,0,0.5);
-    padding: 4px 10px;
-    border-radius: 8px;
-    user-select: none;
-    transition: 0.3s;
-    z-index: 10001;
-}
-#game-close-btn:hover {
-    background: rgba(255,0,0,0.8);
-}
 </style>
 <div id="game-overlay">
-    <div id="game-close-btn" onclick="closeGameOverlay()">x</div>
     <iframe id="game-iframe" src=""></iframe>
 </div>
 
 <script>
-// --- AUDIO PLAYER LOGIC ---
-const audioPlayer = document.getElementById('main-audio-player');
-const audioToggleBtn = document.getElementById('audio-toggle-btn');
-const audioFileInput = document.getElementById('audioFiles');
-const nowPlayingText = document.getElementById('nowPlayingText');
-
-let playlist = [];
-let currentTrackIndex = 0;
-
-audioFileInput.addEventListener('change', function(e) {
-    playlist = Array.from(e.target.files);
-    currentTrackIndex = 0;
-    if(playlist.length > 0) {
-        loadTrack(currentTrackIndex);
-        audioPlayer.play();
-        updatePlayButton(true);
-    } else {
-        nowPlayingText.textContent = "No track selected";
-        stopAudio();
-    }
-});
-
-function loadTrack(index) {
-    if (playlist[index]) {
-        const fileURL = URL.createObjectURL(playlist[index]);
-        audioPlayer.src = fileURL;
-        nowPlayingText.textContent = "Playing: " + playlist[index].name;
-    }
-}
-
-audioPlayer.addEventListener('ended', function() {
-    currentTrackIndex++;
-    if (currentTrackIndex < playlist.length) {
-        loadTrack(currentTrackIndex);
-        audioPlayer.play();
-    } else {
-        currentTrackIndex = 0; 
-        updatePlayButton(false);
-        nowPlayingText.textContent = "Playlist ended";
-    }
-});
-
-function toggleMainAudio() {
-    if (playlist.length === 0) {
-        alert("Please select some audio files first!");
-        return;
-    }
-    if (audioPlayer.paused) {
-        audioPlayer.play();
-        updatePlayButton(true);
-    } else {
-        audioPlayer.pause();
-        updatePlayButton(false);
-    }
-}
-
-function updatePlayButton(isPlaying) {
-    if (isPlaying) {
-        audioToggleBtn.textContent = "Stop";
-        audioToggleBtn.classList.remove('btn-secondary');
-        audioToggleBtn.classList.add('btn-primary');
-    } else {
-        audioToggleBtn.textContent = "Play";
-        audioToggleBtn.classList.remove('btn-primary');
-        audioToggleBtn.classList.add('btn-secondary');
-    }
-}
-
-function stopAudio() {
-    if (audioPlayer && !audioPlayer.paused) {
-        audioPlayer.pause();
-        updatePlayButton(false);
-    }
-}
-
-// NOTE: The 'visibilitychange' document listener that previously cut audio 
-// when minimizing the app or turning off the screen has been REMOVED here. 
-// This ensures audio plays in the background and when navigating to Apps.
-
 // --- GAME OVERLAY LOGIC ---
 document.addEventListener("DOMContentLoaded", () => {
     const gameLinks = document.querySelectorAll('.download-btn');
@@ -2265,7 +2140,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (link.textContent.trim() === "Play Web Version") {
             link.addEventListener("click", function(e) {
                 e.preventDefault();
-                stopAudio(); // Cut audio only for Web Games
                 
                 // History API Integration for Back Button
                 history.pushState({ gameOpen: true }, ""); 
