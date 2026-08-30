@@ -336,6 +336,38 @@ section{
 }
 
 /* =========================================
+   5.5 NEWS TABS STYLING
+========================================= */
+.news-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 35px;
+    flex-wrap: wrap;
+}
+.news-tab-btn {
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+    padding: 12px 28px;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.news-tab-btn:hover {
+    background: #1a1a1a;
+    border-color: #ff3b3b;
+}
+.news-tab-btn.active {
+    background: linear-gradient(135deg,#ff1f1f,#8b0000);
+    border: 1px solid transparent;
+    box-shadow: 0 0 20px rgba(255,0,0,0.3);
+}
+
+/* =========================================
    6. CONTACT VIEW 
 ========================================= */
 .contact-container {
@@ -860,6 +892,7 @@ footer p{
     <a href="javascript:void(0)" onclick="switchView('home')">Home</a>
     <a href="javascript:void(0)" onclick="switchView('about')">About</a> <!-- NEW -->
     <a href="javascript:void(0)" onclick="switchView('profile')">Profile</a>
+    <a href="javascript:void(0)" onclick="switchView('news')">News</a> <!-- NEW NEWS SECTION LINK -->
     <a href="javascript:void(0)" onclick="switchView('devlog')">Dev Log</a>
     <a href="javascript:void(0)" onclick="switchView('games')">Games</a>
     <a href="javascript:void(0)" onclick="switchView('apps')">Apps</a> 
@@ -994,6 +1027,230 @@ footer p{
                     </p>
                 </div>
             </div>
+        </div>
+    </section>
+</div>
+
+<!-- =======================================================
+     VIEW 1.75: NEWS (NEW SECTION)
+======================================================== -->
+<div id="view-news" style="display: none;">
+    <section id="news">
+        <h2 class="section-title">Studio <span>News</span></h2>
+        <p class="section-sub">Latest updates, articles, and art from K210209♤ Studios.</p>
+
+        <div class="account-container" style="max-width: 900px; margin: 0 auto; padding: 40px;">
+            <div style="text-align: center; margin-bottom: 35px;">
+                <h3 style="font-size: 1.8rem; color: white; margin-bottom: 10px;">K210209 Studios ♤</h3>
+                <p style="color: #ff3b3b; font-style: italic; font-size: 1.2rem; font-weight: 600;">
+                    "Not many can create history<br>Join those who can"
+                </p>
+            </div>
+
+            <!-- NEWS TOGGLE TABS -->
+            <div class="news-tabs">
+                <button id="tab-btn-text" class="news-tab-btn active" onclick="switchNewsTab('text')">Studio News</button>
+                <button id="tab-btn-art" class="news-tab-btn" onclick="switchNewsTab('art')">Art Collection</button>
+            </div>
+
+            <!-- TAB 1: TEXT CONTENT -->
+            <div id="news-content-text">
+                <h3 style="color: white; font-size: 1.5rem; margin-bottom: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">GAME NEWS</h3>
+                
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px;">Welcome to K210209♤ Studios</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">K210209♤ Studios is an independent game development studio driven by creativity, technology, and the ambition to create experiences that stand apart.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Founded and led by K210209♤, the studio began with a passion for programming and game development. What started as an individual pursuit has grown into a collaborative team bringing together development, art, content creation, testing, operations, and community management.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Our purpose is simple: to turn ideas into experiences.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We don't want to simply reproduce what has already been done. We want to experiment, challenge conventional ideas, and explore what games can become.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Every project begins with an idea. From there, it becomes a concept, a prototype, a collection of systems, and eventually—if everything comes together—a game that players can experience.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Some ideas succeed.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Some fail.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Some evolve into something completely unexpected.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We believe every one of them matters.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">The People Behind the Studio</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Behind every game is a team.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">At K210209 Studios, each member has a distinct role, but development remains a collaborative process. Programming depends on testing. Art depends on direction. Content depends on development progress. Community depends on communication.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Everyone contributes to the bigger picture.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">K210209♤</h4>
+                <p style="margin-bottom: 5px; color: #d4d4d4; font-weight: bold;">Studio Lead · Founder</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">K210209♤ is the founder and Studio Lead of K210209 Studios.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">He oversees the studio's overall direction, development projects, technical decisions, game design, and long-term vision.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">His work spans programming, system architecture, optimisation, project planning, and experimentation with new technologies.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">As Studio Lead, he also coordinates the different areas of the team and works to turn concepts into functional, playable experiences.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">From the earliest idea to the technical systems running behind a finished project, K210209♤ works across the development process to keep the studio moving forward.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">Phantomink</h4>
+                <p style="margin-bottom: 5px; color: #d4d4d4; font-weight: bold;">Lead Artist</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Phantomink is the Lead Artist responsible for the visual identity of our projects.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">She creates the visual assets that help bring our games to life, including characters, environments, UI elements, concept art, and promotional artwork.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Her role extends beyond creating individual assets. She works to maintain a consistent visual language throughout each project so that the game's world, interface, characters, and promotional material feel connected.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The goal is to ensure that every project has an identity of its own.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">Sunny</h4>
+                <p style="margin-bottom: 5px; color: #d4d4d4; font-weight: bold;">Lead Editor · Content Manager</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Sunny manages the studio's video and promotional content.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">She edits videos, prepares promotional clips, and packages content for social media and other platforms.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Her work supports trailers, announcements, development showcases, and polished visual presentations.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">A game may take months to build, but communicating that development journey effectively is just as important. Sunny helps turn our development progress into content that the community can see, understand, and follow.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">Good Killer</h4>
+                <p style="margin-bottom: 5px; color: #d4d4d4; font-weight: bold;">Production Assistant · Game Development · Content & Community</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Good Killer plays a flexible role across several areas of the studio.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">He contributes directly to game development, assisting with projects and helping the development team during production.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">He also supports quality assurance by testing builds, checking new features, identifying problems, and reporting bugs. This helps us discover issues during development rather than after release.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Good Killer also contributes to video production, including gameplay recording and supporting development-related video content.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Alongside his production responsibilities, he helps keep our community active through general communication, occasional updates, polls, concept art, and other lightweight engagement.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">His role allows him to support several parts of the studio wherever additional help is needed.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">LEGEND</h4>
+                <p style="margin-bottom: 5px; color: #d4d4d4; font-weight: bold;">Operations · QA Support</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">LEGEND provides flexible operational and quality-assurance support.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">He handles overflow work that doesn't directly belong to the main creative roles while assisting the team wherever necessary.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">His responsibilities include testing builds, reporting bugs, checking features, organising development notes, and supporting general studio operations.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">As K210209 Studios grows, his responsibilities can also extend toward supporting the revival and management of our Discord and Instagram communities when the studio is ready.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">What We Create</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">K210209 Studios is focused on original games and interactive experiences.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We aren't committed to a single genre.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Our projects can range from competitive experiences and puzzle concepts to physics-driven gameplay, experimental mechanics, mobile games, browser experiences, and multiplayer systems.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We believe that restricting creativity to one category limits what a studio can become.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Instead, every project is an opportunity to explore a different idea.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Some projects may be small and focused.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Others may become major long-term productions requiring years of development.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The size of a project doesn't determine its value.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The idea does.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">Technology Behind the Experience</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Modern games are built on systems that players rarely see.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Our development work explores technologies including HTML, CSS, JavaScript, Three.js, Phaser, Node.js, WebSockets, Socket.IO, databases, and physics engines.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We experiment with 2D and 3D rendering, networking, physics, multiplayer architecture, server systems, interfaces, and performance optimisation.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Technology isn't simply a tool for us.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">It is part of the creative process.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">A technical limitation can inspire a new mechanic. A performance problem can lead to a better architecture. A networking challenge can completely change how a multiplayer system is designed.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We use those challenges to improve.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">Built With Experimentation</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">One of the foundations of K210209 Studios is experimentation.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We ask questions before we ask how to build something.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">What happens if a familiar mechanic is completely redesigned?</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Can a simple concept become a deep gameplay system?</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Can technology create an experience that wouldn't be possible through traditional game design?</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">These questions drive our prototypes and experiments.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Not every experiment will become a released game.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">That's intentional.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Prototyping allows us to test ideas before committing enormous amounts of time and resources to them.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">The Development Process</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Game development is rarely a straight line.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">An idea becomes a concept.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The concept becomes a prototype.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The prototype gets tested.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The team discovers problems.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Systems are changed.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Features are redesigned.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Performance is improved.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">And the cycle begins again.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Sometimes an entire system has to be rebuilt.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Sometimes a feature that seemed perfect on paper doesn't work when players actually interact with it.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Sometimes the best decision is to remove something completely.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We don't consider this wasted effort.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Every iteration teaches us something.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Every bug improves our understanding.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Every failed experiment gives us information.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Every successful feature becomes experience that we can carry into the next project.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">Game News</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Game News exists to bring our community into that development journey.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Instead of only presenting finished games, we want to show what happens before release.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">This is where we'll share development progress, announcements, feature reveals, concept art, trailers, videos, patch notes, upcoming projects, milestones, and other important studio updates.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">It is also a place to highlight the people behind the projects.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The community will be able to see not only what we're building, but also how we're building it.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">More Than Games</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Although games are at the centre of K210209 Studios, our interests go beyond entertainment.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We explore programming, artificial intelligence, physics, networking, graphics, software development, interactive technology, and other areas that can influence the way digital experiences are created.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">A game can be entertainment.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">It can also be a simulation.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">A learning experience.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">A technical experiment.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">A social experience.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Or something that doesn't fit neatly into any existing category.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We want the freedom to explore those possibilities.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">Our Community</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">A studio doesn't exist in isolation.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Players, testers, supporters, friends, and community members all contribute to the journey.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Feedback helps identify what works.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Testing exposes problems.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Suggestions can inspire new ideas.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">And a community gives our projects an audience before they even reach completion.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">As the studio grows, we want to build stronger connections with the people following our work and give them more opportunities to experience development alongside us.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">Looking Ahead</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">K210209 Studios is still in its early stages.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">There are ideas we haven't revealed.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Projects we haven't started.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Technologies we haven't explored.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">And games that may take years before they are ready.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We're not interested in rushing those projects simply to say they exist.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">We want to build them properly.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">With every project, we aim to improve our technology, design, art, performance, teamwork, and understanding of game development.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The goal isn't simply to release more games.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The goal is to make every new project better than the last.</p>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+                <h4 style="color: #ff3b3b; font-size: 1.2rem; margin-bottom: 15px;">The Beginning of Something Bigger</h4>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">K210209 Studios is more than a collection of projects.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">It is a team.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">It is a creative environment.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">It is an experiment in turning ideas into reality.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">And it is a journey that is only beginning.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">The future isn't completely planned.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Some of it will be designed.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">Some of it will be discovered.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">And some of it will be created from ideas that don't even exist yet.</p>
+                <p style="margin-bottom: 15px; color: #b5b5b5; line-height: 1.8;">That's what makes the journey exciting.</p>
+            </div>
+
+            <!-- TAB 2: ART CONTENT -->
+            <div id="news-content-art" style="display: none;">
+                <h3 style="color: white; font-size: 1.5rem; margin-bottom: 25px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">ART COLLECTION</h3>
+                <div style="text-align: center;">
+                    <img src="1782538630411.png" alt="K210209 Studios Art" style="max-width: 100%; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06);">
+                </div>
+            </div>
+
         </div>
     </section>
 </div>
@@ -1461,6 +1718,7 @@ function switchView(viewName) {
     document.getElementById("view-about").style.display = "none"; 
     document.getElementById("view-games").style.display = "none";
     document.getElementById("view-apps").style.display = "none"; 
+    document.getElementById("view-news").style.display = "none"; 
     document.getElementById("view-devlog").style.display = "none"; 
     document.getElementById("view-contact").style.display = "none";
     document.getElementById("view-account").style.display = "none"; 
@@ -1482,6 +1740,28 @@ function switchView(viewName) {
         loadAdminUserList();
     } else if (viewName === 'admin') {
         switchView('home'); // Kick out unauthorized attempts
+    }
+}
+
+// =========================================
+// NEWS TAB SWITCHING LOGIC
+// =========================================
+function switchNewsTab(tab) {
+    const btnText = document.getElementById('tab-btn-text');
+    const btnArt = document.getElementById('tab-btn-art');
+    const contentText = document.getElementById('news-content-text');
+    const contentArt = document.getElementById('news-content-art');
+
+    if (tab === 'text') {
+        btnText.classList.add('active');
+        btnArt.classList.remove('active');
+        contentText.style.display = 'block';
+        contentArt.style.display = 'none';
+    } else if (tab === 'art') {
+        btnArt.classList.add('active');
+        btnText.classList.remove('active');
+        contentArt.style.display = 'block';
+        contentText.style.display = 'none';
     }
 }
 
