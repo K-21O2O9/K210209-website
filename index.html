@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=1280" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>K210209♤ Studios</title>
 
@@ -2376,19 +2376,28 @@ async function acceptTerms() {
     btn.innerText = "Saving Agreement...";
     btn.disabled = true;
 
+    // Save locally to immediately bypass future prompts even if cloud sync delays
+    localStorage.setItem('termsAccepted_' + GLOBAL_USER.id, 'true');
+
     // Update metadata directly on Supabase to permanently flag they accepted
     const { data, error } = await supabaseClient.auth.updateUser({
         data: { terms_accepted: true }
     });
 
     if (error) {
-        alert("Error saving your agreement: " + error.message);
-        btn.innerText = "I Agree";
-        btn.disabled = false;
-    } else {
-        document.getElementById("termsModal").style.display = "none";
-        updateAuthUI(data.user);
-    }
+        console.warn("Could not sync terms to cloud, but saved locally: " + error.message);
+    } 
+
+    document.getElementById("termsModal").style.display = "none";
+    
+    // Force update the local memory object
+    GLOBAL_USER.user_metadata = GLOBAL_USER.user_metadata || {};
+    GLOBAL_USER.user_metadata.terms_accepted = true;
+    
+    updateAuthUI(data?.user || GLOBAL_USER);
+
+    btn.innerText = "I Agree";
+    btn.disabled = false;
 }
 
 async function declineTerms() {
@@ -2401,7 +2410,9 @@ async function declineTerms() {
 async function handleAuthChange(user) {
     if (user) {
         const meta = user.user_metadata || {};
-        if (meta.terms_accepted === true) {
+        const localAccepted = localStorage.getItem('termsAccepted_' + user.id) === 'true';
+        
+        if (meta.terms_accepted === true || localAccepted) {
             document.getElementById("termsModal").style.display = "none";
             updateAuthUI(user);
         } else {
