@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+<meta name="viewport" content="width=1280" />
 
 <title>K210209♤ Studios</title>
 
@@ -598,7 +598,7 @@ section{
 }
 
 /* =========================================
-   9. ACCOUNT / SIGN-IN STYLING
+   9. ACCOUNT / PROFILE STYLING
 ========================================= */
 .account-container {
     max-width: 800px;
@@ -966,9 +966,8 @@ footer p{
 <div id="sideMenu" class="side-menu">
     <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
     <a href="javascript:void(0)" onclick="switchView('home')">Home</a>
-    <a href="javascript:void(0)" onclick="switchView('about')">About</a> <!-- NEW -->
-    <a href="javascript:void(0)" onclick="switchView('profile')">Profile</a>
-    <a href="javascript:void(0)" onclick="switchView('news')">News</a> <!-- NEW NEWS SECTION LINK -->
+    <a href="javascript:void(0)" onclick="switchView('about')">About</a>
+    <a href="javascript:void(0)" onclick="switchView('news')">News</a>
     <a href="javascript:void(0)" onclick="switchView('devlog')">Dev Log</a>
     <a href="javascript:void(0)" onclick="switchView('games')">Games</a>
     <a href="javascript:void(0)" onclick="switchView('apps')">Apps</a> 
@@ -978,7 +977,7 @@ footer p{
     <!-- Hidden Admin Section in Menu -->
     <a href="javascript:void(0)" id="menuAdminLink" onclick="switchView('admin')" style="display:none; color:#f59e0b;">Admin Panel</a>
     
-    <a href="javascript:void(0)" id="menuAccountLink" onclick="switchView('account')" style="color: #ff3b3b;">My Account</a>
+    <a href="javascript:void(0)" id="menuAccountLink" onclick="switchView('profile')" style="color: #ff3b3b;">Sign In / Register</a>
     <a href="javascript:void(0)" onclick="switchView('contact')">Contact Info</a>
 </div>
 
@@ -1002,7 +1001,7 @@ footer p{
             </p>
             <div class="hero-buttons">
                 <button onclick="switchView('games')" class="btn btn-primary">Explore Games</button>
-                <button onclick="switchView('about')" class="btn btn-secondary">Learn More</button> <!-- CHANGED TO POINT TO ABOUT VIEW -->
+                <button onclick="switchView('about')" class="btn btn-secondary">Learn More</button>
             </div>
         </div>
     </section>
@@ -1108,7 +1107,7 @@ footer p{
 </div>
 
 <!-- =======================================================
-     VIEW 1.75: NEWS (NEW SECTION)
+     VIEW 1.75: NEWS
 ======================================================== -->
 <div id="view-news" style="display: none;">
     <section id="news">
@@ -1339,11 +1338,11 @@ footer p{
         <h2 class="section-title">Featured <span>Games</span></h2>
         <p class="section-sub">Explore current projects from K210209♤ Studios. Download available titles directly below.</p>
 
-        <!-- NEW: Logged out message for Games -->
+        <!-- Logged out message for Games -->
         <div id="gamesLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
             <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
             <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access and download our games.</p>
-            <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
+            <button class="btn btn-primary" onclick="switchView('profile')">Go to Sign In</button>
         </div>
 
         <!-- Logged in state for Games -->
@@ -1455,7 +1454,7 @@ footer p{
 </div>
 
 <!-- =======================================================
-     VIEW 2.5: APPS (NEW SECTION)
+     VIEW 2.5: APPS 
 ======================================================== -->
 <div id="view-apps" style="display: none;">
     <section id="apps">
@@ -1466,7 +1465,7 @@ footer p{
         <div id="appsLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
             <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
             <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access our applications.</p>
-            <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
+            <button class="btn btn-primary" onclick="switchView('profile')">Go to Sign In</button>
         </div>
 
         <!-- Logged in state for Apps -->
@@ -1535,12 +1534,12 @@ footer p{
 </div>
 
 <!-- =======================================================
-     VIEW 5: ACCOUNT & AUTHENTICATION
+     VIEW 5: PROFILE & AUTHENTICATION (Merged Account + Profile)
 ======================================================== -->
-<div id="view-account" style="display: none;">
-    <section id="account">
-        <h2 class="section-title">Studio <span>Account</span></h2>
-        <p class="section-sub">Manage your profile, cloud saves, and studio ecosystem access.</p>
+<div id="view-profile" style="display: none;">
+    <section id="profile">
+        <h2 class="section-title">Studio <span>Profile</span></h2>
+        <p class="section-sub">Manage your account, customize your display name, and access cloud saves.</p>
 
         <div class="account-container">
             
@@ -1599,6 +1598,14 @@ footer p{
                         <h3 id="userName">Player Name</h3>
                         <p id="userEmail">player@email.com</p>
                     </div>
+                </div>
+                
+                <div style="margin-bottom: 35px; padding-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <label style="display:block; margin-bottom:10px; color:#a3a3a3; font-weight:600;">Display Name</label>
+                    <input type="text" id="profileNameInput" class="form-input" placeholder="Enter display name" />
+                    <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:20px; width:100%;">Save Changes</button>
+                    
+                    <div id="profileStatus" style="margin-top:15px; color:#4ade80; text-align:center; display:none; font-weight:600;">Profile updated successfully!</div>
                 </div>
                 
                 <p style="color: #a3a3a3; margin-bottom: 25px;">Your account is currently active. Your game progress and data are being synced automatically.</p>
@@ -1663,7 +1670,7 @@ footer p{
             <div id="forumLoggedOut" class="forum-logged-out-msg">
                 <h3>Authentication Required</h3>
                 <p>The customer care service is exclusive to registered members of the K210209 Ecosystem to prevent spam.</p>
-                <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
+                <button class="btn btn-primary" onclick="switchView('profile')">Go to Sign In</button>
             </div>
 
             <div id="forumLoggedIn">
@@ -1685,34 +1692,6 @@ footer p{
                     <input type="text" id="chatInput" class="form-input" placeholder="Type your message to the dev team here..." onkeypress="handleEnter(event)" />
                     <button id="sendChatBtn" class="btn btn-primary" onclick="sendForumMessage()">Send</button>
                 </div>
-            </div>
-
-        </div>
-    </section>
-</div>
-
-<!-- =======================================================
-     VIEW 8: PROFILE
-======================================================== -->
-<div id="view-profile" style="display: none;">
-    <section id="profile">
-        <h2 class="section-title">My <span>Profile</span></h2>
-        <p class="section-sub">Customize your display name.</p>
-
-        <div class="account-container" style="max-width: 500px; margin: 0 auto;">
-            
-            <div id="profileLoggedOut" style="display:none; text-align:center;">
-                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Authentication Required</h3>
-                <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to edit your profile.</p>
-                <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
-            </div>
-
-            <div id="profileLoggedIn" style="display:none;">
-                <label style="display:block; margin-bottom:10px; color:#a3a3a3; font-weight:600;">Display Name</label>
-                <input type="text" id="profileNameInput" class="form-input" placeholder="Enter display name" />
-                <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:20px; width:100%;">Save Changes</button>
-                
-                <div id="profileStatus" style="margin-top:15px; color:#4ade80; text-align:center; display:none; font-weight:600;">Profile updated successfully!</div>
             </div>
 
         </div>
@@ -1945,10 +1924,9 @@ function switchView(viewName) {
     document.getElementById("view-news").style.display = "none"; 
     document.getElementById("view-devlog").style.display = "none"; 
     document.getElementById("view-contact").style.display = "none";
-    document.getElementById("view-account").style.display = "none"; 
+    document.getElementById("view-profile").style.display = "none"; 
     document.getElementById("view-rules").style.display = "none"; 
     document.getElementById("view-forum").style.display = "none"; 
-    document.getElementById("view-profile").style.display = "none"; 
     document.getElementById("view-admin").style.display = "none"; 
     
     document.getElementById("view-" + viewName).style.display = "block";
@@ -2307,8 +2285,6 @@ async function updateAuthUI(user) {
     const forumLoggedIn = document.getElementById("forumLoggedIn");
     const menuAdminLink = document.getElementById("menuAdminLink");
     
-    const profileLoggedOut = document.getElementById("profileLoggedOut");
-    const profileLoggedIn = document.getElementById("profileLoggedIn");
     const profileNameInput = document.getElementById("profileNameInput");
 
     const gamesLoggedOut = document.getElementById("gamesLoggedOut");
@@ -2325,10 +2301,8 @@ async function updateAuthUI(user) {
         document.getElementById("userAvatar").src = meta.avatar_url || "https://www.gravatar.com/avatar/?d=mp";
         document.getElementById("userName").textContent = meta.full_name || meta.name || "Player";
         document.getElementById("userEmail").textContent = user.email || "";
-        menuAccountLink.textContent = "My Account";
+        menuAccountLink.textContent = "Profile";
         
-        profileLoggedOut.style.display = "none";
-        profileLoggedIn.style.display = "block";
         profileNameInput.value = meta.full_name || meta.name || "";
         
         forumLoggedOut.style.display = "none";
@@ -2375,9 +2349,6 @@ async function updateAuthUI(user) {
         loggedInState.style.display = "none";
         menuAccountLink.textContent = "Sign In / Register";
         menuAdminLink.style.display = "none";
-        
-        profileLoggedOut.style.display = "block";
-        profileLoggedIn.style.display = "none";
         
         forumLoggedOut.style.display = "block";
         forumLoggedIn.style.display = "none";
@@ -2865,7 +2836,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     handleAuthChange(session ? session.user : null);
     if (window.location.hash.includes("access_token")) {
         window.history.replaceState(null, "", window.location.pathname);
-        switchView('account');
+        switchView('profile');
     }
 });
 </script>
