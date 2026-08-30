@@ -467,7 +467,7 @@ section{
 }
 
 /* =========================================
-   8. MODAL STYLING (Guide & Admin)
+   8. MODAL STYLING (Guide & Admin & Terms)
 ========================================= */
 .guide-modal{
     display:none;
@@ -522,6 +522,79 @@ section{
 @keyframes fadeIn{
     from{ opacity:0; transform:translateY(15px); }
     to{ opacity:1; transform:translateY(0); }
+}
+
+/* TERMS MODAL STYLING */
+.terms-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
+}
+.terms-content {
+    background: linear-gradient(180deg,#151515,#0a0a0a);
+    border: 1px solid rgba(255,59,59,0.3);
+    border-radius: 24px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(255,0,0,0.15);
+    animation: fadeIn 0.3s ease;
+}
+.terms-header {
+    padding: 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+    flex-shrink: 0;
+}
+.terms-header h2 {
+    color: #ff3b3b;
+    font-size: 2rem;
+    margin-bottom: 5px;
+}
+.terms-body {
+    padding: 30px;
+    overflow-y: auto;
+    color: #d5d5d5;
+    line-height: 1.8;
+    font-size: 0.95rem;
+    flex-grow: 1;
+}
+.terms-body h3 {
+    color: white;
+    margin-top: 25px;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+.terms-body h3:first-child {
+    margin-top: 0;
+}
+.terms-body ul {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+.terms-body li {
+    margin-bottom: 5px;
+}
+.terms-footer {
+    padding: 25px 30px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 0 0 24px 24px;
+    flex-shrink: 0;
 }
 
 /* =========================================
@@ -876,6 +949,9 @@ footer p{
     .forum-input-area { padding: 15px 20px; flex-direction: column; }
     .forum-input-area .form-input { width: 100%; }
     .forum-input-area button { width: 100%; }
+    
+    .terms-footer { flex-direction: column; }
+    .terms-footer button { width: 100%; }
 }
 </style>
 </head>
@@ -1493,7 +1569,7 @@ footer p{
                     </tbody>
                 </table>
 
-                <!-- NEW: Email Registration / Login Box -->
+                <!-- Email Registration / Login Box -->
                 <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 35px; border-radius: 16px;">
                     <h4 style="margin-bottom: 20px; font-size: 1.2rem; color: white;">Email Login / Registration</h4>
                     
@@ -1665,6 +1741,154 @@ footer p{
 <!-- =======================================================
      GLOBAL COMPONENTS (Footer & Modals)
 ======================================================== -->
+
+<!-- Mandatory Terms and Conditions Overlay -->
+<div id="termsModal" class="terms-modal">
+    <div class="terms-content">
+        <div class="terms-header">
+            <h2>K210209♤ STUDIOS</h2>
+            <p style="color:#a3a3a3; font-weight:600;">User Terms, Privacy & Data Acknowledgement</p>
+            <p style="color:#666; font-size:0.85rem; margin-top:5px;">Effective Date: 30 August 2026</p>
+        </div>
+        <div class="terms-body">
+            <p>Welcome to K210209♤ Studios.</p>
+            <p style="margin-bottom:20px;">By creating, maintaining, or continuing to use a K210209♤ Studios account, you confirm that you have read, understood, and agreed to the terms below.</p>
+
+            <h3>1. Agreement Required</h3>
+            <p>All existing and future registered users must accept these terms before continuing to use their account.</p>
+            <p>Existing users will be required to review and accept the updated terms when they next sign in.</p>
+            <p>If you do not agree with these terms, you must not continue using the account or the services provided by K210209♤ Studios.</p>
+
+            <h3>2. Information We Collect</h3>
+            <p>Depending on the services you use, K210209♤ Studios may process information such as:</p>
+            <ul>
+                <li>Email address</li>
+                <li>Account information</li>
+                <li>Authentication information</li>
+                <li>Username or profile information</li>
+                <li>Game progress and saved data</li>
+                <li>Support requests and messages</li>
+                <li>Technical information necessary to operate and secure our services</li>
+                <li>Information voluntarily provided by you</li>
+            </ul>
+            <p>We aim to collect only information reasonably necessary to provide, maintain, secure, and improve our services.</p>
+
+            <h3>3. Why We Use Your Information</h3>
+            <p>Your information may be used to:</p>
+            <ul>
+                <li>Create and authenticate your account</li>
+                <li>Save and synchronise your game progress</li>
+                <li>Provide requested services</li>
+                <li>Respond to support requests</li>
+                <li>Maintain account security</li>
+                <li>Detect abuse, spam, or malicious activity</li>
+                <li>Moderate content where applicable</li>
+                <li>Prevent fraud and unauthorised access</li>
+                <li>Maintain and improve our services</li>
+                <li>Comply with applicable legal obligations</li>
+            </ul>
+            <p>We do not claim ownership of your personal information merely because you provide it to us.</p>
+
+            <h3>4. Service Providers</h3>
+            <p>Some technical services may process information on our behalf, including infrastructure, hosting, authentication, database, security, communications, or content-delivery providers.</p>
+            <p>These providers may include services such as Supabase and Cloudflare where required to operate the K210209♤ Studios platform.</p>
+            <p>Their processing is subject to their respective terms and privacy policies as applicable.</p>
+
+            <h3>5. Account Security</h3>
+            <p>You are responsible for keeping your account credentials secure.</p>
+            <p>You must not:</p>
+            <ul>
+                <li>Share your password with another person</li>
+                <li>Attempt to access another user's account</li>
+                <li>Attempt to bypass authentication</li>
+                <li>Attempt to obtain unauthorised access to our systems</li>
+                <li>Use another person's account without permission</li>
+            </ul>
+            <p>K210209♤ Studios may restrict or suspend accounts involved in abuse, attacks, fraud, or other prohibited activity.</p>
+
+            <h3>6. Support & Communications</h3>
+            <p>If you contact K210209♤ Studios through our support systems, the information you provide may be processed for the purpose of responding to your request, maintaining support records, preventing abuse, and improving our services.</p>
+            <p>Support information should not be considered absolutely confidential unless expressly stated otherwise.</p>
+
+            <h3>7. Moderation</h3>
+            <p>Where moderation systems are used, automated systems and/or authorised members of K210209♤ Studios may process submitted content for purposes such as detecting spam, profanity, abuse, threats, malicious content, or other prohibited behaviour.</p>
+            <p>Automated moderation may not always be accurate.</p>
+
+            <h3>8. Your Rights</h3>
+            <p>Subject to applicable law, you may have rights concerning your personal information, including rights to:</p>
+            <ul>
+                <li>Request information about data held about you</li>
+                <li>Request correction of inaccurate information</li>
+                <li>Request deletion where legally applicable</li>
+                <li>Withdraw consent where processing is based on consent</li>
+                <li>Object to or restrict certain processing where applicable</li>
+                <li>Ask questions about how your information is processed</li>
+            </ul>
+            <p>Requests should be made through the official K210209♤ Studios support/contact channel.</p>
+
+            <h3>9. Data Retention</h3>
+            <p>We retain information only for as long as reasonably necessary for the purposes for which it was collected, including providing services, maintaining security, resolving disputes, complying with legal obligations, and maintaining appropriate records.</p>
+            <p>Deletion may not immediately remove information that must legally or technically be retained.</p>
+
+            <h3>10. Children and Young Users</h3>
+            <p>Users should provide information appropriate to their age and circumstances.</p>
+            <p>Where applicable, additional protections may apply to children and young users under relevant privacy laws.</p>
+            <p>K210209♤ Studios does not intentionally request unnecessary personal information from children.</p>
+
+            <h3>11. Intellectual Property</h3>
+            <p>Unless otherwise stated, original K210209♤ Studios software, games, code, artwork, designs, branding, graphics, written content, and other original materials are owned by or lawfully controlled by K210209♤ Studios or their respective creators.</p>
+            <p>You may not reproduce, redistribute, sell, modify, reverse engineer, or commercially exploit K210209♤ Studios materials except where expressly permitted by law or by written permission.</p>
+            <p>Third-party software or materials remain subject to their respective licences.</p>
+
+            <h3>12. Prohibited Use</h3>
+            <p>You must not use K210209♤ Studios services to:</p>
+            <ul>
+                <li>Attack or compromise our systems</li>
+                <li>Access information without authorisation</li>
+                <li>Interfere with another user's account</li>
+                <li>Distribute malware</li>
+                <li>Conduct fraudulent activity</li>
+                <li>Circumvent security measures</li>
+                <li>Abuse support systems</li>
+                <li>Impersonate another person</li>
+                <li>Use our services for unlawful activity</li>
+            </ul>
+            <p>Nothing in these terms authorises activity that is prohibited by applicable law.</p>
+
+            <h3>13. Service Availability</h3>
+            <p>K210209♤ Studios is provided on an evolving basis.</p>
+            <p>Games, websites, accounts, servers, features, and other services may be updated, modified, suspended, or discontinued.</p>
+            <p>We will make reasonable efforts to maintain our services but cannot guarantee uninterrupted availability.</p>
+
+            <h3>14. Changes to These Terms</h3>
+            <p>These terms may be updated when necessary because of changes to our services, technology, security practices, or applicable legal requirements.</p>
+            <p>Where a material change affects users, we may require users to review and accept the updated terms before continuing to use affected services.</p>
+
+            <h3>15. Acceptance</h3>
+            <p>By selecting "I Agree", you confirm that:</p>
+            <ul>
+                <li>You have read these terms.</li>
+                <li>You understand how your information may be processed.</li>
+                <li>You agree to the applicable K210209♤ Studios Terms and Privacy Notice.</li>
+                <li>You agree to comply with the rules governing use of our services.</li>
+                <li>You understand that refusing these terms may prevent you from using account-based services.</li>
+            </ul>
+            <p>If you do not agree, do not continue using the account-based services.</p>
+
+            <h3>16. Contact</h3>
+            <p>For questions concerning these terms, privacy, accounts, or personal information, contact K210209♤ Studios through the official support/contact channel provided on the K210209♤ Studios website.</p>
+            
+            <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; text-align: center;">
+                <p style="color: #ff3b3b; font-style: italic; font-weight: 600;">"Not many can create history. Join those who can."</p>
+            </div>
+        </div>
+        <div class="terms-footer">
+            <button class="btn btn-secondary" onclick="declineTerms()">I Do Not Agree (Sign Out)</button>
+            <button id="acceptTermsBtn" class="btn btn-primary" onclick="acceptTerms()">I Agree</button>
+        </div>
+    </div>
+</div>
+
 <div id="guideModal" class="guide-modal">
     <div class="guide-content">
         <span class="close-guide" onclick="closeGuide()">&times;</span>
@@ -1955,6 +2179,7 @@ function closeGuide() {
 window.onclick = function(event) {
     const modal = document.getElementById("guideModal");
     const adminModal = document.getElementById("adminModal");
+    // Explicitly excluding termsModal as it shouldn't be closable by clicking outside
     if(event.target == modal) {
         modal.style.display = "none";
         document.getElementById("guideBody").innerHTML = ""; 
@@ -1966,7 +2191,7 @@ window.onclick = function(event) {
 </script>
 
 <!-- =========================================
-     SUPABASE AUTH, FORUM & ADMIN LOGIC
+     SUPABASE AUTH, FORUM, TERMS & ADMIN LOGIC
 ========================================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -2168,6 +2393,54 @@ async function updateAuthUI(user) {
         }
         
         if(forumChannel) supabaseClient.removeChannel(forumChannel);
+    }
+}
+
+// ---------------------------
+// 1.2 TERMS & CONDITIONS LOGIC
+// ---------------------------
+async function acceptTerms() {
+    if (!GLOBAL_USER) return;
+    const btn = document.getElementById('acceptTermsBtn');
+    btn.innerText = "Saving Agreement...";
+    btn.disabled = true;
+
+    // Update metadata directly on Supabase to permanently flag they accepted
+    const { data, error } = await supabaseClient.auth.updateUser({
+        data: { terms_accepted: true }
+    });
+
+    if (error) {
+        alert("Error saving your agreement: " + error.message);
+        btn.innerText = "I Agree";
+        btn.disabled = false;
+    } else {
+        document.getElementById("termsModal").style.display = "none";
+        updateAuthUI(data.user);
+    }
+}
+
+async function declineTerms() {
+    await supabaseClient.auth.signOut();
+    document.getElementById("termsModal").style.display = "none";
+    updateAuthUI(null);
+    switchView('home');
+}
+
+async function handleAuthChange(user) {
+    if (user) {
+        const meta = user.user_metadata || {};
+        if (meta.terms_accepted === true) {
+            document.getElementById("termsModal").style.display = "none";
+            updateAuthUI(user);
+        } else {
+            // User hasn't accepted terms - block UI access
+            GLOBAL_USER = user; 
+            document.getElementById("termsModal").style.display = "flex";
+        }
+    } else {
+        document.getElementById("termsModal").style.display = "none";
+        updateAuthUI(null);
     }
 }
 
@@ -2585,11 +2858,11 @@ function scrollToBottom() {
 // ---------------------------
 (async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    updateAuthUI(session ? session.user : null);
+    handleAuthChange(session ? session.user : null);
 })();
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
-    updateAuthUI(session ? session.user : null);
+    handleAuthChange(session ? session.user : null);
     if (window.location.hash.includes("access_token")) {
         window.history.replaceState(null, "", window.location.pathname);
         switchView('account');
