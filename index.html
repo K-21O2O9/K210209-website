@@ -29,6 +29,7 @@
 }
 
 body{
+    /* Updated font-family to Pixelify Sans */
     font-family:'Pixelify Sans', sans-serif;
     background:#050505;
     color:white;
@@ -37,6 +38,7 @@ body{
     text-size-adjust: 100%;
 }
 
+/* SCROLLBAR */
 ::-webkit-scrollbar{
     width:10px;
 }
@@ -48,6 +50,7 @@ body{
     border-radius:10px;
 }
 
+/* BACKGROUND EFFECTS */
 .bg-glow{
     position:fixed;
     width:700px;
@@ -170,6 +173,7 @@ section{
     line-height:1.7;
 }
 
+/* Form Inputs globally used */
 .form-input {
     width: 100%;
     background: #0a0a0a;
@@ -227,6 +231,7 @@ section{
     line-height:1.8;
     margin-bottom:40px;
 }
+
 .hero-buttons{
     display:flex;
     justify-content:center;
@@ -300,6 +305,7 @@ section{
     text-align:center;
     padding: 10px;
 }
+
 .game-info{
     padding:25px;
 }
@@ -496,6 +502,7 @@ section{
     border-radius: 28px;
     padding: 50px;
 }
+/* Expanded styling for the Admin panel to stop side-scrolling */
 .admin-db-container {
     max-width: 1400px !important;
     width: 95%;
@@ -574,12 +581,14 @@ section{
     height: 600px;
     max-height: 70vh; 
 }
+
 #forumLoggedIn {
     display: none; 
     flex-direction: column;
     height: 100%;
     width: 100%;
 }
+
 .forum-messages {
     flex: 1 1 auto; 
     padding: 30px;
@@ -589,6 +598,7 @@ section{
     gap: 20px;
     min-height: 0; 
 }
+
 .message-bubble {
     display: flex;
     gap: 15px;
@@ -629,6 +639,7 @@ section{
     font-size: 0.95rem;
     word-break: break-word;
 }
+
 .message-bubble.own-message {
     flex-direction: row-reverse;
 }
@@ -640,6 +651,7 @@ section{
 .message-bubble.own-message .message-header {
     flex-direction: row-reverse;
 }
+
 .forum-input-area {
     flex: 0 0 auto;
     padding: 20px 30px;
@@ -652,6 +664,7 @@ section{
 .forum-input-area button {
     padding: 15px 30px;
 }
+
 .forum-logged-out-msg {
     text-align: center;
     padding: 60px 30px;
@@ -666,20 +679,41 @@ section{
 }
 
 /* =========================================
-   11. TEAM NETWORK / CRIMSON VINE STYLES 
-   (RE-ENGINEERED FOR FAMILY TREE ALIGNMENT)
+   11. TEAM NETWORK / CRIMSON VINE STYLES
 ========================================= */
+
+/* Horizontal scroll wrapper for mobile to prevent layout crushing */
+.team-network-scroll-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    padding: 20px 0;
+    -webkit-overflow-scrolling: touch;
+}
+.team-network-scroll-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+.team-network-scroll-wrapper::-webkit-scrollbar-track {
+    background: #0b0b0b;
+    border-radius: 4px;
+}
+.team-network-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #ff3b3b;
+    border-radius: 4px;
+}
+
 .team-network-container {
     position: relative;
     display: grid;
-    /* Ratio mathematically tuned for precise center/side SVG intersection */
-    grid-template-columns: 1fr 1.2fr 1fr; 
-    gap: 20px;
+    /* Precise 3-column, 2-row mathematical grid */
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 30px;
+    min-width: 1000px; /* Forces tree structure to remain intact on mobile */
     max-width: 1300px;
     margin: 40px auto 0 auto;
-    min-height: 700px; /* Provides consistent bounds for absolute SVGs */
+    align-items: center; /* Vertically centers items in their cell */
+    justify-items: center; /* Horizontally centers items in their cell */
 }
-
 .crimson-vine-bg {
     position: absolute;
     top: 0;
@@ -689,21 +723,6 @@ section{
     z-index: 0;
     pointer-events: none;
 }
-
-.team-column {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    /* Grid-rows keep the cards perfectly fixed at 25% and 75% vertical centers */
-    grid-template-rows: 1fr 1fr;
-    gap: 30px;
-    align-items: center; 
-}
-
-.team-column.center-col {
-    grid-template-rows: 1fr; /* Center holds only the single center node */
-}
-
 .team-card {
     background: linear-gradient(180deg, #121212, #0a0a0a);
     border: 1px solid rgba(255, 0, 0, 0.15);
@@ -712,16 +731,16 @@ section{
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     transition: 0.3s;
+    position: relative;
+    z-index: 1;
     width: 100%;
-    max-width: 340px;
-    margin: 0 auto; /* Horizontally centered in its grid column */
+    max-width: 320px;
 }
 .team-card:hover {
     border-color: rgba(255, 0, 0, 0.4);
     box-shadow: 0 0 25px rgba(255, 0, 0, 0.2);
     transform: translateY(-4px);
 }
-
 .whatsapp-pfp {
     width: 70px;
     height: 70px;
@@ -731,10 +750,9 @@ section{
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #8b0000; /* Glow matches the red vines */
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 0 15px rgba(255, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
 }
-
 .team-card h4 {
     font-size: 1.25rem;
     color: white;
@@ -754,17 +772,17 @@ section{
     line-height: 1.6;
     text-align: left;
 }
-
 .studio-center-node {
     background: linear-gradient(180deg, #141414, #080808);
-    border: 3px solid #cc0000;
+    border: 2px solid rgba(255, 0, 0, 0.4);
     border-radius: 24px;
     padding: 30px;
     text-align: center;
-    box-shadow: 0 0 40px rgba(255, 0, 0, 0.4);
+    box-shadow: 0 0 40px rgba(255, 0, 0, 0.25);
+    position: relative;
+    z-index: 1;
     width: 100%;
     max-width: 360px;
-    margin: 0 auto;
 }
 .studio-name-top {
     font-size: 1.8rem;
@@ -794,13 +812,6 @@ footer{
 }
 footer p{
     color:#8a8a8a;
-}
-@media(max-width:968px){
-    /* Stacks smoothly into single column for smaller devices */
-    .team-network-container { grid-template-columns: 1fr; grid-template-rows: auto; min-height: auto; }
-    .team-column { grid-template-rows: auto; }
-    .team-column.center-col { order: -1; margin-bottom: 40px; } /* Pulls center image to top on mobile */
-    .crimson-vine-bg { display: none; }
 }
 @media(max-width:768px){
     .hero h1{ font-size:3rem; }
@@ -839,13 +850,15 @@ footer p{
 
 <body>
 
+<!-- Background Elements -->
 <div class="bg-glow"></div>
 <div class="bg-glow2"></div>
 
+<!-- Sandwich Side Menu -->
 <div id="sideMenu" class="side-menu">
     <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
     <a href="javascript:void(0)" onclick="switchView('home')">Home</a>
-    <a href="javascript:void(0)" onclick="switchView('about')">About</a> 
+    <a href="javascript:void(0)" onclick="switchView('about')">About</a> <!-- NEW -->
     <a href="javascript:void(0)" onclick="switchView('profile')">Profile</a>
     <a href="javascript:void(0)" onclick="switchView('devlog')">Dev Log</a>
     <a href="javascript:void(0)" onclick="switchView('games')">Games</a>
@@ -853,16 +866,22 @@ footer p{
     <a href="javascript:void(0)" onclick="switchView('rules')">Rules</a>
     <a href="javascript:void(0)" onclick="switchView('forum')">Customer Care</a>
     
+    <!-- Hidden Admin Section in Menu -->
     <a href="javascript:void(0)" id="menuAdminLink" onclick="switchView('admin')" style="display:none; color:#f59e0b;">Admin Panel</a>
+    
     <a href="javascript:void(0)" id="menuAccountLink" onclick="switchView('account')" style="color: #ff3b3b;">My Account</a>
     <a href="javascript:void(0)" onclick="switchView('contact')">Contact Info</a>
 </div>
 
+<!-- Sticky Navbar -->
 <nav>
     <div class="menu-icon" onclick="openMenu()">&#9776;</div>
     <div class="logo" onclick="switchView('home')">K210209♤ <span>STUDIOS</span></div>
 </nav>
 
+<!-- =======================================================
+     VIEW 1: HOME
+======================================================== -->
 <div id="view-home">
     <section class="hero">
         <div class="hero-content">
@@ -874,14 +893,14 @@ footer p{
             </p>
             <div class="hero-buttons">
                 <button onclick="switchView('games')" class="btn btn-primary">Explore Games</button>
-                <button onclick="switchView('about')" class="btn btn-secondary">Learn More</button> 
+                <button onclick="switchView('about')" class="btn btn-secondary">Learn More</button> <!-- CHANGED TO POINT TO ABOUT VIEW -->
             </div>
         </div>
     </section>
 </div>
 
 <!-- =======================================================
-     VIEW 1.5: ABOUT (REWORKED WITH FAMILY TREE NETWORK)
+     VIEW 1.5: ABOUT (REWORKED WITH TRUE FAMILY TREE MATRIX)
 ======================================================== -->
 <div id="view-about" style="display: none;">
     <section id="about">
@@ -900,42 +919,23 @@ footer p{
             </p>
         </div>
 
-        <!-- Family Tree Container with Absolute Alignment Grid -->
-        <div class="team-network-container">
-            
-            <!-- Precise SVG drawing organic vines from the center node to the side nodes -->
-            <svg class="crimson-vine-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <!-- Root node pulse at the exact middle -->
-                <circle cx="50" cy="50" r="1.2" fill="#ff0000" />
-                
-                <g fill="none" vector-effect="non-scaling-stroke" stroke-linecap="round">
-                    
-                    <!-- LEFT TOP (Good Killer) -->
-                    <path d="M 50,50 C 35,50 30,25 15.6,25" stroke="#cc0000" stroke-width="0.8" />
-                    <path d="M 50,50 C 42,42 35,22 15.6,25" stroke="#ff3b3b" stroke-width="0.3" />
-                    <path d="M 50,50 C 38,58 25,28 15.6,25" stroke="#8b0000" stroke-width="0.4" />
+        <!-- Scroll wrapper guarantees family tree doesn't break on mobile screens -->
+        <div class="team-network-scroll-wrapper">
+            <div class="team-network-container">
+                <!-- Mathematical SVG overlay. Uses vector-effect to prevent thickness warping -->
+                <svg class="crimson-vine-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <!-- Connect Center to Top Left -->
+                    <path d="M 50 50 C 35 50 35 25 16.66 25" fill="none" stroke="rgba(255,0,0,0.4)" stroke-width="2.5" stroke-dasharray="6,6" vector-effect="non-scaling-stroke" />
+                    <!-- Connect Center to Bottom Left -->
+                    <path d="M 50 50 C 35 50 35 75 16.66 75" fill="none" stroke="rgba(255,0,0,0.4)" stroke-width="2.5" stroke-dasharray="6,6" vector-effect="non-scaling-stroke" />
+                    <!-- Connect Center to Top Right -->
+                    <path d="M 50 50 C 65 50 65 25 83.33 25" fill="none" stroke="rgba(255,0,0,0.4)" stroke-width="2.5" stroke-dasharray="6,6" vector-effect="non-scaling-stroke" />
+                    <!-- Connect Center to Bottom Right -->
+                    <path d="M 50 50 C 65 50 65 75 83.33 75" fill="none" stroke="rgba(255,0,0,0.4)" stroke-width="2.5" stroke-dasharray="6,6" vector-effect="non-scaling-stroke" />
+                </svg>
 
-                    <!-- LEFT BOTTOM (LEGEND) -->
-                    <path d="M 50,50 C 35,50 30,75 15.6,75" stroke="#cc0000" stroke-width="0.8" />
-                    <path d="M 50,50 C 42,58 35,78 15.6,75" stroke="#ff3b3b" stroke-width="0.3" />
-                    <path d="M 50,50 C 38,42 25,72 15.6,75" stroke="#8b0000" stroke-width="0.4" />
-
-                    <!-- RIGHT TOP (Sunny) -->
-                    <path d="M 50,50 C 65,50 70,25 84.4,25" stroke="#cc0000" stroke-width="0.8" />
-                    <path d="M 50,50 C 58,42 65,22 84.4,25" stroke="#ff3b3b" stroke-width="0.3" />
-                    <path d="M 50,50 C 62,58 75,28 84.4,25" stroke="#8b0000" stroke-width="0.4" />
-
-                    <!-- RIGHT BOTTOM (Phantomink) -->
-                    <path d="M 50,50 C 65,50 70,75 84.4,75" stroke="#cc0000" stroke-width="0.8" />
-                    <path d="M 50,50 C 58,58 65,78 84.4,75" stroke="#ff3b3b" stroke-width="0.3" />
-                    <path d="M 50,50 C 62,42 75,72 84.4,75" stroke="#8b0000" stroke-width="0.4" />
-                    
-                </g>
-            </svg>
-
-            <!-- Left Column: 2 Members -->
-            <div class="team-column left-col">
-                <div class="team-card">
+                <!-- Left Column Top -->
+                <div class="team-card" style="grid-column: 1; grid-row: 1;">
                     <div class="whatsapp-pfp">
                         <svg viewBox="0 0 24 24" fill="#777" width="36" height="36"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     </div>
@@ -947,7 +947,8 @@ footer p{
                     </p>
                 </div>
 
-                <div class="team-card">
+                <!-- Left Column Bottom -->
+                <div class="team-card" style="grid-column: 1; grid-row: 2;">
                     <div class="whatsapp-pfp">
                         <svg viewBox="0 0 24 24" fill="#777" width="36" height="36"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     </div>
@@ -958,21 +959,17 @@ footer p{
                         Test builds, report bugs, and help organize development notes. Support future Discord and Instagram revival when the team is ready.
                     </p>
                 </div>
-            </div>
 
-            <!-- Center Column: Root Node -->
-            <div class="team-column center-col">
-                <div class="studio-center-node">
-                    <div class="studio-name-top">K210209 ♤</div>
+                <!-- Center Column - K210209♤ (Spans both rows to perfectly center) -->
+                <div class="studio-center-node" style="grid-column: 2; grid-row: 1 / 3;">
+                    <div class="studio-name-top">K210209♤</div>
                     <div class="studio-image-wrapper">
                         <img src="file_00000000c80481f4940bf222778e869d.png.file_00000000c80481f4940bf222778e869d.png" alt="K210209♤ Studios">
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Column: 2 Members -->
-            <div class="team-column right-col">
-                <div class="team-card">
+                <!-- Right Column Top -->
+                <div class="team-card" style="grid-column: 3; grid-row: 1;">
                     <div class="whatsapp-pfp">
                         <svg viewBox="0 0 24 24" fill="#777" width="36" height="36"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     </div>
@@ -984,7 +981,8 @@ footer p{
                     </p>
                 </div>
 
-                <div class="team-card">
+                <!-- Right Column Bottom -->
+                <div class="team-card" style="grid-column: 3; grid-row: 2;">
                     <div class="whatsapp-pfp">
                         <svg viewBox="0 0 24 24" fill="#777" width="36" height="36"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     </div>
@@ -996,24 +994,29 @@ footer p{
                     </p>
                 </div>
             </div>
-            
         </div>
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 2: GAMES
+======================================================== -->
 <div id="view-games" style="display: none;">
     <section id="games">
         <h2 class="section-title">Featured <span>Games</span></h2>
         <p class="section-sub">Explore current projects from K210209♤ Studios. Download available titles directly below.</p>
 
+        <!-- NEW: Logged out message for Games -->
         <div id="gamesLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
             <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
             <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access and download our games.</p>
             <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
         </div>
 
+        <!-- Logged in state for Games -->
         <div id="gamesLoggedIn" style="display: none;">
             <div class="games-grid">
+
                 <div class="game-card">
                     <div class="game-banner">SCOUNDREL</div>
                     <div class="game-info">
@@ -1025,6 +1028,7 @@ footer p{
                         </div>
                     </div>
                 </div>
+
                 <div class="game-card">
                     <div class="game-banner" style="background:linear-gradient(135deg,#001a2b,#004466,#0a0a0a);">
                         DIMENSIONAL WARFARE
@@ -1039,6 +1043,7 @@ footer p{
                         </div>
                     </div>
                 </div>
+
                 <div class="game-card">
                     <div class="game-banner" style="background:linear-gradient(135deg, #ff4d94, #2a1132, #0a0a0a);">
                         MIRROR-VERSE
@@ -1052,6 +1057,7 @@ footer p{
                         </div>
                     </div>
                 </div>
+
                 <div class="game-card">
                     <div class="game-banner" style="background:linear-gradient(135deg, #e65c00, #F9D423, #0a0a0a);">
                         HORIZON RUSH
@@ -1065,6 +1071,7 @@ footer p{
                         </div>
                     </div>
                 </div>
+
                 <div class="game-card">
                     <div class="game-banner" style="background:linear-gradient(135deg, #8b0000, #3a0000, #0a0a0a);">
                         BLOOD-BOUND
@@ -1078,6 +1085,8 @@ footer p{
                         </div>
                     </div>
                 </div>
+
+                <!-- REARRANGED: BORROWED (Under Blood-Bound) -->
                 <div class="game-card">
                     <div class="game-banner" style="background:linear-gradient(135deg, #0088cc, #004466, #0a0a0a);">
                         BORROWED
@@ -1091,6 +1100,8 @@ footer p{
                         </div>
                     </div>
                 </div>
+
+                <!-- NEW GAME: NEON SPLASH (Under Borrowed) -->
                 <div class="game-card">
                     <div class="game-banner" style="background:linear-gradient(135deg, #ff007f, #00ffff, #0a0a0a);">
                         NEON SPLASH
@@ -1104,24 +1115,31 @@ footer p{
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 2.5: APPS (NEW SECTION)
+======================================================== -->
 <div id="view-apps" style="display: none;">
     <section id="apps">
         <h2 class="section-title">Studio <span>Apps</span></h2>
         <p class="section-sub">Explore utility applications and tools from K210209♤ Studios.</p>
 
+        <!-- Logged out message for Apps -->
         <div id="appsLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
             <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
             <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access our applications.</p>
             <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
         </div>
 
+        <!-- Logged in state for Apps -->
         <div id="appsLoggedIn" style="display: none;">
             <div class="games-grid">
+
                 <div class="game-card">
                     <div class="game-banner" style="background:linear-gradient(135deg, #1e3c72, #2a5298, #0a0a0a);">
                         PAGECRAFT
@@ -1135,15 +1153,20 @@ footer p{
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 3: DEV LOG
+======================================================== -->
 <div id="view-devlog" style="display: none;">
     <section id="dev-log">
         <h2 class="section-title">Developer <span>Log</span></h2>
         <p class="section-sub">Latest updates, patch notes, and behind-the-scenes development progress.</p>
+
         <div class="devlog-container">
             <div class="devlog-entry">
                 <span class="devlog-date">August 2, 2026</span>
@@ -1156,15 +1179,20 @@ footer p{
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 4: CONTACT INFO
+======================================================== -->
 <div id="view-contact" style="display: none;">
     <section id="contact-info">
         <h2 class="section-title">Contact <span>Info</span></h2>
         <p class="section-sub">Get in touch for inquiries, support, or development news.</p>
+
         <div class="contact-container">
             <div class="email-box">
                 <h3>Studio Email</h3>
                 <a href="mailto:k210209.studios@gmail.com">k210209.studios@gmail.com</a>
             </div>
+
             <div class="whatsapp-box">
                 <p>Follow the K210209♤_STUDIOS channel on WhatsApp for updates, development news, future releases, and announcements.</p>
                 <a class="whatsapp-link" href="https://whatsapp.com/channel/0029Vb7sWjABadmXSFsPxG1Y" target="_blank" rel="noopener noreferrer">Join WhatsApp Channel</a>
@@ -1173,11 +1201,16 @@ footer p{
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 5: ACCOUNT & AUTHENTICATION
+======================================================== -->
 <div id="view-account" style="display: none;">
     <section id="account">
         <h2 class="section-title">Studio <span>Account</span></h2>
         <p class="section-sub">Manage your profile, cloud saves, and studio ecosystem access.</p>
+
         <div class="account-container">
+            
             <div id="loggedOutState">
                 <h3 style="font-size: 1.8rem; margin-bottom: 10px;">Join the K210209 Ecosystem</h3>
                 <p style="color: #a3a3a3; font-size: 1.1rem; margin-bottom: 25px;">Sign in for free to elevate your gaming experience.</p>
@@ -1203,6 +1236,7 @@ footer p{
                     </tbody>
                 </table>
 
+                <!-- NEW: Email Registration / Login Box -->
                 <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 35px; border-radius: 16px;">
                     <h4 style="margin-bottom: 20px; font-size: 1.2rem; color: white;">Email Login / Registration</h4>
                     
@@ -1233,19 +1267,26 @@ footer p{
                         <p id="userEmail">player@email.com</p>
                     </div>
                 </div>
+                
                 <p style="color: #a3a3a3; margin-bottom: 25px;">Your account is currently active. Your game progress and data are being synced automatically.</p>
                 <button class="btn btn-secondary" onclick="signOut()" style="border-color: #ff3b3b; color: #ff3b3b;">Securely Sign Out</button>
             </div>
+
         </div>
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 6: RULES (Reworked for Support)
+======================================================== -->
 <div id="view-rules" style="display: none;">
     <section id="rules">
         <h2 class="section-title">Customer Care <span>Guidelines</span></h2>
         <p class="section-sub">All players must read and agree to these terms before opening a support ticket with K210209♤ Studios.</p>
+
         <div class="account-container">
             <h3 style="color: #ff3b3b; font-size: 1.5rem; margin-bottom: 20px;">Support Ticket Rules</h3>
+            
             <table class="advantages-table">
                 <tbody>
                     <tr>
@@ -1266,25 +1307,35 @@ footer p{
                     </tr>
                 </tbody>
             </table>
+
             <div style="margin-top: 35px; padding: 25px; background: rgba(255,0,0,0.05); border-left: 4px solid #ff3b3b; border-radius: 12px;">
                 <p style="color: #d5d5d5; line-height: 1.6;"><strong>Notice:</strong> By proceeding to the customer care chat, you acknowledge that you have read and agree to follow these rules.</p>
+                
                 <button class="btn btn-primary" onclick="switchView('forum')" style="margin-top: 20px; width: 100%;">I Agree — Open Ticket</button>
             </div>
         </div>
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 7: SUPPORT (Formerly Forum)
+======================================================== -->
 <div id="view-forum" style="display: none;">
     <section id="forum">
         <h2 class="section-title">Customer <span>Care</span></h2>
         <p class="section-sub">Connect securely with K210209♤ Studios staff. Your conversation is entirely private.</p>
+
         <div class="forum-container">
+            
             <div id="forumLoggedOut" class="forum-logged-out-msg">
                 <h3>Authentication Required</h3>
                 <p>The customer care service is exclusive to registered members of the K210209 Ecosystem to prevent spam.</p>
                 <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
             </div>
+
             <div id="forumLoggedIn">
+                
+                <!-- Admin Ticket Management UI -->
                 <div id="adminTicketUI" style="display:none; padding: 15px 30px; background: #080808; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                     <label style="color:#ff3b3b; font-weight:700;">Admin View</label>
                     <select id="adminTicketSelect" class="form-input" style="flex: 1; min-width: 200px;" onchange="switchAdminTicket()">
@@ -1292,42 +1343,58 @@ footer p{
                     </select>
                     <button class="btn btn-secondary" style="padding: 12px 20px;" onclick="refreshAdminTickets()">↻ Refresh</button>
                 </div>
+
                 <div class="forum-messages" id="chatBox">
                     <div style="text-align:center; color:#666; margin-top:20px;">Loading your private chat...</div>
                 </div>
+
                 <div class="forum-input-area">
                     <input type="text" id="chatInput" class="form-input" placeholder="Type your message to the dev team here..." onkeypress="handleEnter(event)" />
                     <button id="sendChatBtn" class="btn btn-primary" onclick="sendForumMessage()">Send</button>
                 </div>
             </div>
+
         </div>
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 8: PROFILE
+======================================================== -->
 <div id="view-profile" style="display: none;">
     <section id="profile">
         <h2 class="section-title">My <span>Profile</span></h2>
         <p class="section-sub">Customize your display name.</p>
+
         <div class="account-container" style="max-width: 500px; margin: 0 auto;">
+            
             <div id="profileLoggedOut" style="display:none; text-align:center;">
                 <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Authentication Required</h3>
                 <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to edit your profile.</p>
                 <button class="btn btn-primary" onclick="switchView('account')">Go to Sign In</button>
             </div>
+
             <div id="profileLoggedIn" style="display:none;">
                 <label style="display:block; margin-bottom:10px; color:#a3a3a3; font-weight:600;">Display Name</label>
                 <input type="text" id="profileNameInput" class="form-input" placeholder="Enter display name" />
                 <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:20px; width:100%;">Save Changes</button>
+                
                 <div id="profileStatus" style="margin-top:15px; color:#4ade80; text-align:center; display:none; font-weight:600;">Profile updated successfully!</div>
             </div>
+
         </div>
     </section>
 </div>
 
+<!-- =======================================================
+     VIEW 9: ADMIN PANEL (User List)
+======================================================== -->
 <div id="view-admin" style="display: none;">
     <section id="admin-panel" style="padding-left: 2%; padding-right: 2%;">
         <h2 class="section-title" style="text-align: center;">Admin <span>Database</span></h2>
         <p class="section-sub" style="text-align: center;">Confidential overview of all registered K210209 Ecosystem users.</p>
+
+        <!-- Upgraded Wider Container specifically for the DB panel -->
         <div class="account-container admin-db-container">
             <h3 style="color: #f59e0b; font-size: 1.5rem; margin-bottom: 20px;">Registered Player Accounts</h3>
             <div id="adminUserList" style="max-height: 75vh; overflow-y: auto; padding-right: 15px;">
@@ -1337,6 +1404,10 @@ footer p{
     </section>
 </div>
 
+
+<!-- =======================================================
+     GLOBAL COMPONENTS (Footer & Modals)
+======================================================== -->
 <div id="guideModal" class="guide-modal">
     <div class="guide-content">
         <span class="close-guide" onclick="closeGuide()">&times;</span>
@@ -1362,6 +1433,7 @@ footer p{
             <button class="btn btn-secondary" onclick="applyMute()">Apply Mute</button>
             <hr style="border-color:rgba(255,255,255,0.1); margin:5px 0;">
             <button class="btn btn-primary" onclick="applyBan()" style="background:#8b0000;">PERMANENT BAN</button>
+            <!-- NEW: Unban option added here -->
             <button class="btn btn-secondary" onclick="removeRestrictions()" style="border-color:#25D366; color:#25D366; background: rgba(37, 211, 102, 0.05); margin-top: 10px;">LIFT RESTRICTIONS (UNBAN)</button>
         </div>
     </div>
@@ -1375,6 +1447,7 @@ footer p{
 // =========================================
 // NAVIGATION & VIEW SWITCHING LOGIC
 // =========================================
+
 function openMenu() {
     document.getElementById("sideMenu").style.width = "300px";
 }
@@ -1408,21 +1481,24 @@ function switchView(viewName) {
     if(viewName === 'admin' && GLOBAL_USER && isMasterAdmin(GLOBAL_USER.email)) {
         loadAdminUserList();
     } else if (viewName === 'admin') {
-        switchView('home'); 
+        switchView('home'); // Kick out unauthorized attempts
     }
 }
 
 // =========================================
 // GAME MODALS LOGIC
 // =========================================
+
 function setModalContent(title, subtitle, bodyHTML) {
     document.getElementById("modalTitle").innerHTML = title;
     document.getElementById("modalSubtitle").innerHTML = subtitle;
     document.getElementById("guideBody").innerHTML = bodyHTML;
 }
 
+// Function to open guide for PageCraft
 function openPageCraftGuide() {
     document.getElementById("guideModal").style.display = "block";
+    
     const content = `
         <div>
             <b>PAGECRAFT</b><br><br>
@@ -1431,11 +1507,14 @@ function openPageCraftGuide() {
             <span style="color:#ff7b7b;">K210209♤ STUDIOS · Utility Division</span>
         </div>
     `;
+    
     setModalContent("PageCraft", "K210209♤ STUDIOS | PDF Utility Tool", content);
 }
 
+// Function to open guide for BORROWED
 function openBorrowedGuide() {
     document.getElementById("guideModal").style.display = "block";
+    
     const content = `
         <div>
             <b>BORROWED</b><br><br>
@@ -1448,11 +1527,14 @@ function openBorrowedGuide() {
             Take what you need. Give what you don't.
         </div>
     `;
+    
     setModalContent("Borrowed", "K210209♤ STUDIOS | Property-Swapping Puzzle", content);
 }
 
+// NEW: Function to open guide for NEON SPLASH
 function openNeonSplashGuide() {
     document.getElementById("guideModal").style.display = "block";
+    
     const content = `
         <div>
             <b>NEON SPLASH</b><br><br>
@@ -1461,6 +1543,7 @@ function openNeonSplashGuide() {
             <span style="color:#ff7b7b;">K210209♤ STUDIOS · Arcade Division</span>
         </div>
     `;
+    
     setModalContent("Neon Splash", "K210209♤ STUDIOS | Neon Arcade Shooter", content);
 }
 
@@ -1496,6 +1579,7 @@ async function openGuide() {
         setModalContent("Scoundrel · Dungeon Crawler Guide", "K210209♤ STUDIOS | Official Tutorial", styledContent);
         
     } catch (error) {
+        console.error("Failed to load Scoundrel tutorial:", error);
         setModalContent(
             "Scoundrel · Guide Unavailable", 
             "K210209♤ STUDIOS",
@@ -1514,6 +1598,7 @@ async function openGuide() {
 
 function openDWGuide() {
     document.getElementById("guideModal").style.display = "block";
+    
     const dwContent = `
         <div>
             <b> 3D Space Shooter · Dimensional Warfare</b><br><br>
@@ -1533,11 +1618,13 @@ function openDWGuide() {
             <span style="color:#ff7b7b;">K210209♤ STUDIOS · Space Warfare Division</span>
         </div>
     `;
+    
     setModalContent("Dimensional Warfare", "K210209♤ STUDIOS | Tactical Space Shooter", dwContent);
 }
 
 function openMirrorVerseGuide() {
     document.getElementById("guideModal").style.display = "block";
+    
     const content = `
         <div>
             <b>Spatial Puzzle Platformer · Mirror-verse</b><br><br>
@@ -1546,11 +1633,13 @@ function openMirrorVerseGuide() {
             <span style="color:#ff7b7b;">K210209♤ STUDIOS · Puzzle Division</span>
         </div>
     `;
+    
     setModalContent("Mirror-verse", "K210209♤ STUDIOS | Puzzle Platformer", content);
 }
 
 function openHorizonRushGuide() {
     document.getElementById("guideModal").style.display = "block";
+    
     const content = `
         <div>
             <b>Endless Runner · Horizon Rush</b><br><br>
@@ -1559,11 +1648,13 @@ function openHorizonRushGuide() {
             <span style="color:#ff7b7b;">K210209♤ STUDIOS · Arcade Division</span>
         </div>
     `;
+    
     setModalContent("Horizon Rush", "K210209♤ STUDIOS | Arcade Runner", content);
 }
 
 function openBloodBoundGuide() {
     document.getElementById("guideModal").style.display = "block";
+    
     const content = `
         <div>
             <b>Action Survival · Blood-Bound</b><br><br>
@@ -1572,6 +1663,7 @@ function openBloodBoundGuide() {
             <span style="color:#ff7b7b;">K210209♤ STUDIOS · Survival Division</span>
         </div>
     `;
+    
     setModalContent("Blood-Bound", "K210209♤ STUDIOS | Survival Experience", content);
 }
 
@@ -1593,6 +1685,9 @@ window.onclick = function(event) {
 }
 </script>
 
+<!-- =========================================
+     SUPABASE AUTH, FORUM & ADMIN LOGIC
+========================================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const SUPABASE_URL = "https://qzubciaxoknwddcfuzuj.supabase.co";
@@ -1616,10 +1711,14 @@ function isAdmin(email) {
     return email && ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
+// Master Admin check for the database panel
 function isMasterAdmin(email) {
     return email && email.toLowerCase() === "kingk210209@gmail.com";
 }
 
+// ---------------------------
+// 1. AUTHENTICATION LOGIC
+// ---------------------------
 async function signUpWithEmail() {
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
@@ -1641,6 +1740,7 @@ async function signUpWithEmail() {
         msg.innerText = "Error: " + error.message;
     } else {
         msg.style.color = "#4ade80";
+        // Depending on your Supabase settings, users might need to check their email.
         msg.innerText = "Success! Please check your email inbox to confirm your account.";
     }
 }
@@ -1735,11 +1835,14 @@ async function updateAuthUI(user) {
         if(appsLoggedOut) appsLoggedOut.style.display = "none";
         if(appsLoggedIn) appsLoggedIn.style.display = "block";
         
+        // ADMIN SPECIFIC LOGIC
         if (isAdmin(user.email)) {
+            // General Admins get customer care UI
             document.getElementById("adminTicketUI").style.display = "flex";
             currentTicketId = null; 
             refreshAdminTickets();
             
+            // ONLY Master Admin gets the Admin Panel menu link
             if (isMasterAdmin(user.email)) {
                 menuAdminLink.style.display = "block"; 
             } else {
@@ -1788,6 +1891,9 @@ async function updateAuthUI(user) {
     }
 }
 
+// ---------------------------
+// 1.5 ADMIN USER LIST LOGIC (REWORKED UI)
+// ---------------------------
 async function loadAdminUserList() {
     const adminListContainer = document.getElementById("adminUserList");
     adminListContainer.innerHTML = "<div style='text-align:center; padding: 40px;'><span style='color:#f59e0b; font-size: 1.5rem;'>⟳</span><br><br><span style='color:#a3a3a3;'>Decrypting player database...</span></div>";
@@ -1804,6 +1910,7 @@ async function loadAdminUserList() {
         return;
     }
 
+    // New Card-Based Grid Layout
     let html = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 15px; padding-bottom: 20px;">`;
     
     data.forEach(u => {
@@ -1812,6 +1919,7 @@ async function loadAdminUserList() {
         const badgeText = isUserAdmin ? "Staff" : "Player";
         const badgeBg = isUserAdmin ? "rgba(255, 59, 59, 0.1)" : "rgba(245, 158, 11, 0.1)";
 
+        // Safely escape the name for the HTML inline function call
         const safeNameForJS = escapeHTML(u.name || 'Anonymous').replace(/'/g, "\\'");
 
         html += `
@@ -1834,14 +1942,19 @@ async function loadAdminUserList() {
                 <span style="color: #888;">${u.id}</span>
             </div>
 
+            <!-- NEW: Moderate button added to card so you can Unban from the database list directly -->
             <button onclick="openAdminModal('${u.id}', '${safeNameForJS}')" style="margin-top: 15px; width: 100%; padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #d4d4d4; border-radius: 12px; cursor: pointer; transition: 0.3s; font-weight: 600;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">Moderate Player</button>
         </div>`;
     });
     
     html += `</div>`;
+    
     adminListContainer.innerHTML = html;
 }
 
+// ---------------------------
+// 2. ADMIN MODERATION LOGIC
+// ---------------------------
 let targetModerateUserId = null;
 
 async function checkGlobalBan() {
@@ -1930,10 +2043,12 @@ async function applyBan() {
     }
 }
 
+// NEW: Allows you to UNBAN a player or remove a mute
 async function removeRestrictions() {
     if(!targetModerateUserId) return;
     if(!confirm("Are you sure you want to lift all bans and mutes for this player?")) return;
 
+    // Delete all restriction records matching the user_id
     const {error} = await supabaseClient.from('user_restrictions').delete().eq('user_id', targetModerateUserId);
     
     if(error) alert("Error removing restrictions: " + error.message);
@@ -1949,6 +2064,10 @@ async function deleteMessage(msgId) {
     if(error) alert("Error deleting message: " + error.message);
 }
 
+
+// ---------------------------
+// 3. PROFILE LOGIC
+// ---------------------------
 async function saveProfile() {
     const newName = document.getElementById("profileNameInput").value.trim();
     if(!newName) {
@@ -1969,6 +2088,10 @@ async function saveProfile() {
         updateAuthUI(data.user); 
     }
 }
+
+// ---------------------------
+// 4. CUSTOMER CARE / CHAT LOGIC
+// ---------------------------
 
 async function refreshAdminTickets() {
     const { data, error } = await supabaseClient
@@ -2177,6 +2300,9 @@ function scrollToBottom() {
     }, 50);
 }
 
+// ---------------------------
+// 5. INITIALIZATION
+// ---------------------------
 (async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
     updateAuthUI(session ? session.user : null);
@@ -2191,6 +2317,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 });
 </script>
 
+<!-- Web Games Overlay -->
 <style>
 #game-overlay {
     display: none;
@@ -2213,23 +2340,27 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 </div>
 
 <script>
+// --- GAME OVERLAY LOGIC ---
 document.addEventListener("DOMContentLoaded", () => {
     const gameLinks = document.querySelectorAll('.download-btn');
     gameLinks.forEach(link => {
         if (link.textContent.trim() === "Play Web Version" || link.textContent.trim() === "View in web") {
             link.addEventListener("click", function(e) {
                 e.preventDefault();
+                
+                // History API Integration for Back Button
                 history.pushState({ gameOpen: true }, ""); 
                 
                 const overlay = document.getElementById("game-overlay");
                 document.getElementById("game-iframe").src = this.href;
                 overlay.style.display = "block";
                 
+                // NEW: Request Fullscreen when launching the web game
                 if (overlay.requestFullscreen) {
                     overlay.requestFullscreen().catch(err => console.warn(err));
-                } else if (overlay.webkitRequestFullscreen) {
+                } else if (overlay.webkitRequestFullscreen) { /* Safari */
                     overlay.webkitRequestFullscreen();
-                } else if (overlay.msRequestFullscreen) {
+                } else if (overlay.msRequestFullscreen) { /* IE11 */
                     overlay.msRequestFullscreen();
                 }
             });
@@ -2237,6 +2368,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+// Mobile/Desktop Native Back Button support
 window.addEventListener("popstate", (event) => {
     const overlay = document.getElementById("game-overlay");
     if (overlay.style.display === "block") {
@@ -2244,6 +2376,7 @@ window.addEventListener("popstate", (event) => {
     }
 });
 
+// Escape Key Listener (Desktop)
 document.addEventListener('keydown', (e) => {
     const overlay = document.getElementById("game-overlay");
     if (e.key === "Escape" && overlay.style.display === "block") {
@@ -2251,6 +2384,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Swipe-Down Gesture (Mobile Apple/Android)
 let gameOverlayTouchStartY = 0;
 const gameOverlayElem = document.getElementById("game-overlay");
 
@@ -2260,12 +2394,13 @@ gameOverlayElem.addEventListener('touchstart', (e) => {
 
 gameOverlayElem.addEventListener('touchend', (e) => {
     const touchEndY = e.changedTouches[0].screenY;
-    if (touchEndY - gameOverlayTouchStartY > 100) { 
+    if (touchEndY - gameOverlayTouchStartY > 100) { // 100px downward threshold
         closeGameOverlay();
     }
 }, {passive: true});
 
 function closeGameOverlay() {
+    // Exit fullscreen if active
     if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
         if (document.exitFullscreen) {
             document.exitFullscreen().catch(err => console.warn(err));
@@ -2277,8 +2412,9 @@ function closeGameOverlay() {
     }
 
     if (history.state && history.state.gameOpen) {
-        history.back(); 
+        history.back(); // Triggers the popstate event cleanly
     } else {
+        // Fallback if state is missing
         document.getElementById("game-overlay").style.display = "none";
         document.getElementById("game-iframe").src = "";
         if (typeof switchView === "function") switchView("games");
