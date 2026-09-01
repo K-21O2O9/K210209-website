@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+ <meta name="description" content="K210209♤ Studios is an independent game development studio building immersive games and experiences like Dimensional Warfare and Scoundrel.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>K210209♤ Studios</title>
@@ -1272,6 +1273,7 @@ footer p{
 <div id="sideMenu" class="side-menu">
     <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
     <a href="javascript:void(0)" onclick="switchView('home')">Home</a>
+    <a href="javascript:void(0)" id="menuAccountLink" onclick="switchView('profile')" style="color: #ff3b3b;">Sign In / Register</a>
     <a href="javascript:void(0)" onclick="switchView('about')">About</a>
     <a href="javascript:void(0)" onclick="switchView('news')">News</a>
     <a href="javascript:void(0)" onclick="switchView('devlog')">Dev Log</a>
@@ -1283,7 +1285,6 @@ footer p{
     <!-- Hidden Admin Section in Menu -->
     <a href="javascript:void(0)" id="menuAdminLink" onclick="switchView('admin')" style="display:none; color:#f59e0b;">Admin Panel</a>
     
-    <a href="javascript:void(0)" id="menuAccountLink" onclick="switchView('profile')" style="color: #ff3b3b;">Sign In / Register</a>
     <a href="javascript:void(0)" onclick="switchView('contact')">Contact Info</a>
 </div>
 
@@ -1422,6 +1423,7 @@ footer p{
             <div class="news-tabs">
                 <button id="tab-btn-text" class="news-tab-btn active" onclick="switchNewsTab('text')">Studio News</button>
                 <button id="tab-btn-art" class="news-tab-btn" onclick="switchNewsTab('art')">Art Collection</button>
+                <button id="tab-btn-ideas" class="news-tab-btn" onclick="switchNewsTab('ideas')">Game Ideas</button>
             </div>
 
             <!-- TAB 1: TEXT CONTENT -->
@@ -1544,6 +1546,28 @@ Not many can create history. Join those who can.</p>
                 <h3 style="color: white; font-size: 1.5rem; margin-bottom: 25px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">ART COLLECTION</h3>
                 <div style="text-align: center;">
                     <img src="1782538630411.png" alt="K210209 Studios Art" style="max-width: 100%; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06);">
+                </div>
+            </div>
+
+            <!-- TAB 3: GAME IDEAS (Public Submissions, Admin-Approved) -->
+            <div id="news-content-ideas" style="display: none;">
+                <h3 style="color: white; font-size: 1.5rem; margin-bottom: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">GAME IDEAS</h3>
+                <p style="color: #a3a3a3; text-align: center; margin-bottom: 30px; line-height: 1.7;">Got an idea for a future K210209♤ Studios game? Send it in below! Every submission is reviewed by our team, and approved ideas will be featured here for the community to see.</p>
+
+                <!-- Submission Form -->
+                <div style="background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 30px; max-width: 700px; margin: 0 auto 45px auto;">
+                    <h4 style="color: #ff3b3b; font-size: 1.15rem; margin-bottom: 18px;">Submit Your Idea</h4>
+                    <input type="text" id="ideaNameInput" class="form-input" placeholder="Your name" style="margin-bottom: 15px;" />
+                    <textarea id="ideaTextInput" class="form-input" placeholder="Describe your game idea..." rows="4" style="margin-bottom: 15px; resize: vertical; font-family: inherit;"></textarea>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="submitGameIdea()">Submit Idea</button>
+                    <p id="ideaSubmitMessage" style="margin-top: 12px; text-align: center; font-size: 0.95rem;"></p>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.85rem; text-align: center;">Submissions are private until approved by an admin. Only approved ideas are shown publicly below.</p>
+                </div>
+
+                <!-- Approved Ideas List -->
+                <h4 style="color: white; font-size: 1.2rem; margin-bottom: 20px; text-align: center;">Approved Community Ideas</h4>
+                <div id="gameIdeasList" style="max-width: 700px; margin: 0 auto;">
+                    <div style="text-align:center; color:#666; padding: 20px;">Loading ideas...</div>
                 </div>
             </div>
         </div>
@@ -1822,6 +1846,20 @@ Not many can create history. Join those who can.</p>
     <section id="admin-panel" style="padding-left: 2%; padding-right: 2%;">
         <h2 class="section-title" style="text-align: center;">Admin <span>Database</span></h2>
         <p class="section-sub" style="text-align: center;">Confidential overview of all registered K210209 Ecosystem users.</p>
+
+        <!-- Total Sign-In Counter -->
+        <div style="max-width: 900px; margin: 0 auto 30px auto; background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.02)); border: 1px solid rgba(245,158,11,0.3); border-radius: 20px; padding: 25px 30px; text-align: center;">
+            <div style="color: #a3a3a3; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Total Registered Sign-Ins</div>
+            <div id="adminUserCountValue" style="color: #f59e0b; font-size: 2.5rem; font-weight: 800;">--</div>
+        </div>
+
+        <!-- Pending Game Idea Submissions -->
+        <div class="account-container admin-db-container" style="margin-bottom: 30px;">
+            <h3 style="color: #f59e0b; font-size: 1.5rem; margin-bottom: 20px;">Pending Game Idea Submissions</h3>
+            <div id="adminPendingIdeasList" style="max-height: 50vh; overflow-y: auto; padding-right: 15px;">
+                <!-- Pending ideas populated by JS -->
+            </div>
+        </div>
 
         <div class="account-container admin-db-container">
             <h3 style="color: #f59e0b; font-size: 1.5rem; margin-bottom: 20px;">Registered Player Accounts</h3>
@@ -2424,19 +2462,33 @@ function switchView(viewName) {
 function switchNewsTab(tab) {
     const btnText = document.getElementById('tab-btn-text');
     const btnArt = document.getElementById('tab-btn-art');
+    const btnIdeas = document.getElementById('tab-btn-ideas');
     const contentText = document.getElementById('news-content-text');
     const contentArt = document.getElementById('news-content-art');
+    const contentIdeas = document.getElementById('news-content-ideas');
+
+    btnText.classList.remove('active');
+    btnArt.classList.remove('active');
+    btnIdeas.classList.remove('active');
+    contentText.style.display = 'none';
+    contentArt.style.display = 'none';
+    contentIdeas.style.display = 'none';
 
     if (tab === 'text') {
         btnText.classList.add('active');
-        btnArt.classList.remove('active');
         contentText.style.display = 'block';
-        contentArt.style.display = 'none';
     } else if (tab === 'art') {
         btnArt.classList.add('active');
-        btnText.classList.remove('active');
         contentArt.style.display = 'block';
-        contentText.style.display = 'none';
+    } else if (tab === 'ideas') {
+        btnIdeas.classList.add('active');
+        contentIdeas.style.display = 'block';
+        if (GLOBAL_USER) {
+            const meta = GLOBAL_USER.user_metadata || {};
+            const nameInput = document.getElementById('ideaNameInput');
+            if (nameInput && !nameInput.value) nameInput.value = meta.full_name || meta.name || "";
+        }
+        loadGameIdeas();
     }
 }
 
@@ -2710,10 +2762,13 @@ async function handleAuthChange(user) {
 // 1.5 ADMIN USER LIST LOGIC
 async function loadAdminUserList() {
     const adminListContainer = document.getElementById("adminUserList");
+    const adminUserCountValue = document.getElementById("adminUserCountValue");
     adminListContainer.innerHTML = "<div style='text-align:center; padding: 40px;'><span style='color:#f59e0b; font-size: 1.5rem;'>⟳</span><br><br><span style='color:#a3a3a3;'>Decrypting player database...</span></div>";
+    loadPendingGameIdeas();
     const { data, error } = await supabaseClient.rpc('get_all_user_emails');
     
-    if (error) { adminListContainer.innerHTML = `<div style='color:#ff3b3b; padding: 20px; border: 1px solid rgba(255,59,59,0.3); background: rgba(255,0,0,0.05); border-radius: 16px;'><b>System Error:</b> ${error.message}</div>`; return; }
+    if (error) { adminListContainer.innerHTML = `<div style='color:#ff3b3b; padding: 20px; border: 1px solid rgba(255,59,59,0.3); background: rgba(255,0,0,0.05); border-radius: 16px;'><b>System Error:</b> ${error.message}</div>`; if(adminUserCountValue) adminUserCountValue.textContent = "--"; return; }
+    if (adminUserCountValue) adminUserCountValue.textContent = data ? data.length : 0;
     if (!data || data.length === 0) { adminListContainer.innerHTML = "<div style='padding: 20px; color: #a3a3a3; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;'>No registered users found in the ecosystem.</div>"; return; }
 
     let html = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 15px; padding-bottom: 20px;">`;
@@ -2738,6 +2793,91 @@ async function loadAdminUserList() {
     });
     html += `</div>`;
     adminListContainer.innerHTML = html;
+}
+
+// 1.6 GAME IDEAS LOGIC (Public submission, admin-approved display)
+// NOTE: Requires a Supabase table named "game_ideas" with columns:
+//   id (uuid, pk, default gen_random_uuid()), user_id (uuid, nullable),
+//   user_name (text), idea (text), approved (boolean, default false),
+//   created_at (timestamptz, default now())
+// with Row Level Security allowing: anyone to insert, anyone to select where approved = true,
+// and the master admin (kingk210209@gmail.com) to select/update/delete all rows.
+async function submitGameIdea() {
+    const nameInput = document.getElementById('ideaNameInput');
+    const ideaInput = document.getElementById('ideaTextInput');
+    const msg = document.getElementById('ideaSubmitMessage');
+    const name = nameInput.value.trim();
+    const idea = ideaInput.value.trim();
+
+    if (!name || !idea) { msg.style.color = "#ff3b3b"; msg.innerText = "Please enter your name and your idea before submitting."; return; }
+
+    msg.style.color = "white"; msg.innerText = "Submitting your idea...";
+    const { error } = await supabaseClient.from('game_ideas').insert([{
+        user_id: GLOBAL_USER ? GLOBAL_USER.id : null,
+        user_name: name,
+        idea: idea,
+        approved: false
+    }]);
+
+    if (error) { msg.style.color = "#ff3b3b"; msg.innerText = "Error: " + error.message; return; }
+    msg.style.color = "#4ade80"; msg.innerText = "Thanks! Your idea has been submitted and is awaiting admin approval.";
+    ideaInput.value = "";
+}
+
+async function loadGameIdeas() {
+    const listContainer = document.getElementById('gameIdeasList');
+    if (!listContainer) return;
+    listContainer.innerHTML = "<div style='text-align:center; color:#666; padding: 20px;'>Loading ideas...</div>";
+    const { data, error } = await supabaseClient.from('game_ideas').select('*').eq('approved', true).order('created_at', { ascending: false });
+
+    if (error) { listContainer.innerHTML = `<div style='color:#ff3b3b; padding: 20px; border: 1px solid rgba(255,59,59,0.3); background: rgba(255,0,0,0.05); border-radius: 16px;'><b>System Error:</b> ${error.message}</div>`; return; }
+    if (!data || data.length === 0) { listContainer.innerHTML = "<div style='padding: 20px; color: #a3a3a3; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;'>No approved ideas yet. Be the first to submit one!</div>"; return; }
+
+    let html = '';
+    data.forEach(item => {
+        html += `
+        <div style="background: linear-gradient(145deg, #161616, #0d0d0d); border: 1px solid rgba(255,255,255,0.04); border-left: 3px solid #ff3b3b; border-radius: 16px; padding: 20px; margin-bottom: 15px;">
+            <div style="color: white; font-weight: 700; margin-bottom: 8px;">${escapeHTML(item.user_name || 'Anonymous')}</div>
+            <div style="color: #b5b5b5; line-height: 1.6; white-space: pre-wrap;">${escapeHTML(item.idea)}</div>
+        </div>`;
+    });
+    listContainer.innerHTML = html;
+}
+
+async function loadPendingGameIdeas() {
+    const container = document.getElementById('adminPendingIdeasList');
+    if (!container) return;
+    container.innerHTML = "<div style='text-align:center; padding: 20px;'><span style='color:#f59e0b;'>⟳</span> <span style='color:#a3a3a3;'>Loading submissions...</span></div>";
+    const { data, error } = await supabaseClient.from('game_ideas').select('*').eq('approved', false).order('created_at', { ascending: true });
+
+    if (error) { container.innerHTML = `<div style='color:#ff3b3b; padding: 20px; border: 1px solid rgba(255,59,59,0.3); background: rgba(255,0,0,0.05); border-radius: 16px;'><b>System Error:</b> ${error.message}</div>`; return; }
+    if (!data || data.length === 0) { container.innerHTML = "<div style='padding: 20px; color: #a3a3a3; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;'>No pending submissions.</div>"; return; }
+
+    let html = '';
+    data.forEach(item => {
+        html += `
+        <div style="background: linear-gradient(145deg, #161616, #0d0d0d); border: 1px solid rgba(255,255,255,0.04); border-left: 3px solid #f59e0b; border-radius: 16px; padding: 20px; margin-bottom: 15px;">
+            <div style="color: white; font-weight: 700; margin-bottom: 8px;">${escapeHTML(item.user_name || 'Anonymous')}</div>
+            <div style="color: #b5b5b5; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap;">${escapeHTML(item.idea)}</div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-primary" style="padding: 10px 20px;" onclick="approveGameIdea('${item.id}')">Approve</button>
+                <button class="btn btn-secondary" style="padding: 10px 20px;" onclick="rejectGameIdea('${item.id}')">Reject</button>
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+async function approveGameIdea(id) {
+    const { error } = await supabaseClient.from('game_ideas').update({ approved: true }).eq('id', id);
+    if (error) { alert("Error approving idea: " + error.message); return; }
+    loadPendingGameIdeas();
+}
+
+async function rejectGameIdea(id) {
+    const { error } = await supabaseClient.from('game_ideas').delete().eq('id', id);
+    if (error) { alert("Error rejecting idea: " + error.message); return; }
+    loadPendingGameIdeas();
 }
 
 // 2. ADMIN MODERATION LOGIC
