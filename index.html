@@ -2412,7 +2412,7 @@ function switchView(viewName) {
     }
     
     // Safety for admin menu
-    if(viewName === 'admin' && GLOBAL_USER && isMasterAdmin(GLOBAL_USER.email)) {
+    if(viewName === 'admin' && GLOBAL_USER && isMasterAdmin(GLOBAL_USER.id)) {
         loadAdminUserList();
     } else if (viewName === 'admin') {
         switchView('home'); 
@@ -2566,18 +2566,16 @@ let GLOBAL_USER = null;
 let forumChannel = null; 
 let currentTicketId = null; 
 
-const ADMIN_EMAILS = [
-    "ubaydullah1111@gmail.com",
-    "sunjanahkhushi@gmail.com",
-    "bhundooamodini3@gmail.com",
-    "chris59469655@gmail.com",
-    "kingk210209@gmail.com",
-    "k210209.studios@gmail.com"
-].map(e => e.toLowerCase());
+  const ADMIN_UUIDS = [
+    "838993a7-edaf-4422-a48a-383082f5b6e6", 
+    "888a2777-49e1-40ed-bae6-0f773e022669"
+];
 
-function isAdmin(email) { return email && ADMIN_EMAILS.includes(email.toLowerCase()); }
-function isMasterAdmin(email) { return email && email.toLowerCase() === "kingk210209@gmail.com"; }
+// The specific UUID for kingk210209@gmail.com
+const MASTER_ADMIN_UUID = "838993a7-edaf-4422-a48a-383082f5b6e6"; 
 
+function isAdmin(userId) { return userId && ADMIN_UUIDS.includes(userId); }
+function isMasterAdmin(userId) { return userId && userId === MASTER_ADMIN_UUID; }
 // 1. AUTHENTICATION LOGIC
 async function signUpWithEmail() {
     const email = document.getElementById('authEmail').value.trim();
@@ -2642,7 +2640,7 @@ async function updateAuthUI(user) {
         loggedInState.style.display = "block";
         document.getElementById("userAvatar").src = meta.avatar_url || "https://www.gravatar.com/avatar/?d=mp";
         document.getElementById("userName").textContent = meta.full_name || meta.name || "Player";
-        document.getElementById("userEmail").textContent = user.email || "";
+        document.getElementById("userEmail").textContent = user.id || "";
         menuAccountLink.textContent = "Profile";
         profileNameInput.value = meta.full_name || meta.name || "";
         
@@ -2653,11 +2651,11 @@ async function updateAuthUI(user) {
         if(appsLoggedOut) appsLoggedOut.style.display = "none";
         if(appsLoggedIn) appsLoggedIn.style.display = "block";
         
-        if (isAdmin(user.email)) {
+        if (isAdmin(user.id)) {
             document.getElementById("adminTicketUI").style.display = "flex";
             currentTicketId = null; 
             refreshAdminTickets();
-            if (isMasterAdmin(user.email)) { menuAdminLink.style.display = "block"; } 
+            if (isMasterAdmin(user.id)) { menuAdminLink.style.display = "block"; } 
             else {
                 menuAdminLink.style.display = "none";
                 if (document.getElementById("view-admin").style.display === "block") switchView('home');
@@ -2855,7 +2853,7 @@ async function checkGlobalBan() {
     if (!GLOBAL_USER) return false;
     const { data } = await supabaseClient.from('user_restrictions').select('*').eq('user_id', GLOBAL_USER.id).eq('restriction_type', 'ban');
     if (data && data.length > 0) {
-        document.body.innerHTML = `<div style="display:flex; height:100vh; width:100%; align-items:center; justify-content:center; background:#050505; color:#ff3b3b; flex-direction:column; text-align:center; padding:20px;"><h1 style="font-size:3rem; margin-bottom:10px; font-weight:800; letter-spacing:2px;">ACCOUNT BANNED</h1><p style="color:#a3a3a3; font-size:1.1rem; margin-bottom:30px; max-width:600px; line-height:1.7;">Your account (${GLOBAL_USER.email}) has been permanently banned from K210209♤ Studios for violating community guidelines.</p><button style="padding:15px 30px; background:#111; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:14px; cursor:pointer; font-weight:bold; transition:0.3s;" onclick="signOutAndReload()">Sign Out</button></div>`;
+        document.body.innerHTML = `<div style="display:flex; height:100vh; width:100%; align-items:center; justify-content:center; background:#050505; color:#ff3b3b; flex-direction:column; text-align:center; padding:20px;"><h1 style="font-size:3rem; margin-bottom:10px; font-weight:800; letter-spacing:2px;">ACCOUNT BANNED</h1><p style="color:#a3a3a3; font-size:1.1rem; margin-bottom:30px; max-width:600px; line-height:1.7;">Your account (${GLOBAL_USER.id}) has been permanently banned from K210209♤ Studios for violating community guidelines.</p><button style="padding:15px 30px; background:#111; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:14px; cursor:pointer; font-weight:bold; transition:0.3s;" onclick="signOutAndReload()">Sign Out</button></div>`;
         return true;
     }
     return false;
@@ -2965,7 +2963,7 @@ async function sendForumMessage() {
     input.value = ""; 
     const meta = GLOBAL_USER.user_metadata || {};
     const userNameRaw = meta.full_name || meta.name || "Anonymous Player";
-    const userName = isAdmin(GLOBAL_USER.email) ? "[DEV] " + userNameRaw : userNameRaw;
+    const userName = isAdmin(GLOBAL_USER.id) ? "[DEV] " + userNameRaw : userNameRaw;
     
     let isFlagged = false; const originalMessage = content;
     const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.(com|net|org|io|gov|co|dev|app|me|uk|us|info)(?:\/[^\s]*)?)/gi;
@@ -2978,7 +2976,7 @@ async function sendForumMessage() {
 
     const { error } = await supabaseClient.from('forum_messages').insert([{ user_id: GLOBAL_USER.id, customer_id: currentTicketId, user_name: userName, avatar_url: meta.avatar_url || "https://www.gravatar.com/avatar/?d=mp", content: content }]);
     if (error) { alert("Failed to send message: " + error.message); } 
-    else if (isFlagged && !isAdmin(GLOBAL_USER.email)) { sendAutoModEmail(userName, GLOBAL_USER.email, originalMessage, content); }
+    else if (isFlagged && !isAdmin(GLOBAL_USER.id)) { sendAutoModEmail(userName, GLOBAL_USER.id, originalMessage, content); }
 }
 
 function sendAutoModEmail(playerName, playerEmail, originalText, censoredText) {
@@ -3011,7 +3009,7 @@ function appendMessageToUI(msg) {
     const isOwn = GLOBAL_USER && msg.user_id === GLOBAL_USER.id;
     const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     let adminControls = '';
-    if (GLOBAL_USER && isAdmin(GLOBAL_USER.email)) {
+    if (GLOBAL_USER && isAdmin(GLOBAL_USER.id)) {
         adminControls = `<div style="margin-top: 5px; font-size: 0.75rem; display: flex; gap: 10px;"><span style="color: #ff5555; cursor: pointer; text-decoration:underline;" onclick="deleteMessage('${msg.id}')">Delete Message</span>${msg.user_id !== GLOBAL_USER.id ? `<span style="color: #f59e0b; cursor: pointer; text-decoration:underline;" onclick="openAdminModal('${msg.user_id}', '${escapeHTML(msg.user_name)}')">Moderate Player</span>` : ''}</div>`;
     }
     const bubble = document.createElement('div');
