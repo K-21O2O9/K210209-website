@@ -30,7 +30,6 @@
 }
 
 body{
-    /* Updated font-family to Pixelify Sans */
     font-family:'Pixelify Sans', sans-serif;
     background:#050505;
     color:white;
@@ -334,6 +333,42 @@ section{
 }
 .download-btn:hover{
     background:#8b0000;
+}
+
+/* App Categories Styling */
+.app-category {
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+.app-category h3 {
+    font-size: 2rem;
+    color: white;
+    border-bottom: 2px solid rgba(255, 45, 45, 0.5);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+.app-subcategory {
+    margin-top: 25px;
+    margin-bottom: 30px;
+    padding-left: 15px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+.app-subcategory h4 {
+    font-size: 1.5rem;
+    color: #f59e0b;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+.empty-state {
+    color: #a3a3a3;
+    font-style: italic;
+    background: rgba(255,255,255,0.02);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255,255,255,0.1);
+    display: inline-block;
 }
 
 /* =========================================
@@ -1409,7 +1444,7 @@ footer p{
         <h2 class="section-title">Featured <span>Games</span></h2>
         <p class="section-sub" style="margin-bottom:20px;">Explore current projects from K210209♤ Studios. Select a game from the shelf below.</p>
 
-        <!-- Logged out message for Games (STAYS EXACTLY THE SAME) -->
+        <!-- Logged out message for Games -->
         <div id="gamesLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
             <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Authentication Required</h3>
             <p style="color: #a3a3a3; margin-bottom: 25px;">You must be signed in to access and download our games.</p>
@@ -1464,12 +1499,12 @@ footer p{
 </div>
 
 <!-- =======================================================
-     VIEW 2.5: APPS (PRESERVES THE ORIGINAL GRID UI)
+     VIEW 2.5: APPS (RESTRUCTURED CATEGORY UI)
 ======================================================== -->
 <div id="view-apps" style="display: none;">
     <section id="apps">
         <h2 class="section-title">Studio <span>Apps</span></h2>
-        <p class="section-sub">Explore utility applications and tools from K210209♤ Studios.</p>
+        <p class="section-sub">Explore utility applications and educational tools from K210209♤ Studios.</p>
 
         <!-- Logged out message for Apps -->
         <div id="appsLoggedOut" style="text-align:center; padding: 60px 30px; background: linear-gradient(180deg,#111,#0b0b0b); border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; max-width: 800px; margin: 0 auto;">
@@ -1480,73 +1515,131 @@ footer p{
 
         <!-- Logged in state for Apps -->
         <div id="appsLoggedIn" style="display: none;">
-            <div class="games-grid">
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #1e3c72, #2a5298, #0a0a0a);">
-                        PAGECRAFT
-                    </div>
-                    <div class="game-info">
-                        <h3>PageCraft</h3>
-                        <p>A powerful, completely free, and ad-free PDF editor. Seamlessly edit, modify, and manage your documents without any distractions or hidden costs.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="https://pagecraft.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
-                            <button class="download-btn" onclick="openPageCraftGuide()">About App</button>
-                        </div>
-                    </div>
-                </div>
+            
+            <!-- EDUCATIONAL CATEGORY -->
+            <div class="app-category">
+                <h3>Educational</h3>
                 
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #8a6300, #d4a017, #0a0a0a);">
-                        PHYSENIA
-                    </div>
-                    <div class="game-info">
-                        <h3>Physenia</h3>
-                        <p>An advanced interactive physics simulator focused on electricity. Design circuits, test currents, and experiment with electrical phenomena in a dynamic, real-time sandbox environment.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="https://physics-electricity.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                <div class="app-subcategory">
+                    <h4>O Level</h4>
+                    <div class="games-grid">
+                        
+                        <!-- New App: Flux Core -->
+                        <div class="game-card">
+                            <div class="game-banner" style="background:linear-gradient(135deg, #ffcc00, #cc0000, #0a0a0a);">
+                                FLUX CORE
+                            </div>
+                            <div class="game-info">
+                                <h3>Flux Core</h3>
+                                <p>An interactive simulation for mastering electricity and magnetism. Experiment with magnetic fields, flux, and core dynamics in this engaging educational tool.</p>
+                                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                    <a href="https://electricity-magnetism-physics.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- New App: Anti-Derivative -->
+                        <div class="game-card">
+                            <div class="game-banner" style="background:linear-gradient(135deg, #0080ff, #00ff00, #0a0a0a);">
+                                ANTI-DERIVATIVE
+                            </div>
+                            <div class="game-info">
+                                <h3>Anti-Derivative</h3>
+                                <p>Master integration and advanced calculus concepts. A powerful interactive tool for learning and visualizing anti-derivatives in Add-Maths.</p>
+                                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                    <a href="https://integration-addmaths.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Existing Educational Apps -->
+                        <div class="game-card">
+                            <div class="game-banner" style="background:linear-gradient(135deg, #8a6300, #d4a017, #0a0a0a);">
+                                PHYSENIA
+                            </div>
+                            <div class="game-info">
+                                <h3>Physenia</h3>
+                                <p>An advanced interactive physics simulator focused on electricity. Design circuits, test currents, and experiment with electrical phenomena in a dynamic, real-time sandbox environment.</p>
+                                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                    <a href="https://physics-electricity.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="game-card">
+                            <div class="game-banner" style="background:linear-gradient(135deg, #004d40, #00796b, #0a0a0a);">
+                                ASYMPTOTE
+                            </div>
+                            <div class="game-info">
+                                <h3>Asymptote</h3>
+                                <p>Visualize O Level graphs interactively.</p>
+                                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                    <a href="https://graph-addmaths.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="game-card">
+                            <div class="game-banner" style="background:linear-gradient(135deg, #004d00, #008000, #0a0a0a);">
+                                BOOLEX
+                            </div>
+                            <div class="game-info">
+                                <h3>Boolex</h3>
+                                <p>An interactive tool for learning computer logic gates.</p>
+                                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                    <a href="https://computer-logic-gates.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #6a0dad, #00008b, #0a0a0a);">
-                        PULSE
-                    </div>
-                    <div class="game-info">
-                        <h3>K2𝅘𝅥𝅮0209 Pulse</h3>
-                        <p>An immersive audio-visual experience. Let the pulse of the music guide your senses through vibrant, responsive soundscapes and dynamic rhythmic interactions.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="https://k2-pulse.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
-                        </div>
-                    </div>
+                <div class="app-subcategory">
+                    <h4>A Level</h4>
+                    <div class="empty-state">Nothing for now. Check back soon for advanced interactive tools!</div>
                 </div>
+            </div>
 
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #004d40, #00796b, #0a0a0a);">
-                        ASYMPTOTE
-                    </div>
-                    <div class="game-info">
-                        <h3>Asymptote</h3>
-                        <p>Visualize O Level graphs interactively.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="https://graph-addmaths.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+            <!-- ENTERTAINMENT CATEGORY -->
+            <div class="app-category">
+                <h3>Entertainment</h3>
+                <div class="games-grid">
+                    <div class="game-card">
+                        <div class="game-banner" style="background:linear-gradient(135deg, #6a0dad, #00008b, #0a0a0a);">
+                            PULSE
                         </div>
-                    </div>
-                </div>
-
-                <div class="game-card">
-                    <div class="game-banner" style="background:linear-gradient(135deg, #004d00, #008000, #0a0a0a);">
-                        BOOLEX
-                    </div>
-                    <div class="game-info">
-                        <h3>Boolex</h3>
-                        <p>An interactive tool for learning computer logic gates.</p>
-                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a href="https://computer-logic-gates.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                        <div class="game-info">
+                            <h3>K2𝅘𝅥𝅮0209 Pulse</h3>
+                            <p>An immersive audio-visual experience. Let the pulse of the music guide your senses through vibrant, responsive soundscapes and dynamic rhythmic interactions.</p>
+                            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                <a href="https://k2-pulse.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- UTILITY CATEGORY -->
+            <div class="app-category">
+                <h3>Utility</h3>
+                <div class="games-grid">
+                    <div class="game-card">
+                        <div class="game-banner" style="background:linear-gradient(135deg, #1e3c72, #2a5298, #0a0a0a);">
+                            PAGECRAFT
+                        </div>
+                        <div class="game-info">
+                            <h3>PageCraft</h3>
+                            <p>A powerful, completely free, and ad-free PDF editor. Seamlessly edit, modify, and manage your documents without any distractions or hidden costs.</p>
+                            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                <a href="https://pagecraft.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                                <button class="download-btn" onclick="openPageCraftGuide()">About App</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </section>
 </div>
@@ -1765,7 +1858,6 @@ footer p{
         <div class="terms-body">
             <p>Welcome to K210209♤ Studios.</p>
             <p style="margin-bottom:20px;">By creating, maintaining, or continuing to use a K210209♤ Studios account, you confirm that you have read, understood, and agreed to the terms below.</p>
-            <!-- Terms Content Stays Exactly as Provided -->
             <p>
 K210209♤ STUDIOS<br>
 <br>
@@ -2289,7 +2381,7 @@ K210209♤ Studios<br>
 
 <script>
 // =========================================
-// NAVIGATION & VIEW SWITCHING LOGIC
+// NAVIGATION & VIEW SWITCHING LOGIC (UPDATED FOR HISTORY API)
 // =========================================
 
 function openMenu() {
@@ -2300,7 +2392,7 @@ function closeMenu() {
     document.getElementById("sideMenu").style.width = "0";
 }
 
-function switchView(viewName) {
+function switchView(viewName, pushState = true) {
     document.getElementById("view-home").style.display = "none";
     document.getElementById("view-about").style.display = "none"; 
     document.getElementById("view-games").style.display = "none";
@@ -2317,6 +2409,10 @@ function switchView(viewName) {
     
     window.scrollTo(0, 0);
     closeMenu();
+
+    if (pushState && window.location.hash !== '#' + viewName) {
+        history.pushState({ view: viewName }, '', '#' + viewName);
+    }
     
     if(viewName === 'forum' && GLOBAL_USER) {
         scrollToBottom();
@@ -2326,7 +2422,8 @@ function switchView(viewName) {
     if(viewName === 'admin' && GLOBAL_USER && isMasterAdmin(GLOBAL_USER.id)) {
         loadAdminUserList();
     } else if (viewName === 'admin') {
-        switchView('home'); 
+        if (pushState) history.replaceState({ view: 'home' }, '', '#home');
+        switchView('home', false); 
     }
     
     // Safety re-check for Game Shelf
@@ -2334,6 +2431,48 @@ function switchView(viewName) {
         if(typeof selectGame === "function") selectGame(currentShelfIndex); 
     }
 }
+
+// Global Browser Back Button Handling
+window.addEventListener("popstate", (event) => {
+    const overlay = document.getElementById("game-overlay");
+    // Handle closing the web game overlay via back button
+    if (overlay && overlay.style.display === "block") {
+        overlay.style.display = "none";
+        document.getElementById("game-iframe").src = "";
+        
+        // Restore underlying view state if present
+        if (event.state && event.state.view) {
+            switchView(event.state.view, false);
+        } else {
+            const hash = window.location.hash.substring(1);
+            if (hash) switchView(hash, false);
+        }
+        return;
+    }
+
+    // Normal view switching
+    if (event.state && event.state.view) {
+        switchView(event.state.view, false);
+    } else {
+        // Fallback to home if no state
+        switchView('home', false);
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.location.hash.includes("access_token")) return; // Let Supabase handle auth hashes
+    
+    const hash = window.location.hash.substring(1);
+    const validViews = ['home', 'about', 'news', 'games', 'apps', 'devlog', 'contact', 'profile', 'rules', 'forum', 'admin'];
+    
+    if (hash && validViews.includes(hash)) {
+        switchView(hash, false);
+        history.replaceState({ view: hash }, '', '#' + hash);
+    } else {
+        switchView('home', false);
+        history.replaceState({ view: 'home' }, '', '#home');
+    }
+});
 
 // =========================================
 // NEWS TAB SWITCHING LOGIC
@@ -2372,7 +2511,7 @@ function switchNewsTab(tab) {
 }
 
 // =========================================
-// GAME MODALS LOGIC (100% PRESERVED)
+// GAME MODALS LOGIC
 // =========================================
 
 function setModalContent(title, subtitle, bodyHTML) {
@@ -2487,6 +2626,7 @@ const MASTER_ADMIN_UUID = "838993a7-edaf-4422-a48a-383082f5b6e6";
 
 function isAdmin(userId) { return userId && ADMIN_UUIDS.includes(userId); }
 function isMasterAdmin(userId) { return userId && userId === MASTER_ADMIN_UUID; }
+
 // 1. AUTHENTICATION LOGIC
 async function signUpWithEmail() {
     const email = document.getElementById('authEmail').value.trim();
@@ -2673,12 +2813,6 @@ async function loadAdminUserList() {
 }
 
 // 1.6 GAME IDEAS LOGIC (Public submission, admin-approved display)
-// NOTE: Requires a Supabase table named "game_ideas" with columns:
-//   id (uuid, pk, default gen_random_uuid()), user_id (uuid, nullable),
-//   user_name (text), idea (text), approved (boolean, default false),
-//   created_at (timestamptz, default now())
-// with Row Level Security allowing: anyone to insert, anyone to select where approved = true,
-// and the master admin (kingk210209@gmail.com) to select/update/delete all rows.
 async function submitGameIdea() {
     const nameInput = document.getElementById('ideaNameInput');
     const ideaInput = document.getElementById('ideaTextInput');
@@ -3169,7 +3303,7 @@ initGameShelf();
 
 </script>
 
-<!-- Web Games Overlay (UNTOUCHED LOGIC, JUST REBINDABLE) -->
+<!-- Web Games Overlay -->
 <style>
 #game-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10000; }
 #game-iframe { width: 100%; height: 100%; border: none; }
@@ -3190,6 +3324,7 @@ function rebindWebGameOverlayEvents() {
         if (clone.textContent.trim() === "Play Web Version" || clone.textContent.trim() === "View in web") {
             clone.addEventListener("click", function(e) {
                 e.preventDefault();
+                // Push history state to handle back button smoothly for the overlay
                 history.pushState({ gameOpen: true }, ""); 
                 const overlay = document.getElementById("game-overlay");
                 document.getElementById("game-iframe").src = this.href;
@@ -3203,10 +3338,6 @@ function rebindWebGameOverlayEvents() {
 }
 document.addEventListener("DOMContentLoaded", rebindWebGameOverlayEvents);
 
-window.addEventListener("popstate", (event) => {
-    const overlay = document.getElementById("game-overlay");
-    if (overlay.style.display === "block") closeGameOverlay();
-});
 document.addEventListener('keydown', (e) => {
     const overlay = document.getElementById("game-overlay");
     if (e.key === "Escape" && overlay.style.display === "block") closeGameOverlay();
@@ -3225,11 +3356,12 @@ function closeGameOverlay() {
         else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); } 
         else if (document.msExitFullscreen) { document.msExitFullscreen(); }
     }
-    if (history.state && history.state.gameOpen) { history.back(); } 
+    if (history.state && history.state.gameOpen) { 
+        history.back(); // This triggers popstate, cleanly closing the overlay
+    } 
     else {
         document.getElementById("game-overlay").style.display = "none";
         document.getElementById("game-iframe").src = "";
-        if (typeof switchView === "function") switchView("games");
     }
 }
 </script>
