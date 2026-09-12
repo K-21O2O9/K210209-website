@@ -371,6 +371,44 @@ section{
     display: inline-block;
 }
 
+/* App Folders (clickable category folders for Apps section) */
+.app-folders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 24px;
+    margin-bottom: 20px;
+}
+.app-folder {
+    background: linear-gradient(180deg, #111, #0a0a0a);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+    user-select: none;
+}
+.app-folder:hover {
+    transform: translateY(-6px);
+    border-color: rgba(255,0,0,0.35);
+    box-shadow: 0 0 25px rgba(255,0,0,0.15);
+}
+.app-folder.active {
+    border-color: #ff2d2d;
+    background: linear-gradient(180deg, #1a0000, #0a0a0a);
+}
+.app-folder-icon {
+    font-size: 3rem;
+    margin-bottom: 14px;
+    transition: 0.3s;
+}
+.app-folder-label {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #f0f0f0;
+}
+
 /* =========================================
    5.1 NEW: PIXEL GAME SHELF 
 ========================================= */
@@ -1515,9 +1553,25 @@ footer p{
 
         <!-- Logged in state for Apps -->
         <div id="appsLoggedIn" style="display: none;">
-            
+
+            <!-- APP FOLDERS -->
+            <div class="app-folders-grid">
+                <div class="app-folder" id="folder-btn-educational" onclick="toggleAppFolder('educational')">
+                    <div class="app-folder-icon">📁</div>
+                    <div class="app-folder-label">Educational</div>
+                </div>
+                <div class="app-folder" id="folder-btn-entertainment" onclick="toggleAppFolder('entertainment')">
+                    <div class="app-folder-icon">📁</div>
+                    <div class="app-folder-label">Entertainment</div>
+                </div>
+                <div class="app-folder" id="folder-btn-utility" onclick="toggleAppFolder('utility')">
+                    <div class="app-folder-icon">📁</div>
+                    <div class="app-folder-label">Utility</div>
+                </div>
+            </div>
+
             <!-- EDUCATIONAL CATEGORY -->
-            <div class="app-category">
+            <div class="app-category app-folder-content" id="folder-content-educational" style="display:none;">
                 <h3>Educational</h3>
                 
                 <div class="app-subcategory">
@@ -1548,6 +1602,48 @@ footer p{
                                 <p>Master integration and advanced calculus concepts. A powerful interactive tool for learning and visualizing anti-derivatives in Add-Maths.</p>
                                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                                     <a href="https://integration-addmaths.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- New App: Maths-Explorer -->
+                        <div class="game-card">
+                            <div class="game-banner" style="background:linear-gradient(135deg, #00a300, #cc0000, #0a0a0a);">
+                                MATHS-EXPLORER
+                            </div>
+                            <div class="game-info">
+                                <h3>Maths-Explorer</h3>
+                                <p>An interactive O Level maths tool for exploring and visualizing key mathematical concepts step by step.</p>
+                                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                    <a href="https://maths-explorer-olevel.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- New App: Vectors -->
+                        <div class="game-card">
+                            <div class="game-banner" style="background:linear-gradient(135deg, #ffe600, #ff69b4, #0a0a0a);">
+                                VECTORS
+                            </div>
+                            <div class="game-info">
+                                <h3>Vectors</h3>
+                                <p>An interactive tool for visualizing and mastering vectors in Add-Maths, covering magnitude, direction, and vector operations.</p>
+                                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                    <a href="https://vectors-addmaths.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- New App: Equilibrium -->
+                        <div class="game-card">
+                            <div class="game-banner" style="background:linear-gradient(135deg, #0066ff, #cc0000, #0a0a0a);">
+                                EQUILIBRIUM
+                            </div>
+                            <div class="game-info">
+                                <h3>Equilibrium</h3>
+                                <p>An interactive tool for exploring rate of reaction and chemical equilibrium concepts.</p>
+                                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                                    <a href="https://rate-equilibrium.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
                                 </div>
                             </div>
                         </div>
@@ -1602,7 +1698,7 @@ footer p{
             </div>
 
             <!-- ENTERTAINMENT CATEGORY -->
-            <div class="app-category">
+            <div class="app-category app-folder-content" id="folder-content-entertainment" style="display:none;">
                 <h3>Entertainment</h3>
                 <div class="games-grid">
                     <div class="game-card">
@@ -1610,7 +1706,7 @@ footer p{
                             PULSE
                         </div>
                         <div class="game-info">
-                            <h3>K2𝅘𝅥𝅮0209 Pulse</h3>
+                            <h3>K2𝅘𝅥𝅮0209 Pulse</h3>
                             <p>An immersive audio-visual experience. Let the pulse of the music guide your senses through vibrant, responsive soundscapes and dynamic rhythmic interactions.</p>
                             <div style="display:flex; gap:12px; flex-wrap:wrap;">
                                 <a href="https://k2-pulse.k210209-studios.workers.dev/" class="download-btn" target="_blank" rel="noopener noreferrer">View in web</a>
@@ -1621,7 +1717,7 @@ footer p{
             </div>
 
             <!-- UTILITY CATEGORY -->
-            <div class="app-category">
+            <div class="app-category app-folder-content" id="folder-content-utility" style="display:none;">
                 <h3>Utility</h3>
                 <div class="games-grid">
                     <div class="game-card">
@@ -2734,6 +2830,33 @@ async function updateAuthUI(user) {
         
         if (document.getElementById("view-admin").style.display === "block") switchView('home');
         if(forumChannel) supabaseClient.removeChannel(forumChannel);
+    }
+}
+
+// Toggle the Apps category folders (Educational / Entertainment / Utility)
+function toggleAppFolder(folderName) {
+    const content = document.getElementById("folder-content-" + folderName);
+    const btn = document.getElementById("folder-btn-" + folderName);
+    if (!content || !btn) return;
+
+    const isOpen = content.style.display === "block";
+
+    // Close all folder contents and reset all folder buttons
+    document.querySelectorAll(".app-folder-content").forEach(el => {
+        el.style.display = "none";
+    });
+    document.querySelectorAll(".app-folder").forEach(el => {
+        el.classList.remove("active");
+        const icon = el.querySelector(".app-folder-icon");
+        if (icon) icon.textContent = "📁";
+    });
+
+    // If it wasn't already open, open it now
+    if (!isOpen) {
+        content.style.display = "block";
+        btn.classList.add("active");
+        const icon = btn.querySelector(".app-folder-icon");
+        if (icon) icon.textContent = "📂";
     }
 }
 
